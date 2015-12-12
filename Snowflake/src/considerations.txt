@@ -1,0 +1,21 @@
+Dokumentation für Klassen:
+	- thread-safety
+	- open-/closeable
+	
+	
+Klasse:
+	- Flake:
+		-> bekommt IOExceptions von closeAllStreams() -> was damit anfangen? (loggen??)
+	- IChunkManager
+		-> sind die Implementationen von recycleChunks() thread-safe (bzgl. Streams -> dürfen nicht während der
+				Ausführung manipuliert werden!)
+	
+	
+Server:
+	- FTP/eigene Schnittstelle/NFS/SMB?
+	- Metadaten für Dateien
+	- Kompatibilität mit java.io.File?
+	- mehrere Flakes pro Datei?
+	- Ordner, oder Links, oder beides?
+	- sind Ordner auch Dateien?
+	- 
