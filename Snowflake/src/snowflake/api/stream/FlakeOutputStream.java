@@ -1,10 +1,10 @@
-package snowflake.core.stream;
+package snowflake.api.stream;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
-import j3l.util.ClosureState;
 import j3l.util.check.ArgumentChecker;
+import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import snowflake.api.flake.DataPointer;
 import snowflake.core.flake.Flake;
@@ -16,7 +16,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2015.12.19_0
  * @author Johannes B. Latzel
  */
 public final class FlakeOutputStream extends OutputStream implements IClose<IOException> {
@@ -98,6 +98,7 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 				flake.setLength( flake.getLength() + 1 );
 			}
 			write.write(data_pointer, (byte)(b));
+			data_pointer.increasePosition();
 		}		
 	}
 	
@@ -111,10 +112,12 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 			throw new IOException("The stream is not open!");
 		}
 		else {
-			if( data_pointer.getRemainingBytes() < length ) {
-				flake.setLength( flake.getLength() + length - data_pointer.getRemainingBytes() );
+			long remaining_bytes = data_pointer.getRemainingBytes();
+			if( remaining_bytes < length ) {
+				flake.setLength( flake.getLength() + length - remaining_bytes );
 			}
 			write.write(data_pointer, buffer, offset, length);
+			data_pointer.changePosition(length);
 		}
 	}
 	

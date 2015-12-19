@@ -7,7 +7,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.06_0
+ * @version 2015.12.14_0
  * @author Johannes B. Latzel
  */
 public enum StorageConfigurationElement {
@@ -23,7 +23,8 @@ public enum StorageConfigurationElement {
 	InitializationFilePath("initialization_file_path"),
 	DataFilePath("data_file_path"),
 	ConfigurationFilePath("configuration_file_path"),
-	ClearArraySize("clear_array_size");
+	ClearArraySize("clear_array_size"),
+	MaximumAvailableChunks("maximum_available_chunks");
 	
 	
 	/**

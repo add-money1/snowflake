@@ -1,4 +1,4 @@
-package snowflake.core;
+package snowflake.core.data;
 
 import java.io.IOException;
 
@@ -19,7 +19,7 @@ import snowflake.core.flake.Flake;
  * assigned to a {@link snowflake.api.flake.IFlake flake} by the {@link snowflake.api.IStorage storage}.</p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2015.12.14_0
  * @author Johannes B. Latzel
  */
 public final class Chunk implements IChunkInformation {
@@ -92,7 +92,7 @@ public final class Chunk implements IChunkInformation {
 		this.chunk_table_index = chunk_table_index;
 		position_in_flake = -1;
 		is_valid = true;
-		needs_to_be_saved = false;
+		needs_to_be_saved = true;
 		
 	}
 	
@@ -180,9 +180,9 @@ public final class Chunk implements IChunkInformation {
 			return;
 		}
 		
+		chunk_memory.deleteChunk(this);
 		is_valid = false;
 		needs_to_be_saved = false;
-		chunk_memory.deleteChunk(this);
 		
 	}
 	
@@ -193,9 +193,10 @@ public final class Chunk implements IChunkInformation {
 	 * @param
 	 * @return
 	 */
-	public void save(Flake owner_flake) {
+	public synchronized void save(Flake owner_flake) {
 		if( needsToBeSaved() ) {
 			chunk_memory.saveChunk(owner_flake, this);
+			needs_to_be_saved = false;
 		}
 	}
 	

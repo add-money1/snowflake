@@ -14,7 +14,7 @@ import snowflake.api.configuration.IReadonlyStorageConfiguration;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2015.12.14_0
  * @author Johannes B. Latzel
  */
 public final class StorageConfiguration implements IReadonlyStorageConfiguration {
@@ -240,6 +240,27 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 					1,
 					Integer.MAX_VALUE, 
 					StorageConfigurationElement.ClearArraySize.getName()
+				)
+			)
+		);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *s
+	 * @param
+	 * @return
+	 */
+	public void setMaximumAvailableChunks(int maximum_available_chunks) {
+		configuration_manager.setElement(
+			StorageConfigurationElement.MaximumAvailableChunks.getName(), 
+			Integer.toString(
+				ArgumentChecker.checkForBoundaries(
+					maximum_available_chunks, 
+					1,
+					Integer.MAX_VALUE, 
+					StorageConfigurationElement.MaximumAvailableChunks.getName()
 				)
 			)
 		);
@@ -479,6 +500,14 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 */
 	@Override public int getClearArraySize() {
 		return getValue("clear_array_size", 8192);
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getTresholdForChunkMerging()
+	 */
+	@Override public int getMaximumAvailableChunks() {
+		return getValue("maximum_available_chunks", 1000);
 	}
 	
 }

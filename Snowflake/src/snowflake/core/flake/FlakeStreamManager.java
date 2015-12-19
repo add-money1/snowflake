@@ -7,17 +7,17 @@ import java.util.stream.Stream;
 
 import j3l.util.check.ArgumentChecker;
 import j3l.util.close.IStateClosure;
+import snowflake.api.stream.FlakeInputStream;
+import snowflake.api.stream.FlakeOutputStream;
 import snowflake.core.storage.IRead;
 import snowflake.core.storage.IWrite;
-import snowflake.core.stream.FlakeInputStream;
-import snowflake.core.stream.FlakeOutputStream;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.06_0
+ * @version 2015.12.18_0
  * @author Johannes B. Latzel
  */
 public final class FlakeStreamManager implements IFlakeStreamManager {
@@ -75,7 +75,6 @@ public final class FlakeStreamManager implements IFlakeStreamManager {
 		if( (closeable_stream instanceof FlakeOutputStream || closeable_stream instanceof FlakeInputStream)
 				&& closeable_stream.isClosed() ) {
 			synchronized( stream_creation_lock ) {
-				System.out.println("FlakeStreamManager.removeStream() -> Test");
 				stream_list.remove(closeable_stream);
 			}
 		}

@@ -6,9 +6,9 @@ import java.io.RandomAccessFile;
 import java.util.LinkedList;
 
 import j3l.exception.ClosureException;
-import j3l.util.ClosureState;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ClosureChecker;
+import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 
 
@@ -16,7 +16,7 @@ import j3l.util.close.IClose;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.13_0
+ * @version 2015.12.14_0
  * @author Johannes B. Latzel
  */
 public final class DataTable<T extends IBinaryData> implements IClose<IOException> {
@@ -112,7 +112,6 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 			return;
 		}
 		
-		
 		is_flushing = true;
 		byte[] buffer;
 		IBinaryData current_entry;
@@ -143,6 +142,11 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 					
 				}
 				catch( IOException e ) {
+					
+					if( current_wrapper != null ) {
+						pending_entries_list.addFirst(current_wrapper);
+					}
+					
 					throw new IOException("Could not flush the data in this table! Stopped at wrapper \""
 							+ (current_wrapper == null ? "null" : current_wrapper.toString()) + "\".", e);
 				}
@@ -212,33 +216,26 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 		if( !hasBeenOpened() ) {
 			throw new ClosureException("The table has not been opened!");
 		}
-		else if( !isOpen() ) {
+		else {
 			ClosureChecker.checkForOpen(this, "table");
 		}
-		else if( wrapper == null ) {
-			return;
-		}
 		
 		
-		if( isFlushing() ) {
-			synchronized( pending_entries_buffer_lock ) {
-				if( pending_entries_buffer_list.contains(wrapper) ) {
-					pending_entries_buffer_list.remove(wrapper);
-				}
-				pending_entries_buffer_list.add(wrapper);
-			}
-		}
-		else {
-			synchronized( pending_entries_lock ) {
-				if( pending_entries_list.contains(wrapper) ) {
-					pending_entries_list.remove(wrapper);
-				}
-				pending_entries_list.add(wrapper);
-				if( pending_entries_list.size() >= max_capacity ) {
-					flushParallel();
+		if( wrapper != null ) {
+			if( isFlushing() ) {
+				synchronized( pending_entries_buffer_lock ) {
+					pending_entries_buffer_list.addLast(wrapper);
 				}
 			}
-		}
+			else {
+				synchronized( pending_entries_lock ) {
+					pending_entries_list.addLast(wrapper);
+					if( pending_entries_list.size() >= max_capacity ) {
+						flushParallel();
+					}
+				}
+			}
+		}		
 		
 	}
 	

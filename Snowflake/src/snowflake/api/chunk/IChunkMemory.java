@@ -1,6 +1,6 @@
 package snowflake.api.chunk;
 
-import snowflake.core.Chunk;
+import snowflake.core.data.Chunk;
 import snowflake.core.flake.Flake;
 
 

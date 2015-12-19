@@ -8,7 +8,7 @@ import j3l.util.check.ArgumentChecker;
 import j3l.util.close.IStateClosure;
 import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamMode;
-import snowflake.core.Chunk;
+import snowflake.core.data.Chunk;
 import snowflake.core.flake.Flake;
 
 

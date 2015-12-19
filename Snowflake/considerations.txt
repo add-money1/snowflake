@@ -6,9 +6,14 @@ Dokumentation für Klassen:
 Klasse:
 	- Flake:
 		-> bekommt IOExceptions von closeAllStreams() -> was damit anfangen? (loggen??)
-	- IChunkManager
+	- IChunkManager:
 		-> sind die Implementationen von recycleChunks() thread-safe (bzgl. Streams -> dürfen nicht während der
 				Ausführung manipuliert werden!)
+	- FlakeStreamManager:
+		-> removeStream() -> was soll hier noch zusätzlich geschehen? Listener könnten hier das Ende
+							eines i/O-vorgangs signalisieren
+	- DataTable:
+		-> hat über 5000 Threads erzeugt (ohne sichtbaren Grund..)
 	
 	
 Server:

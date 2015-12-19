@@ -4,32 +4,30 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Random;
 import java.util.stream.Stream;
 
 import j3l.exception.ValueOverflowException;
-import j3l.util.ArrayTool;
-import j3l.util.ClosureState;
-import j3l.util.RandomFactory;
+import j3l.util.array.ArrayTool;
 import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ClosureChecker;
 import j3l.util.check.ElementChecker;
+import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
+import j3l.util.collection.ListType;
+import j3l.util.collection.SortedList;
+import j3l.util.interfaces.ComparisonType;
 import j3l.util.stream.StreamFactory;
+import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
-import j3l.util.transform.TransformValue;
 import snowflake.api.chunk.ChunkAppendingMode;
 import snowflake.api.chunk.IChunkInformation;
 import snowflake.api.chunk.IChunkManager;
 import snowflake.api.chunk.IChunkMemory;
 import snowflake.api.configuration.IReadOnlyChunkManagerConfiguration;
 import snowflake.api.storage.IStorageInformation;
-import snowflake.core.Chunk;
 import snowflake.core.data.BinaryDataWrapper;
+import snowflake.core.data.Chunk;
 import snowflake.core.data.ChunkData;
 import snowflake.core.data.ChunkUtility;
 import snowflake.core.data.DataTable;
@@ -42,7 +40,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2015.12.16_0
  * @author Johannes B. Latzel
  */
 public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<IOException> {
@@ -52,6 +50,12 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * <p></p>
 	 */
 	public final static ChunkData NULL_CHUNK_DATA = new ChunkData(0, 0, 0, 0);
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private final ChunkMergingManager chunk_merging_manager;
 	
 	
 	/**
@@ -75,7 +79,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	/**
 	 * <p></p>
 	 */
-	private final ArrayList<Chunk> available_chunk_list;
+	private final SortedList<Long, Chunk> available_chunk_list;
 	
 	
 	/**
@@ -155,29 +159,12 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 				chunk_manager_configuration.getMaximumChunkDataTableSize());
 		index_manager = new IndexManager( new File(chunk_manager_configuration.getChunkManagerIndexConfigurationFilePath()) );
 		
-		available_chunk_list = new ArrayList<>(1000);
+		chunk_merging_manager = new ChunkMergingManager(this);
+		available_chunk_list = new SortedList<>(ListType.LinkedList, chunk -> new Long(chunk.getLength()));
 		available_chunk_lock = new Object();
 		chunk_file_lock = new Object();
 		closure_state = ClosureState.None;
 		
-	}
-
-
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	public BigInteger getFreeSpace() {
-		ClosureChecker.checkForOpen(this, "ChunkManager");
-		BigInteger used_space = new BigInteger(new byte[] {0});
-		synchronized( available_chunk_lock ) {
-			available_chunk_list.stream().forEach(chunk -> {
-				used_space.add(new BigInteger((TransformValue.toByteArray(chunk.getLength()))));
-			});
-		}
-		return used_space;
 	}
 	
 	
@@ -198,92 +185,8 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 			throw new IllegalArgumentException("The length must be greater than 0!");
 		}
 		
-		
-		Chunk available_chunk = null;
-		
 		synchronized( available_chunk_lock ) {
-			
-			if( available_chunk_list.size() == 0  ) {
-				return null;
-			}
-			else if( available_chunk_list.size() == 1 && available_chunk_list.get(0).getLength() >= number_of_bytes ) {
-				available_chunk = available_chunk_list.remove(0);
-			}
-			else if( available_chunk_list.size() == 2 ) {
-				
-				Chunk left = available_chunk_list.get(0);
-				Chunk right = available_chunk_list.get(1);
-				
-				if( left.getLength() >= number_of_bytes && left.getLength() <= right.getLength() ) {
-					available_chunk = available_chunk_list.remove(0);
-				}
-				else if( right.getLength() >= number_of_bytes && right.getLength() <= left.getLength() )  {
-					available_chunk = available_chunk_list.remove(1);
-				}
-				
-			}
-			
-		}
-		
-		
-		if( available_chunk == null ) {
-			
-			int index = -1;
-			int min = 0;
-			int max;
-			int previous_index;
-			Chunk current_chunk;
-			
-			synchronized( available_chunk_lock ) {
-				
-				max = available_chunk_list.size();
-				
-				do {
-					
-					previous_index = index;
-					index = min + ( (max - min) / 2 );
-					
-					if( previous_index >= 0 && previous_index == index ) {
-						break;
-					}
-					
-					current_chunk = available_chunk_list.get(index);
-					
-					if( current_chunk.getLength() == number_of_bytes ) {
-						break;
-					} 
-					else if( current_chunk.getLength() > number_of_bytes ) {
-						min = index;
-					}
-					else {
-						max = index;
-					}
-					
-				}
-				while( min != max );
-				
-				if( available_chunk_list.get(index).getLength() >= number_of_bytes) {
-					available_chunk = available_chunk_list.remove(index);
-				}
-				
-			}
-			
-		}
-		
-		if( available_chunk == null || !available_chunk.isValid() ) {
-			createAvailableChunk(number_of_bytes);
-			return getAvailableChunk(number_of_bytes);
-		}
-		else if( available_chunk.getLength() == number_of_bytes ) {
-			return available_chunk;
-		}
-		else {
-			
-			Chunk[] split_chunk = splitChunk(available_chunk, number_of_bytes);
-			addAvailableChunk(split_chunk[1]);
-			split_chunk[0].save(null);
-			return split_chunk[0];
-			
+			return available_chunk_list.removeAny(ComparisonType.GreaterThanOrEqualTo, new Long(number_of_bytes));
 		}
 		
 	}
@@ -306,7 +209,6 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		
 		LinkedList<Chunk> chunk_list = new LinkedList<>();
 		Chunk current_chunk;
-		Chunk trimmed_chunk;
 		long remaining_bytes = number_of_bytes;
 		int current_available_chunk_list_size;
 		
@@ -317,26 +219,14 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 				current_available_chunk_list_size = available_chunk_list.size();
 				
 				if( current_available_chunk_list_size > 0 ) {
-					
-					for(int a=0;a<current_available_chunk_list_size;a++) {
-						
-						current_chunk = available_chunk_list.get(a);
-						
-						if( current_chunk.getLength() <= remaining_bytes ) {
-							available_chunk_list.remove(a);
-							chunk_list.add(current_chunk);
-							remaining_bytes -= current_chunk.getLength();
-							break;
-						}
-						else if( a == current_available_chunk_list_size - 1 ) {
-							available_chunk_list.remove(a);
-							trimmed_chunk = trimToSize(current_chunk, remaining_bytes);
-							chunk_list.add(trimmed_chunk);
-							remaining_bytes -= trimmed_chunk.getLength();
-						}
-						
+					current_chunk = available_chunk_list.removeAny(ComparisonType.SmallerThanOrEqualTo, new Long(remaining_bytes));
+					if( current_chunk != null ) {
+						remaining_bytes -= current_chunk.getLength();
+						chunk_list.add(current_chunk);
 					}
-					
+					else {
+						break;
+					}
 				}
 				else {
 					break;
@@ -351,8 +241,16 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 			do {
 				current_chunk = getAvailableChunk(remaining_bytes);
 				if( current_chunk != null ) {
-					remaining_bytes -= current_chunk.getLength();
-					chunk_list.add(current_chunk);
+					if( current_chunk.getLength() <= remaining_bytes ) {
+						remaining_bytes -= current_chunk.getLength();
+						chunk_list.add(current_chunk);
+					}
+					else {
+						// trimToSizeUnsafe() is okay, because the chunks has already been available
+						Chunk trimmed_chunk = trimToSizeUnsafe(current_chunk, remaining_bytes);
+						chunk_list.add(trimmed_chunk);
+						remaining_bytes = 0;
+					}
 					current_chunk = null;
 				}
 				else {
@@ -384,70 +282,10 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		}
 		
 		synchronized( available_chunk_lock ) {
-			
-			if( available_chunk_list.contains(chunk) ) {
-				throw new IllegalArgumentException("The chunk \"" + chunk.toString() + "\" is already part of "
-						+ "the available_chunk_list. There must never be a duplicated entry in the available_chunk_list! "
-						+ "This could be a the action of a bug, or some real serious problem inside the core engine!");
+			available_chunk_list.add(chunk);
+			if( available_chunk_list.size() > chunk_manager_configuration.getMaximumAvailableChunks() ) {
+				chunk_merging_manager.add(available_chunk_list.removeLast());
 			}
-			
-			if( available_chunk_list.size() == 0 ) {
-				available_chunk_list.add(chunk);
-				return;
-			}
-			else if( available_chunk_list.size() == 1 ) {
-				
-				if( available_chunk_list.get(0).getLength() >= chunk.getLength() ) {
-					available_chunk_list.add(chunk);
-					return;
-				}
-				else {
-					available_chunk_list.add(0, chunk);
-					return;
-				}
-				
-			}				
-			
-		}
-		
-		
-		int index = -1;
-		int min = 0;
-		int max;
-		int previous_index;
-		Chunk current_chunk;
-		
-		synchronized( available_chunk_lock ) {
-			
-			max = available_chunk_list.size();
-			
-			do {
-				
-				previous_index = index;
-				index = min + ( (max - min) / 2 );
-				
-				if( previous_index >= 0 && previous_index == index ) {
-					index = min + 1;
-					break;
-				}
-				
-				current_chunk = available_chunk_list.get(index);
-				
-				if( current_chunk.getLength() == chunk.getLength() ) {
-					break;
-				} 
-				else if( current_chunk.getLength() > chunk.getLength() ) {
-					min = index;
-				}
-				else {
-					max = index;
-				}
-				
-			}
-			while( min != max );
-			
-			available_chunk_list.add(index, chunk);
-			
 		}
 		
 	}
@@ -466,37 +304,43 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 			throw new SecurityException("The ChunkManager is not open!");
 		}
 		
-		Chunk chunk;
-		ChunkData temporary_chunk_data;
-		long allocated_space;
-		long chunk_length;
-		long additional_length;
-		long available_index;
 		
-		synchronized( available_chunk_lock ) {
+		Chunk chunk = chunk_merging_manager.getChunk(minimum_length);
+		
+		if( chunk == null ) {
 			
-			allocated_space = storage_information.getAllocatedSpace();
-			additional_length = (long)( allocated_space * chunk_manager_configuration.getDataFileIncreaseRate() );
+			ChunkData temporary_chunk_data;
+			long allocated_space;
+			long chunk_length;
+			long additional_length;
+			long available_index;
 			
-			if( additional_length < 0 ) {
-				throw new ValueOverflowException("The additional_length of this method managed to overflow! :o");
+			synchronized( available_chunk_lock ) {
+				
+				allocated_space = storage_information.getAllocatedSpace();
+				additional_length = (long)( allocated_space * chunk_manager_configuration.getDataFileIncreaseRate() );
+				
+				if( additional_length < 0 ) {
+					throw new ValueOverflowException("The additional_length of this method managed to overflow! :o");
+				}
+				
+				chunk_length = minimum_length + additional_length;
+				
+				if( chunk_length < chunk_manager_configuration.getPreferredAvailableStorageSize() + minimum_length ) {
+					chunk_length = chunk_manager_configuration.getPreferredAvailableStorageSize() + minimum_length;
+				}
+				
+				temporary_chunk_data = allocate_space.allocateSpace(chunk_length);
+				
 			}
 			
-			chunk_length = minimum_length + additional_length;
 			
-			if( chunk_length < chunk_manager_configuration.getPreferredAvailableStorageSize() + minimum_length ) {
-				chunk_length = chunk_manager_configuration.getPreferredAvailableStorageSize() + minimum_length;
-			}
-			
-			temporary_chunk_data = allocate_space.allocateSpace(chunk_length);
+			available_index = index_manager.getAvailableIndex();
+			chunk = new Chunk(this, temporary_chunk_data.getStartAddress(), 
+					temporary_chunk_data.getChunkLength(), available_index);
+			chunk.save(null);
 			
 		}
-		
-		
-		available_index = index_manager.getAvailableIndex();
-		chunk = new Chunk(this, temporary_chunk_data.getStartAddress(), 
-				temporary_chunk_data.getChunkLength(), available_index);
-		chunk.save(null);
 		
 		addAvailableChunk(chunk);
 		
@@ -516,8 +360,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		}
 		
 		
-		LinkedList<Long> declared_flakes_identification_list = new LinkedList<>();		
-		int number_of_chunks;
+		LinkedList<Long> declared_flakes_identification_list = new LinkedList<>();
 		int current_chunk_number = 0;
 		int position_in_input_buffer = 0;
 		int max_bytes_in_buffer;
@@ -556,16 +399,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 				}
 				
 				
-				// ok, because there is an integral number a so that a * ChunkUtility.BINARY_CHUNK_SIZE = length_of_file
-				// as long as length_of_file <= ChunkUtility.BINARY_CHUNK_SIZE * Integer.MAX_VALUE
-				number_of_chunks = (int)(length_of_file / ChunkUtility.BINARY_CHUNK_SIZE);
 				remaining_bytes_in_file = length_of_file;
-				
-				
-				synchronized( available_chunk_lock ) {
-					available_chunk_list.ensureCapacity(number_of_chunks);
-				}
-				
 				
 				while( remaining_bytes_in_file != 0 ) {	
 					
@@ -590,13 +424,11 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 						ArrayTool.transferValues(chunk_buffer, input_buffer, 0, position_in_input_buffer, chunk_buffer.length);
 						position_in_input_buffer += chunk_buffer.length;
 						
-						if( !ElementChecker.checkAllElements(chunk_buffer) ) {
+						if( !ElementChecker.checkAllElementsForZero(chunk_buffer) ) {
 							
 							chunk_data = ChunkUtility.getChunkData(chunk_buffer);
 							chunk = new Chunk(this, chunk_data.getStartAddress(), 
 									chunk_data.getChunkLength(), current_chunk_number);
-
-							System.out.println(chunk_data.toString());
 							
 							if( chunk_data.getFlakeIdentification() == FlakeManager.ROOT_IDENTIFICATION ) {
 								addAvailableChunk(chunk);
@@ -640,62 +472,15 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	/**
 	 * <p></p>
 	 *
-	 * @param
-	 * @return
+	 * @param nopc_treshold {@link snowflake.core.manager.ChunkMergingManager#mergeChunks same as in mergeChunks}
 	 */
-	public void mergeAvailableChunks(int number_of_attempts) {
-
+	public void mergeAvailableChunks(int nopc_treshold) {
 		if( !isOpen() ) {
 			return;
 		}
-		
-		int actual_attempts = 0;
-		Random random = RandomFactory.createRandom();
-		
-		synchronized( available_chunk_lock ) {
-			
-			if( number_of_attempts > available_chunk_list.size() ) {
-				actual_attempts = available_chunk_list.size();
-			}
-			else if( number_of_attempts > 0 ) {
-				actual_attempts = number_of_attempts;
-			}
-			else {
-				return;
-			}
-			
-		}
-		
-		
-		Chunk left_chunk = null;
-		Chunk right_chunk = null;
-		Chunk merge_chunk = null;
-		
-		for(int a=0;a<actual_attempts;a++) {
-			
-			synchronized( available_chunk_lock ) {
-				
-				left_chunk = available_chunk_list.get(random.nextInt(available_chunk_list.size()));
-				right_chunk = available_chunk_list.get(random.nextInt(available_chunk_list.size()));
-				
-				if( left_chunk.isNeighbourOf(right_chunk) ) {
-					
-					merge_chunk = mergeChunks(new Chunk[] {left_chunk, right_chunk});
-					available_chunk_list.remove(left_chunk);
-					available_chunk_list.remove(right_chunk);
-					
-				}
-				else {
-					merge_chunk = null;
-				}
-				
-			}
-			
-			if( merge_chunk != null ) {
-				addAvailableChunk(merge_chunk);
-			}
-			
-		}
+		else {
+			chunk_merging_manager.mergeChunks(nopc_treshold);
+		}		
 	}
 	
 	
@@ -707,8 +492,27 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 */
 	public Stream<IChunkInformation> streamAvailableChunks(StreamMode stream_mode) {
 		synchronized( available_chunk_lock ) {
-			return StreamFactory.getStream(new ArrayList<>(available_chunk_list), stream_mode);
+			return Stream.concat(
+				available_chunk_list.getStream(stream_mode, StreamFilter::filterNull).<IChunkInformation>map(_o->_o),
+				chunk_merging_manager.getStream(stream_mode)
+			);
 		}
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	private Chunk trimToSizeUnsafe(Chunk chunk, long size) {
+		if( chunk.isPartOfFlake() ) {
+			throw new SecurityException("Do not ever trim a chunk unsafe when the chunk is part of a flake!");
+		}
+		Chunk[] split_chunks = splitChunk(chunk, size);
+		addAvailableChunk(split_chunks[1]);
+		return split_chunks[0];
 	}
 	
 	
@@ -748,7 +552,6 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		}
 
 		closure_state = ClosureState.InClosure;
-		data_table.close();
 		index_manager.close();
 		data_table.close();
 		closure_state = ClosureState.Closed;
@@ -760,11 +563,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * @see snowflake.api.IChunkMemory#deleteChunk(snowflake.core.Chunk)
 	 */
 	@Override public void deleteChunk(Chunk chunk) {
-		if( chunk == null ) {
-			throw new IllegalArgumentException("The chunk must not be equal to null!");
-		}
-		else if( chunk.isValid() ) {
-			chunk.delete();
+		if( chunk == null || !chunk.isValid() ) {
 			return;
 		}
 		else {
@@ -818,8 +617,14 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 */
 	@Override public void recycleChunk(Chunk chunk) {
 		if( chunk != null && chunk.isValid() ) {
-			chunk.resetPositionInFlake();
+			synchronized( available_chunk_lock ) {
+				if( available_chunk_list.contains(chunk) || chunk_merging_manager.contains(chunk) ) {
+						return;
+				}
+			}
+			System.out.println("clear_chunk: " + chunk.toString());
 			clear_chunk.clearChunk(chunk);
+			chunk.resetPositionInFlake();
 			chunk.save(null);
 			addAvailableChunk(chunk);
 		}
@@ -900,7 +705,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	@Override public Chunk[] splitChunk(Chunk chunk, long position) {
 		
 		ArgumentChecker.checkForNull(chunk, "chunk");
-		ArgumentChecker.checkForBoundaries(position, 0, chunk.getLength(), "position");
+		ArgumentChecker.checkForBoundaries(position, 1, chunk.getLength() - 1, "position");
 		
 		Chunk[] split_chunk = new Chunk[2];
 		split_chunk[0] = new Chunk(this, chunk.getStartAddress(), position, index_manager.getAvailableIndex());
@@ -926,7 +731,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 */
 	@Override public Chunk trimToSize(Chunk chunk, long size) {
 		Chunk[] split_chunks = splitChunk(chunk, size);
-		addAvailableChunk(split_chunks[1]);
+		recycleChunk(split_chunks[1]);
 		return split_chunks[0];
 	}
 	

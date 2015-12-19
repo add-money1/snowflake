@@ -2,11 +2,10 @@ package snowflake.core.data;
 
 import java.util.zip.CRC32;
 
-import j3l.util.ArrayTool;
+import j3l.util.array.ArrayTool;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
 import j3l.util.transform.TransformValue;
-import snowflake.core.Chunk;
 import snowflake.core.flake.Flake;
 import snowflake.core.manager.ChunkManager;
 import snowflake.core.manager.FlakeManager;
@@ -16,7 +15,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2015.12.14_0
  * @author Johannes B. Latzel
  */
 public final class ChunkUtility {
@@ -126,7 +125,7 @@ public final class ChunkUtility {
 		}
 		
 		
-		if( ElementChecker.checkAllElements(buffer) ) {
+		if( ElementChecker.checkAllElementsForZero(buffer) ) {
 			throw new SecurityException("All elements of the buffer are equal to 0!");
 		}
 		

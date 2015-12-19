@@ -1,6 +1,6 @@
 package snowflake.core.storage;
 
-import snowflake.core.Chunk;
+import snowflake.core.data.Chunk;
 
 /**
  * <p></p>

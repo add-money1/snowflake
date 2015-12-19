@@ -1,0 +1,69 @@
+
+
+	2015.12.18
+	
+		snowflake.core.manager.ChunkManager
+			-> introduced trimToSizeUnsafe() as a private analog to trimToSize() - it does not recycle the 
+				chunk, but instead adds it to the list of available chunks - this method should only be used
+				with chunks which already have been available, whose which have previously been cleaned up 
+				(reduces the runtime of trimToSize() for large chunks dramatically!)
+		
+		snwoflake.api.flake.DataPointer
+			-> added an increasePosition() and a decreasePosition() method (increments/decrements the
+				position_in_flake by 1)
+			-> renamed setter-methods for position_in_flake (removed the "InFlake")
+			
+		snowflake.core.stream
+			-> moved the package to snowflake.api.stream
+			
+		snowflake.api.stream
+			-> new stream-package (former snowflake.core.stream)
+		
+		snowflake.api.stream.FlakeInputStream
+			-> now changes the position in the flake by the amount of read-in bytes
+		
+		snowflake.api.stream.FlakeOutputStream
+			-> now changes the position in the flake by the amount of written bytes
+			
+		snowflake.api.flake.IFlake
+			-> minor import-change
+			
+		snowflake.core.flake.Flake
+			-> minor import-change
+			-> getLength() now returns 0 when the instance is invalid
+			
+		snowflake.core.flake.FlakeStreamManager
+			-> minor import-change
+			
+		snowflake.core.Chunk
+			-> moved the class to the package snowflake.core.data
+			
+		snowflake.core.data
+			-> added the class Chunk (former snowflake.core.Chunk)
+
+
+	2015.12.17
+	
+		snowflake.core.manager.ChunkMergingManager
+			-> debugged mergeChunks() - it actually works now
+			-> added a contains method
+			
+		snowflake.core.manager.ChunkManager
+			-> recycleChunk() now only "recycles" the chunk if the chunk is neither part of the 
+			available_chunk_list or the chunk_merging_manager (instead of just plain adding it to the
+				available_chunk_list)
+				
+		snowflake.core.manager.IndexManager
+			-> fixed a tiny bug in loadConfiguration() (the position_in_input_buffer has not been reset)
+
+
+	2015.12.16
+		
+		snowflake.core.manager.ChunkManager
+			-> getAvailableChunks() did not trim chunks to the needed size
+			-> getAvailableChunk() & getAvailableChunks() did not remove the chunks from the available_chunks_list,
+			but instead kept them and gave them to multiple flake and sometimes multiple times to the same flake
+			
+		snowflake.core.flake.FlakeDataManager
+			-> add() and insertChunk() will check if the certain chunk is already part of the flake and if so will
+			throw a SecurityException

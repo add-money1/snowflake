@@ -9,7 +9,7 @@ import snowflake.core.flake.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.06_0
+ * @version 2015.12.19_0
  * @author Johannes B. Latzel
  */
 public final class DataPointer {	
@@ -36,7 +36,7 @@ public final class DataPointer {
 	public DataPointer(Flake flake, long position_in_flake) {
 		ArgumentChecker.checkForNull(flake, "flake");
 		this.flake = flake;
-		setPositionInFlake(position_in_flake);
+		setPosition(position_in_flake);
 	}
 	
 	
@@ -65,14 +65,19 @@ public final class DataPointer {
 		
 		IChunkInformation chunk = flake.getChunkAtPositionInFlake(position_in_flake);
 		
-		long actual_position = chunk.getStartAddress()
+		long position_in_storage = chunk.getStartAddress()
 				+ ( position_in_flake - chunk.getPositionInFlake() );
 		
-		if( actual_position < 0 ) {
-			throw new SecurityException("The actual_position managed to overflow! :o");
+		if( position_in_storage < 0 ) {
+			throw new SecurityException(
+				"The position_in_storage managed to overflow!" 
+				+ " [chunk.getStartAddress(): " + chunk.getStartAddress()
+				+ " | pointer_position_in_flake: " + position_in_flake
+				+ " | chunk_position_in_flake: " + chunk.getPositionInFlake() + "]"
+			);
 		}
 		
-		return actual_position;	
+		return position_in_storage;	
 	}
 	
 	
@@ -100,12 +105,28 @@ public final class DataPointer {
 	
 	
 	/**
+	 * <p>increases the position in the flake by 1</p>
+	 */
+	public void increasePosition() {
+		position_in_flake++;
+	}
+	
+	
+	/**
+	 * <p>decreases the position in the flake by one</p>
+	 */
+	public void decreasePosition() {
+		position_in_flake--;
+	}
+	
+	
+	/**
 	 * <p></p>
 	 *
 	 * @param
 	 * @return
 	 */
-	public void setPositionInFlake(long position_in_flake) {
+	public void setPosition(long position_in_flake) {
 		ArgumentChecker.checkForBoundaries(position_in_flake, 0, flake.getLength(), "position_in_flake");
 		this.position_in_flake = position_in_flake;
 	}
@@ -117,8 +138,10 @@ public final class DataPointer {
 	 * @param
 	 * @return
 	 */
-	public void changePositionInFlake(long delta) {
-		setPositionInFlake( position_in_flake + delta );
+	public void changePosition(long delta) {
+		if( delta != 0 ) {
+			setPosition( position_in_flake + delta );
+		}
 	}
 	
 	
@@ -140,7 +163,7 @@ public final class DataPointer {
 	 * @return
 	 */
 	public void seekEOF() {
-		setPositionInFlake(flake.getLength());
+		setPosition(flake.getLength());
 	}
 	
 	

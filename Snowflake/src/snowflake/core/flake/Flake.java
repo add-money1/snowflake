@@ -1,27 +1,27 @@
-package snowflake.core.flake;
+ package snowflake.core.flake;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import j3l.util.ClosureState;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ClosureChecker;
 import j3l.util.check.ValidationChecker;
+import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import snowflake.api.chunk.IChunkInformation;
 import snowflake.api.flake.IFlake;
 import snowflake.api.flake.Lock;
-import snowflake.core.Chunk;
-import snowflake.core.stream.FlakeInputStream;
-import snowflake.core.stream.FlakeOutputStream;
+import snowflake.api.stream.FlakeInputStream;
+import snowflake.api.stream.FlakeOutputStream;
+import snowflake.core.data.Chunk;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.07_0
+ * @version 2015.12.18_0
  * @author Johannes B. Latzel
  */
 public final class Flake implements IClose<IOException>, IFlake {
@@ -213,7 +213,10 @@ public final class Flake implements IClose<IOException>, IFlake {
 	@Override public synchronized boolean delete() {
 		
 		if( !isValid() ) {
-			return false;
+			close();
+			flake_data_manager.recycle();
+			is_deleted = true;
+			return true;
 		}
 		
 		Lock lock;
@@ -230,7 +233,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 			close();
 		}
 		
-		flake_data_manager.setLength(0);
+		flake_data_manager.recycle();
 		is_deleted = true;
 		lock.releaseLock();
 		
@@ -250,7 +253,9 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getLength()
 	 */
 	@Override public long getLength() {
-		ValidationChecker.checkForValidation(this);
+		if( !isValid() ) {
+			return 0;
+		}
 		return flake_data_manager.getLength();
 	}
 	
@@ -260,7 +265,9 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 */
 	@Override public void setLength(long new_length) {
 		ValidationChecker.checkForValidation(this);
-		flake_data_manager.setLength(new_length);
+		if( getLength() != new_length ) {
+			flake_data_manager.setLength(new_length);
+		}
 	}
 	
 	
@@ -268,7 +275,6 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getNumberOfChunks()
 	 */
 	@Override public int getNumberOfChunks() {
-		ValidationChecker.checkForValidation(this);
 		return flake_data_manager.getNumberOfChunks();
 	}
 	

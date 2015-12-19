@@ -8,14 +8,14 @@ import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamMode;
 import snowflake.api.chunk.IChunkInformation;
 import snowflake.api.chunk.IChunkManager;
-import snowflake.core.Chunk;
+import snowflake.core.data.Chunk;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2015.12.16_0
  * @author Johannes B. Latzel
  */
 public final class FlakeDataManager {
@@ -137,6 +137,9 @@ public final class FlakeDataManager {
 	public void addChunk(Chunk chunk) {
 		if( chunk != null && chunk.isValid() ) {
 			synchronized( chunk_lock ) {
+				if( chunk_list.contains(chunk) ) {
+					throw new SecurityException("The flake already contains this chunk: " + chunk.toString() + "!");
+				}
 				if( chunk_list.size() > 0 ) {
 					Chunk last_chunk = chunk_list.get(chunk_list.size() - 1);
 					chunk.setPositionInFlake(last_chunk.getPositionInFlake() + last_chunk.getLength());
@@ -162,7 +165,7 @@ public final class FlakeDataManager {
 	public void addChunks(Chunk[] chunks) {
 		if( chunks != null && chunks.length > 0 ) {
 			if( chunks.length > 1 ) {
-				StreamFactory.getStream(chunks, StreamMode.Parallel).forEach(chunk -> addChunk(chunk));
+				StreamFactory.getStream(chunks, StreamMode.Parallel).forEach(this::addChunk);
 			}
 			else {
 				addChunk(chunks[0]);
@@ -179,7 +182,7 @@ public final class FlakeDataManager {
 	 */
 	public void addChunks(Collection<Chunk> chunk_collection) {
 		if( chunk_collection != null && chunk_collection.size() > 0 ) {
-			StreamFactory.getStream(chunk_collection, StreamMode.Parallel).forEach(chunk -> addChunk(chunk));
+			StreamFactory.getStream(chunk_collection, StreamMode.Parallel).forEach(this::addChunk);
 		}
 	}
 	
@@ -203,7 +206,7 @@ public final class FlakeDataManager {
 	/**
 	 * <p></p>
 	 */
-	private void countLength() {
+	private synchronized void countLength() {
 		
 		if( !isConsistent() ) {
 			return;
@@ -237,7 +240,9 @@ public final class FlakeDataManager {
 	 * @return
 	 */
 	public long getLength() {
-		countLength();
+		if( is_length_changed ) {
+			countLength();
+		}
 		return length;
 	}
 	
@@ -358,8 +363,6 @@ public final class FlakeDataManager {
 		int chunk_list_size;
 		
 		synchronized( chunk_lock ) {
-			
-			chunk_list.stream().forEach(chunk -> System.out.println(chunk.toString()));
 			
 			chunk_list_size = chunk_list.size();
 			
@@ -617,8 +620,8 @@ public final class FlakeDataManager {
 				current_index = left_index + ((right_index - left_index) / 2);
 				current_chunk = chunk_list.get(current_index);
 				
-				if(  current_chunk.getPositionInFlake() >= position_in_flake ) {
-					if( current_chunk.containsFlakePosition(position_in_flake)) {
+				if( current_chunk.getPositionInFlake() < position_in_flake ) {
+					if( current_chunk.containsFlakePosition(position_in_flake) ) {
 						return current_chunk;
 					}
 					else {
@@ -631,8 +634,17 @@ public final class FlakeDataManager {
 				
 				if( right_index - left_index == 1 ) {
 					current_chunk = chunk_list.get(right_index);
-					if( current_chunk.containsFlakePosition(position_in_flake)) {
+					if( current_chunk.containsFlakePosition(position_in_flake) ) {
 						return current_chunk;
+					}
+					else {
+						current_chunk = chunk_list.get(left_index);
+						if( current_chunk.containsFlakePosition(position_in_flake) ) {
+							return current_chunk;
+						}
+						else {
+							break;
+						}
 					}
 				}
 				
@@ -683,7 +695,9 @@ public final class FlakeDataManager {
 		ArgumentChecker.checkForNull(chunk, "chunk");
 		ArgumentChecker.checkForBoundaries(index, 0, Integer.MAX_VALUE, "index");
 		synchronized( chunk_lock ) {
-			System.out.println("chunk: " + index + " " + chunk.toString() + " " + getIndexOfChunk(chunk));
+			if( chunk_list.contains(chunk) ) {
+				throw new SecurityException("The flake already contains this chunk: " + chunk.toString() + "!");
+			}
 			if( index == chunk_list.size() ) {
 				chunk_list.add(chunk);
 			}

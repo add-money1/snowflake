@@ -1,10 +1,10 @@
-package snowflake.core.stream;
+package snowflake.api.stream;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import j3l.util.ClosureState;
 import j3l.util.check.ArgumentChecker;
+import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import snowflake.api.flake.DataPointer;
 import snowflake.core.flake.Flake;
@@ -16,7 +16,7 @@ import snowflake.core.storage.IRead;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.06_0
+ * @version 2015.12.18_0
  * @author Johannes B. Latzel
  */
 public final class FlakeInputStream extends InputStream implements IClose<IOException> {
@@ -104,7 +104,9 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 			throw new IOException("The stream is not open!");
 		}
 		else {
-			return read.read(data_pointer);
+			int read_in_byte_value = read.read(data_pointer);
+			data_pointer.increasePosition();
+			return read_in_byte_value;
 		}
 	}
 	
@@ -118,7 +120,9 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 			throw new IOException("The stream is not open!");
 		}
 		else {
-			return read.read(data_pointer, buffer, offset, length);
+			int read_in_bytes = read.read(data_pointer, buffer, offset, length);
+			data_pointer.changePosition(read_in_bytes);
+			return read_in_bytes;
 		}
 	}
 	
@@ -140,7 +144,7 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 			return remaining_bytes;
 		}
 		else {
-			data_pointer.changePositionInFlake(number_of_bytes);
+			data_pointer.changePosition(number_of_bytes);
 			return number_of_bytes;
 		}
 		
@@ -193,7 +197,7 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 			throw new IOException("The current mark has been invalidated due to the read_in_bytes_since_marking_limit.");
 		}
 		
-		data_pointer.setPositionInFlake(marked_position_in_flake);
+		data_pointer.setPosition(marked_position_in_flake);
 		mark(read_in_bytes_since_marking_limit);
 		
 	}

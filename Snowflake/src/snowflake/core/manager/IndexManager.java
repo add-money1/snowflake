@@ -8,9 +8,9 @@ import java.io.RandomAccessFile;
 import java.util.LinkedList;
 import java.util.zip.CRC32;
 
-import j3l.util.ArrayTool;
-import j3l.util.ClosureState;
+import j3l.util.array.ArrayTool;
 import j3l.util.check.ArgumentChecker;
+import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import j3l.util.transform.TransformValue;
 
@@ -19,7 +19,7 @@ import j3l.util.transform.TransformValue;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2015.12.17_0
  * @author Johannes B. Latzel
  */
 public final class IndexManager implements IClose<IOException> {
@@ -174,6 +174,7 @@ public final class IndexManager implements IClose<IOException> {
 							bytes_in_buffer = input.read(input_buffer, 0, max_bytes_in_buffer);
 							checksum.update(input_buffer, 0, bytes_in_buffer);
 							current_position += bytes_in_buffer;
+							position_in_input_buffer = 0;
 							
 							// will always have at least 8 bytes of data and at max buffer.length bytes
 							// will always contain a number of bytes which can be divided by 8

@@ -7,15 +7,16 @@ import java.util.Random;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import j3l.util.ClosureState;
-import j3l.util.RandomFactory;
 import j3l.util.check.ArgumentChecker;
+import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
+import j3l.util.random.RandomFactory;
 import j3l.util.stream.StreamFactory;
+import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.api.flake.IFlake;
 import snowflake.api.flake.IFlakeManager;
-import snowflake.core.Chunk;
+import snowflake.core.data.Chunk;
 import snowflake.core.flake.Flake;
 import snowflake.core.flake.FlakeDataManager;
 import snowflake.core.flake.FlakeStreamManager;
@@ -27,7 +28,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2015.12.14_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose<IOException> {
@@ -103,7 +104,8 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 	 * @return
 	 */
 	public Stream<IFlake> streamFlakes(StreamMode stream_mode) {
-		return StreamFactory.getStream(new ArrayList<>(flake_table.values()), stream_mode);
+		return StreamFactory.getStream(new ArrayList<>(flake_table.values()), stream_mode).filter(StreamFilter::filterNull)
+				.filter(flake -> !flake.isDeleted()).<IFlake>map(_O_->_O_);
 	}
 	
 	
@@ -255,7 +257,13 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 			// will eventually be closed by this instance
 			@SuppressWarnings("resource") Flake flake = flake_table.get(new Long(identification));
 			if( flake != null ) {
-				flake.open();
+				try {
+					flake.open();
+				}
+				catch( Exception e ) {
+					e.printStackTrace();
+					throw e;
+				}
 			}
 		});
 	}

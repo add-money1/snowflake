@@ -3,7 +3,7 @@ package snowflake.core.manager;
 import java.util.stream.LongStream;
 
 import j3l.util.close.IStateClosure;
-import snowflake.core.Chunk;
+import snowflake.core.data.Chunk;
 
 
 /**

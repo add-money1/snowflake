@@ -5,15 +5,15 @@ import java.io.IOException;
 import j3l.util.check.IValidate;
 import j3l.util.close.IStateClosure;
 import snowflake.api.chunk.IChunkInformation;
-import snowflake.core.stream.FlakeInputStream;
-import snowflake.core.stream.FlakeOutputStream;
+import snowflake.api.stream.FlakeInputStream;
+import snowflake.api.stream.FlakeOutputStream;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.05_0
+ * @version 2015.12.18_0
  * @author Johannes B. Latzel
  */
 public interface IFlake extends IStateClosure, IValidate {
