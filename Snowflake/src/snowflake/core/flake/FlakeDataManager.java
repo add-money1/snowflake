@@ -140,14 +140,15 @@ public final class FlakeDataManager {
 				if( chunk_list.contains(chunk) ) {
 					throw new SecurityException("The flake already contains this chunk: " + chunk.toString() + "!");
 				}
-				if( chunk_list.size() > 0 ) {
+				if( chunk_list.isEmpty() ) {
+					chunk.setPositionInFlake(0);
+				}
+				else {
 					Chunk last_chunk = chunk_list.get(chunk_list.size() - 1);
 					chunk.setPositionInFlake(last_chunk.getPositionInFlake() + last_chunk.getLength());
 				}
-				else {
-					chunk.setPositionInFlake(0);
-				}		
 				chunk_list.add(chunk);
+				System.out.println("FlakeDataManager.addChunk() -> added: " + chunk.toString());
 				chunk.save(flake);
 				is_length_changed = true;
 				is_consistency_checked = false;
@@ -279,13 +280,21 @@ public final class FlakeDataManager {
 				
 				if( buffer.getLength() > remaining_bytes ) {
 					
+					System.out.println("FlakeDataManager.decreaseLength() -> trim " + buffer.toString());
 					buffer = chunk_manager.trimToSize(buffer, buffer.getLength() - remaining_bytes);
 					
-					last_chunk = chunk_list.get(chunk_list.size() - 1);
-					buffer.setPositionInFlake(last_chunk.getPositionInFlake() + last_chunk.getLength());
+					if( chunk_list.isEmpty() ) {
+						buffer.setPositionInFlake(0);
+					}
+					else {
+						last_chunk = chunk_list.get(chunk_list.size() - 1);
+						buffer.setPositionInFlake(last_chunk.getPositionInFlake() + last_chunk.getLength());
+					}
 					
 					chunk_list.add(buffer);
+					System.out.println("FlakeDataManager.decreaseLength() -> added chunk: " + buffer.toString());
 					buffer.save(flake);
+					remaining_bytes = 0;
 					
 				}
 				else {

@@ -622,7 +622,6 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 						return;
 				}
 			}
-			System.out.println("clear_chunk: " + chunk.toString());
 			clear_chunk.clearChunk(chunk);
 			chunk.resetPositionInFlake();
 			chunk.save(null);

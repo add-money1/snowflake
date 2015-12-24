@@ -1,4 +1,12 @@
 
+	
+	
+	2015.12.21
+	
+		snowflake.core.flake.FlakeDataManager
+			-> changed addChunk(Chunk) - use chunk_list.isEmpty() instead of chunk_list.size() > 0
+
+
 
 	2015.12.18
 	

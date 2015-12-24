@@ -354,7 +354,9 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.core.IClearChunk#clearChunk(snowflake.core.Chunk)
 	 */
 	@Override public void clearChunk(Chunk chunk) {
-		ArgumentChecker.checkForNull(chunk, "chunk");
+		if( chunk == null || !chunk.isValid() ) {
+			return;
+		}
 		long remaining_bytes = chunk.getLength();
 		int clear_array_size = clear_array.length;
 		synchronized( write_lock ) {
@@ -365,10 +367,10 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 						data_output_file.write(clear_array, 0, clear_array_size);
 						remaining_bytes -= clear_array_size;
 					}
-					while( remaining_bytes > clear_array_size );
+					while( remaining_bytes >= clear_array_size );
 				}
 				if( remaining_bytes > 0 ) {
-					// cast is okay, because remaining_bytes is smaller than clear_array.length, which is int
+					// cast is okay, because remaining_bytes is smaller than or equal to clear_array.length (which is int)
 					data_output_file.write(clear_array, 0, (int)remaining_bytes);
 					remaining_bytes = 0;
 				}
