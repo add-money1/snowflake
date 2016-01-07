@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.close.IStateClosure;
 import j3l.util.stream.StreamFactory;
+import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.core.data.Chunk;
 import snowflake.core.flake.Flake;
@@ -16,7 +17,7 @@ import snowflake.core.flake.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.07_0
+ * @version 2016.01.06_0
  * @author Johannes B. Latzel
  */
 public interface IChunkManager extends IStateClosure  {
@@ -112,7 +113,7 @@ public interface IChunkManager extends IStateClosure  {
 	 */
 	default void recycleChunks(Stream<Chunk> chunk_stream) {
 		ArgumentChecker.checkForNull(chunk_stream, "chunk_stream")
-		.filter(chunk -> chunk != null && chunk.isValid()).forEach(chunk -> recycleChunk(chunk));
+		.filter(StreamFilter::filterInvalid).forEach(this::recycleChunk);
 	}
 	
 	

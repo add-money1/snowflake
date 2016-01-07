@@ -391,7 +391,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 		closure_state = ClosureState.InOpening;
 		
 		if( flake_data_manager != null ) {
-			flake_data_manager.orderChunks();
+			flake_data_manager.arrangeChunks();
 		}
 		
 		if( !checkForConsistency() ) {

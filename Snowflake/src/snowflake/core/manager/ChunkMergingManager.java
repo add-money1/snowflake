@@ -21,7 +21,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.17_0
+ * @version 2016.01.07_0
  * @author Johannes B. Latzel
  */
 public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInformation> {
@@ -54,7 +54,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	public ChunkMergingManager(IChunkManager chunk_manager) {
 		this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, "chunk_manager");
 		chunk_list = new SortedList<>(ListType.LinkedList, chunk -> new Long(chunk.getStartAddress()));
-		chunk_lock = new Object();
+		chunk_lock = new Object();		
 	}
 	
 	
@@ -138,6 +138,8 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 		neighbour_list.clear();
 		processed_chunk_list.clear();
 		
+		System.gc();
+		
 	}
 	
 	
@@ -148,14 +150,17 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * @return
 	 */
 	public Chunk getChunk(long minimum_length) {
+		
 		synchronized( chunk_lock ) {
 			Chunk available_chunk = chunk_list.getStream(
 						StreamMode.Parallel,
 						chunk -> chunk != null && chunk.getLength() >= minimum_length
 					).findAny().orElse(null);
+			
 			if( available_chunk != null && !chunk_list.remove(available_chunk) ) {
 				return null;
 			}
+			
 			return available_chunk;
 		}
 	}
@@ -179,6 +184,11 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * @see j3l.util.collection.interfaces.add.IBasicAdd#add(java.lang.Object)
 	 */
 	@Override public boolean add(Chunk chunk) {
+		
+		if( chunk == null ) {
+			return false;
+		}
+		
 		synchronized( chunk_lock ) {
 			if( chunk_list.contains(chunk) ) {
 				return false;

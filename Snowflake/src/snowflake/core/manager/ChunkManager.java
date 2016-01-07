@@ -12,6 +12,7 @@ import j3l.exception.ValueOverflowException;
 import j3l.util.array.ArrayTool;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
+import j3l.util.check.ValidationChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import j3l.util.collection.ListType;
@@ -40,7 +41,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.16_0
+ * @version 2016.01.06_0
  * @author Johannes B. Latzel
  */
 public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<IOException> {
@@ -246,9 +247,8 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 						chunk_list.add(current_chunk);
 					}
 					else {
-						// trimToSizeUnsafe() is okay, because the chunks has already been available
-						Chunk trimmed_chunk = trimToSizeUnsafe(current_chunk, remaining_bytes);
-						chunk_list.add(trimmed_chunk);
+						// trimToSizeUnsafe() is okay, because the chunk has already been available
+						chunk_list.add(trimToSizeUnsafe(current_chunk, remaining_bytes));
 						remaining_bytes = 0;
 					}
 					current_chunk = null;
@@ -282,9 +282,13 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		}
 		
 		synchronized( available_chunk_lock ) {
-			available_chunk_list.add(chunk);
+			if( !available_chunk_list.add(chunk) ) {
+				throw new SecurityException("A chunk got lost on its way!");
+			}
 			if( available_chunk_list.size() > chunk_manager_configuration.getMaximumAvailableChunks() ) {
-				chunk_merging_manager.add(available_chunk_list.removeLast());
+				if( !chunk_merging_manager.add(available_chunk_list.removeLast()) ) {
+					throw new SecurityException("A chunk got lost on its way!");
+				}
 			}
 		}
 		
@@ -443,6 +447,9 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 							}
 							
 						}
+						else {
+							index_manager.addAvailableIndex(current_chunk_number);
+						}
 						
 						current_chunk_number++;
 						
@@ -452,6 +459,8 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 					remaining_bytes_in_file = length_of_file - current_position;
 					
 				}
+				
+				index_manager.setNewIndex(current_chunk_number);
 				
 			}
 			catch (IOException e) {
@@ -479,6 +488,10 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 			return;
 		}
 		else {
+			synchronized( available_chunk_lock ) {
+				chunk_merging_manager.addAll(available_chunk_list.getStream(StreamMode.Parallel));
+				available_chunk_list.clear();
+			}
 			chunk_merging_manager.mergeChunks(nopc_treshold);
 		}		
 	}
@@ -593,6 +606,8 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 */
 	@Override public void appendChunk(Flake flake, long number_of_bytes, ChunkAppendingMode chunk_appending_mode) {
 		
+		ValidationChecker.checkForValidation(flake, "flake");
+		
 		switch( chunk_appending_mode ) {
 		
 			case SINGLE_CHUNK:
@@ -703,7 +718,10 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 */
 	@Override public Chunk[] splitChunk(Chunk chunk, long position) {
 		
-		ArgumentChecker.checkForNull(chunk, "chunk");
+		if( ArgumentChecker.checkForNull(chunk, "chunk").getLength() == 1 ) {
+			throw new IllegalArgumentException("A chunk of length 1 can not be splitted.");
+		}
+		
 		ArgumentChecker.checkForBoundaries(position, 1, chunk.getLength() - 1, "position");
 		
 		Chunk[] split_chunk = new Chunk[2];

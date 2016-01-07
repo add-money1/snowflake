@@ -156,7 +156,6 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 		if( !isOpen() ) {
 			throw new SecurityException("The FlakeManager is not open!");
 		}
-
 		
 		long identification;
 		Flake flake;
@@ -242,6 +241,7 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 		if( !flakeExists(identification) ) {
 			declareFlake(identification, chunk_manager);
 		}
+		
 		// will eventually be closed by this instance
 		@SuppressWarnings("resource") Flake flake = flake_table.get(new Long(identification));
 		ArgumentChecker.checkForNull(flake, "flake").insertChunk(chunk, index);

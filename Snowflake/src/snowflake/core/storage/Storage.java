@@ -356,7 +356,7 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	@Override public void clearChunk(Chunk chunk) {
 		if( chunk == null || !chunk.isValid() ) {
 			return;
-		}
+		}		
 		long remaining_bytes = chunk.getLength();
 		int clear_array_size = clear_array.length;
 		synchronized( write_lock ) {

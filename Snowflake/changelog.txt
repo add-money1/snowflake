@@ -1,4 +1,30 @@
-
+	
+	
+	
+	
+	2016.01.07
+	
+		snowflake.core.manager.ChunkMergingManager
+			-> changed add(Chunk) so that false will be returned when the argument is null
+			-> mergeChunks(int) now triggers the garbage collection after finishing the merging
+	
+	
+	
+	2016.01.06
+	
+		snowflake.core.flake.FlakeDataManager
+			-> changed the way mergeChunks() used to "count" the size of the chunk_list
+			-> removed save() (is not used, nor will it be in the future)
+			-> change the name of orderChunks() into arrangeChunks()
+			
+		snowflake.core.manager.ChunkManager
+			-> changed mergeAvailableChunks(int) so that all Chunks in available_chunk_list will be
+				transferred to the chunk_merging_manager
+			-> added length-check in splitChunk(Chunk, long) for Chunks with a length of 1
+				
+		snowflake.api.chunk.IChunkManager
+			-> changed  recycleChunks(Stream<Chunk>) so that it uses method-references
+	
 	
 	
 	2015.12.21

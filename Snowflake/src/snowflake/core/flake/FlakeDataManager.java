@@ -15,7 +15,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.16_0
+ * @version 2016.01.06_0
  * @author Johannes B. Latzel
  */
 public final class FlakeDataManager {
@@ -148,7 +148,6 @@ public final class FlakeDataManager {
 					chunk.setPositionInFlake(last_chunk.getPositionInFlake() + last_chunk.getLength());
 				}
 				chunk_list.add(chunk);
-				System.out.println("FlakeDataManager.addChunk() -> added: " + chunk.toString());
 				chunk.save(flake);
 				is_length_changed = true;
 				is_consistency_checked = false;
@@ -280,7 +279,6 @@ public final class FlakeDataManager {
 				
 				if( buffer.getLength() > remaining_bytes ) {
 					
-					System.out.println("FlakeDataManager.decreaseLength() -> trim " + buffer.toString());
 					buffer = chunk_manager.trimToSize(buffer, buffer.getLength() - remaining_bytes);
 					
 					if( chunk_list.isEmpty() ) {
@@ -292,7 +290,6 @@ public final class FlakeDataManager {
 					}
 					
 					chunk_list.add(buffer);
-					System.out.println("FlakeDataManager.decreaseLength() -> added chunk: " + buffer.toString());
 					buffer.save(flake);
 					remaining_bytes = 0;
 					
@@ -462,15 +459,13 @@ public final class FlakeDataManager {
 									chunk_list.remove(current_chunk_index)
 								})
 					);
+					chunk_list_size--;
 				}
 				else {
 					// only move the index to ensure that even a newly merged chunk
 					// may be considered for merging with the following chunk
 					current_chunk_index++;
 				}
-				
-				// reread the possibly new size of the list
-				chunk_list_size = chunk_list.size();
 				
 			}
 			while( current_chunk_index < chunk_list_size - 1 );
@@ -673,20 +668,6 @@ public final class FlakeDataManager {
 	 * @param
 	 * @return
 	 */
-	public void save() {
-		synchronized( chunk_lock ) {
-			StreamFactory.getStream(chunk_list, StreamMode.Parallel)
-			.filter(chunk -> !chunk.needsToBeSaved()).forEach(chunk -> chunk.save(flake));
-		}
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
 	public int getIndexOfChunk(Chunk chunk) {
 		synchronized( chunk_lock ) {
 			return chunk_list.indexOf(chunk);
@@ -733,7 +714,7 @@ public final class FlakeDataManager {
 	 * @param
 	 * @return
 	 */
-	public void orderChunks() {
+	public void arrangeChunks() {
 		
 		if( flake.hasBeenOpened() ) {
 			throw new SecurityException("Can not order the chunks once the flake has been opened!");
