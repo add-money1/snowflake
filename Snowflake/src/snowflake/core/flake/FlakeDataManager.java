@@ -165,7 +165,7 @@ public final class FlakeDataManager {
 	public void addChunks(Chunk[] chunks) {
 		if( chunks != null && chunks.length > 0 ) {
 			if( chunks.length > 1 ) {
-				StreamFactory.getStream(chunks, StreamMode.Parallel).forEach(this::addChunk);
+				StreamFactory.getStream(chunks, StreamMode.Sequential).forEach(this::addChunk);
 			}
 			else {
 				addChunk(chunks[0]);
@@ -182,7 +182,7 @@ public final class FlakeDataManager {
 	 */
 	public void addChunks(Collection<Chunk> chunk_collection) {
 		if( chunk_collection != null && chunk_collection.size() > 0 ) {
-			StreamFactory.getStream(chunk_collection, StreamMode.Parallel).forEach(this::addChunk);
+			StreamFactory.getStream(chunk_collection, StreamMode.Sequential).forEach(this::addChunk);
 		}
 	}
 	
@@ -195,7 +195,7 @@ public final class FlakeDataManager {
 	 */
 	public void recycle() {
 		synchronized( chunk_lock ) {
-			chunk_manager.recycleChunks(chunk_list, StreamMode.Parallel);
+			chunk_manager.recycleChunks(chunk_list, StreamMode.Sequential);
 			chunk_list.clear();
 			is_length_changed = true;
 			is_consistency_checked = false;

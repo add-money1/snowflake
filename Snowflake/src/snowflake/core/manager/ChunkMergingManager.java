@@ -21,7 +21,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.01.07_0
+ * @version 2016.01.22_0
  * @author Johannes B. Latzel
  */
 public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInformation> {
@@ -31,12 +31,6 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * <p></p>
 	 */
 	private final SortedList<Long, Chunk> chunk_list;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final Object chunk_lock;
 	
 	
 	/**
@@ -54,7 +48,6 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	public ChunkMergingManager(IChunkManager chunk_manager) {
 		this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, "chunk_manager");
 		chunk_list = new SortedList<>(ListType.LinkedList, chunk -> new Long(chunk.getStartAddress()));
-		chunk_lock = new Object();		
 	}
 	
 	
@@ -67,7 +60,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 		
 		int actual_nopc_treshold;
 		
-		synchronized( chunk_lock ) {
+		synchronized( chunk_list ) {
 			int chunk_list_size = chunk_list.size();
 			if( chunk_list_size  > 1 ) {
 				if( nopc_treshold > chunk_list_size ) {
@@ -96,7 +89,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 				neighbour_list.clear();
 			}
 			
-			synchronized( chunk_lock ) {
+			synchronized( chunk_list ) {
 				
 				min_index = max_index = 1 + random.nextInt(chunk_list.size() - 1);
 				
@@ -150,8 +143,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * @return
 	 */
 	public Chunk getChunk(long minimum_length) {
-		
-		synchronized( chunk_lock ) {
+		synchronized( chunk_list ) {
 			Chunk available_chunk = chunk_list.getStream(
 						StreamMode.Parallel,
 						chunk -> chunk != null && chunk.getLength() >= minimum_length
@@ -160,7 +152,6 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 			if( available_chunk != null && !chunk_list.remove(available_chunk) ) {
 				return null;
 			}
-			
 			return available_chunk;
 		}
 	}
@@ -173,7 +164,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * @return
 	 */
 	public boolean contains(Chunk chunk) {
-		synchronized( chunk_lock ) {
+		synchronized( chunk_list ) {
 			return chunk_list.contains(chunk);
 		}
 	}
@@ -184,16 +175,16 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * @see j3l.util.collection.interfaces.add.IBasicAdd#add(java.lang.Object)
 	 */
 	@Override public boolean add(Chunk chunk) {
-		
 		if( chunk == null ) {
 			return false;
 		}
-		
-		synchronized( chunk_lock ) {
-			if( chunk_list.contains(chunk) ) {
+		synchronized( chunk_list ) {
+			if( !chunk_list.contains(chunk) ) {
+				return chunk_list.add(chunk);
+			}
+			else {
 				return false;
 			}
-			return chunk_list.add(chunk);
 		}
 	}
 	
@@ -202,7 +193,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * @see j3l.util.stream.IStream#getStream(j3l.util.stream.StreamMode)
 	 */
 	@Override public Stream<IChunkInformation> getStream(StreamMode stream_mode) {
-		synchronized( chunk_lock ) {
+		synchronized( chunk_list ) {
 			return chunk_list.getStream(stream_mode, StreamFilter::filterNull).<IChunkInformation>map(_i->_i);
 		}
 	}

@@ -1,5 +1,115 @@
 	
 	
+	2016.01.24
+	
+		snwoflake.core.storage.Storage
+			-> fixed HUGE bug: write(DataPointer, byte) and write(DataPointer, byte[], int, int)
+				did not check if the number of bytes in the flake satifies the write-operation AND
+				write(DataPointer, byte[], int, int) did not seek to a new position when there were more
+				bytes to write then there were remaining bytes in the chunk at which the write-operation
+				pointed
+			-> no more chunk-leaks and -overflows
+	
+	
+	2016.01.23
+	
+		snowflake.core.storage.Storage
+			-> modified allocateSpace(long) so that it only calls getAllocatedSpace() once
+			
+	
+	2016.01.22
+		
+		snowflake.core.data.Chunk
+			-> minor modification in the way the constructor-arguments are checked
+		
+		snowflake.core.manager.ChunkMergingManager
+			-> minor structural changes
+		
+		snowflake.core.manager.ChunkRecyclingManager
+			-> add(Chunk) now returns false if the chunk is already part of the chunk_recycling_list
+		
+	
+	2016.01.20
+		
+		snowflake.core.manager.ChunkRecyclingManager
+			-> chunk_recycling_list is now of type j3l.util.collection.SortedList
+			-> recycleChunk() now uses the chunk in the middle of the chunk_recycling_list
+	
+		snowflake.core.storage.IClearChunk
+			-> all methods now throw snowflake.api.storage.StorageException
+		
+		snowflake.core.storage.Storage
+			-> clearChunk(Chunk, long, long) now throws snowflake.api.storage.StorageException
+		
+	
+	2016.01.19
+		
+		snowflake.core.data.ChunkUtility
+			-> increased BINARY_CHUNK_SIZE (in 2016.01.19 the structure of the data-sets has been changed)
+	
+		snwofalke.core.manager.ChunkMergingManager
+			-> replaced all occurrences of chunk_lock with chunk_list		
+	
+		snwofalke.core.manager.ChunkManager
+			-> added chunk_recyling_thread and chunk_merging_thread
+			-> open now starts chunk_recyling_thread and chunk_merging_thread
+			-> close now interrupts chunk_recyling_thread and chunk_merging_thread
+			-> removed chunk_file_lock
+			-> replaced all occurrences of available_chunk_lock with available_chunk_list
+			-> loadChunks() now uses ChunkUtility.configureChunk(Chunk, byte) properly
+		
+		snowflake.core.storage.Storage
+			-> modified allocateSpace(long) (snowflake.core.data.ChunkData constructor has been modified
+				in 2016.01.18)
+			-> fixed clearChunk(Chunk, long, long): an IndexOutOfBoundsException was thrown when the
+				parameter where correct and not when they weren't
+				
+	
+	2016.01.18
+		
+		snowflake.core.storage.StorageConfigurationElement
+			-> added ChunkRecyclingTreshhold
+			-> changed MaximumChunkTableSize to MaximumChunkDataTableSize
+		
+		snowflake.core.storage.StorageConfiguration
+			-> implemented getChunkRecyclingTreshhold()
+			-> add setChunkRecyclingTreshhold(long)
+			-> modified all getter so that the correct snowflake.core.storage.StorageConfigurationElement
+				instances are used instead of the hard-coded Strings directly inside the methods
+		
+		snowflake.api.configuration
+			-> added getChunkRecyclingTreshhold()
+		
+		snwoflake.core.manager.ChunkManager
+			-> modified NULL_CHUNK_DATA so that it uses the new constructor (see below)
+			-> createAvailableChunk(long) now retrieves all recycled chunks from the ChunkRecyclingManager
+				and adds them to the ChunkMergingManager before searching for a suitable Chunk in the chunks
+				of the ChunkMergingManager
+		
+		snowflake.core.data.ChunkUtility
+			-> added the static field FLAG_VECTOR_POSITION for 1B flag-vector
+			-> changed almost every method (see above)
+			-> added createFlagVector(Chunk) and configureChunk(Chunk, byte)
+		
+		snowflake.core.data.ChunkData
+			-> added flag_vector, getFlagVector(), and the argument "flag_vector" in the constructor
+			-> modified toString() (see above)
+			-> modified hashCode() (now takes the start_address and the length into account)
+			-> modified equals(ChunkData): ignores all values but start_address and length for comparison
+		
+		snowflake.core.storage.ClearChunk
+			-> added clearChunk(Chunk, long, long) for partial clearing of a chunk
+			-> clearChunk(Chunk) is now default and calls clearChunk(Chunk, long, long)
+		
+		snowflake.core.storage.Storage
+			-> see snowflake.core.storage.ClearChunk
+		
+		snowflake.core.manager.ChunkRecyclingManager
+			-> new class
+			-> asynchronous chunk recycling of added chunks (see add(Chunk))
+			-> not yet recycled chunks wait until they are cleared in chunk_recycling_list
+			-> recycled chunks are stored in the recycled_chunk_list until they 
+				are retrieved by getStream(StreamMode)
 	
 	
 	2016.01.07
@@ -7,6 +117,19 @@
 		snowflake.core.manager.ChunkMergingManager
 			-> changed add(Chunk) so that false will be returned when the argument is null
 			-> mergeChunks(int) now triggers the garbage collection after finishing the merging
+			
+		snowflake.api.configuration.IReadOnlyChunkManagerConfiguration
+			-> removed getChunkManagerIndexConfigurationFilePath()
+			
+		snowflake.api.configuration.StorageConfiguration
+			-> removed setChunkManagerIndexConfigurationFilePath(String)
+			-> removed getChunkManagerIndexConfigurationFilePath()
+			-> removed ChunkManangerIndexConfigurationFilePath and its references
+			
+		snowflake.ore.manager.IndexManager
+			-> changed completely
+			-> now relies on other instances to set/add indices rather than load/save available indices
+			-> does not need to be opened/closed (e.g. is no instance of IClose<IOException> any more)
 	
 	
 	
@@ -23,7 +146,7 @@
 			-> added length-check in splitChunk(Chunk, long) for Chunks with a length of 1
 				
 		snowflake.api.chunk.IChunkManager
-			-> changed  recycleChunks(Stream<Chunk>) so that it uses method-references
+			-> changed recycleChunks(Stream<Chunk>) so that it uses method-references
 	
 	
 	
@@ -101,3 +224,5 @@
 		snowflake.core.flake.FlakeDataManager
 			-> add() and insertChunk() will check if the certain chunk is already part of the flake and if so will
 			throw a SecurityException
+
+

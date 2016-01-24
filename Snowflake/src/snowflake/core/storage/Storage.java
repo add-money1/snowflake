@@ -31,7 +31,7 @@ import snowflake.core.manager.FlakeManager;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2015.12.14_0
+ * @version 2016.01.23_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IListenerAdapter, IStorageInformation, IManagerAdapter, 
@@ -237,6 +237,9 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.core.IWrite#write(snowflake.api.DataPointer, byte)
 	 */
 	@Override public void write(DataPointer data_pointer, byte b) throws IOException {
+		if( data_pointer.getRemainingBytes() < 1 ) {
+			throw new IndexOutOfBoundsException("The length must not succeed the number of available bytes in the flake!");
+		}
 		synchronized( write_lock ) {
 			data_output_file.seek(data_pointer.getPositionInStorage());
 			data_output_file.write(b);
@@ -248,9 +251,29 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.core.IWrite#write(snowflake.api.DataPointer, byte[], int, int)
 	 */
 	@Override public void write(DataPointer data_pointer, byte[] buffer, int offset, int length) throws IOException {
+		int remaining_bytes = length;
+		int advance_in_buffer;
+		int remaining_bytes_in_chunk;
+		long actual_remaining_bytes_in_chunk;
+		if( data_pointer.getRemainingBytes() < remaining_bytes ) {
+			throw new IndexOutOfBoundsException("The length must not succeed the number of available bytes in the flake!");
+		}
 		synchronized( write_lock ) {
-			data_output_file.seek(data_pointer.getPositionInStorage());
-			data_output_file.write(buffer, offset, length);
+			do {
+				data_output_file.seek(data_pointer.getPositionInStorage());
+				actual_remaining_bytes_in_chunk = data_pointer.getRemainingBytesInChunk();
+				if( actual_remaining_bytes_in_chunk >= Integer.MAX_VALUE ) {
+					remaining_bytes_in_chunk = Integer.MAX_VALUE;
+				}
+				else {
+					// cast to int is okay, because actual_remaining_bytes_in_chunk < Integer.MAX_VALUE
+					remaining_bytes_in_chunk = (int)actual_remaining_bytes_in_chunk;
+				}
+				advance_in_buffer = Math.min(remaining_bytes, remaining_bytes_in_chunk);
+				data_output_file.write(buffer, length - remaining_bytes + offset, advance_in_buffer);
+				remaining_bytes -= advance_in_buffer;
+			}
+			while( remaining_bytes != 0 );
 		}
 	}
 	
@@ -351,17 +374,23 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.core.IClearChunk#clearChunk(snowflake.core.Chunk)
+	 * @see snowflake.core.storage.IClearChunk#clearChunk(snowflake.core.data.Chunk, long, length)
 	 */
-	@Override public void clearChunk(Chunk chunk) {
+	@Override public void clearChunk(Chunk chunk, long offset, long length) throws StorageException {
+		
 		if( chunk == null || !chunk.isValid() ) {
 			return;
-		}		
-		long remaining_bytes = chunk.getLength();
+		}
+		
+		if( chunk.getLength() - offset < length ) {
+			throw new IndexOutOfBoundsException("The length must not be greater than chunk.getLength() - offset!");
+		}
+		
+		long remaining_bytes = length;
 		int clear_array_size = clear_array.length;
 		synchronized( write_lock ) {
 			try {
-				data_output_file.seek(chunk.getStartAddress());
+				data_output_file.seek(chunk.getStartAddress() + offset);
 				if( remaining_bytes > clear_array.length ) {
 					do {
 						data_output_file.write(clear_array, 0, clear_array_size);
@@ -390,9 +419,11 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 		ArgumentChecker.checkForBoundaries(number_of_bytes, 1, Long.MAX_VALUE, "number_of_bytes");
 		ChunkData chunk_data;
 		long new_length;
+		long current_length;
 		synchronized( write_lock ) {
-			new_length = getAllocatedSpace() + number_of_bytes;
-			chunk_data = new ChunkData(getAllocatedSpace(), number_of_bytes, FlakeManager.ROOT_IDENTIFICATION, 0);
+			current_length = getAllocatedSpace();
+			new_length = current_length + number_of_bytes;
+			chunk_data = new ChunkData(current_length, number_of_bytes, FlakeManager.ROOT_IDENTIFICATION, 0, (byte)0);
 			try {
 				data_output_file.setLength(new_length);
 			} catch (IOException e) {

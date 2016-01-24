@@ -3,6 +3,11 @@ Dokumentation für Klassen:
 	- open-/closeable
 	
 	
+	LOGGER?
+	
+	StorageException -> wo muss diese Exception geworfen, und wo muss sie abgefangen werden?
+	
+	
 Klasse:
 	- Flake:
 		-> bekommt IOExceptions von closeAllStreams() -> was damit anfangen? (loggen??)
@@ -12,8 +17,6 @@ Klasse:
 	- FlakeStreamManager:
 		-> removeStream() -> was soll hier noch zusätzlich geschehen? Listener könnten hier das Ende
 							eines i/O-vorgangs signalisieren
-	- DataTable:
-		-> hat über 5000 Threads erzeugt (ohne sichtbaren Grund..)
 	
 	
 Server:

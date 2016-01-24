@@ -248,7 +248,7 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 	 */
 	public void flushParallel() {
 		
-		System.out.println("DataTable.addEntry() -> flush sollte nicht mit try eingwickelt werden!");
+		//System.out.println("DataTable.addEntry() -> flush sollte nicht mit try eingwickelt werden!");
 		Thread flush_thread = new Thread(() -> {
 			try {
 				flush();

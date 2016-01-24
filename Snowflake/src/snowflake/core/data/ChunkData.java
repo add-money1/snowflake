@@ -6,7 +6,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.11.26_0
+ * @version 2015.01.18_0
  * @author Johannes B. Latzel
  */
 public final class ChunkData implements IBinaryData {
@@ -38,11 +38,17 @@ public final class ChunkData implements IBinaryData {
 	
 	/**
 	 * <p></p>
+	 */
+	private final byte flag_vector;
+	
+	
+	/**
+	 * <p></p>
 	 *
 	 * @param
 	 * @return
 	 */
-	public ChunkData(long start_address, long length, long flake_indentification, int index_in_flake) {
+	public ChunkData(long start_address, long length, long flake_indentification, int index_in_flake, byte flag_vector) {
 
 		ArgumentChecker.checkForBoundaries(start_address, 0, Long.MAX_VALUE, "start_address");
 		ArgumentChecker.checkForBoundaries(length, 0, Integer.MAX_VALUE, "length");
@@ -52,6 +58,7 @@ public final class ChunkData implements IBinaryData {
 		this.length = length;
 		this.flake_identification = flake_indentification;
 		this.index_in_flake = index_in_flake;
+		this.flag_vector = flag_vector;
 		
 	}
 	
@@ -100,6 +107,17 @@ public final class ChunkData implements IBinaryData {
 	}
 	
 	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public byte getFlagVector() {
+		return flag_vector;
+	}
+	
+	
 	/* (non-Javadoc)
 	 * @see snowflake.core.data.IBinaryData#getBinaryData(byte[])
 	 */
@@ -132,6 +150,8 @@ public final class ChunkData implements IBinaryData {
 		string_builder.append(getFlakeIdentification());
 		string_builder.append(" | index_in_flake = ");
 		string_builder.append(getIndexInFlake());
+		string_builder.append(" | flag_vector = ");
+		string_builder.append(getFlagVector());
 		string_builder.append("]");
 		
 		string_builder.trimToSize();
@@ -146,7 +166,7 @@ public final class ChunkData implements IBinaryData {
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override public int hashCode() {
-		return Long.hashCode(getStartAddress());
+		return Long.hashCode(getStartAddress() ^ Long.rotateLeft(getChunkLength(), 32));
 	}
 	
 	
@@ -158,10 +178,7 @@ public final class ChunkData implements IBinaryData {
 		if( object != null && object instanceof ChunkData ) {
 			ChunkData chunk_data = (ChunkData)object;
 			if( chunk_data.hashCode() == hashCode() ) {
-				return		chunk_data.getFlakeIdentification() == getFlakeIdentification()
-						&&	chunk_data.getIndexInFlake() == getIndexInFlake()
-						&&	chunk_data.getChunkLength() == getChunkLength()
-						&& chunk_data.getStartAddress() == getStartAddress();
+				return chunk_data.getStartAddress() == getStartAddress() && chunk_data.getChunkLength() == getChunkLength();
 			}
 		}
 		return false;

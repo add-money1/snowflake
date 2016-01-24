@@ -9,17 +9,25 @@ import snowflake.core.flake.Flake;
 
 
 /**
- * <p>A chunk represents a part of the stored data provided by the {@link snowflake.api.IStorage storage}. Its
- * start-address and its length uniquely identify a chunk. There won't be any other chunk with the same start-address.</p>
- * <p>A chunk includes the data in the {@link snowflake.api.IStorage storage} at the addresses from {@link #start_adress} to
- * {@link #start_adress} + {@link #length} - 1.</p>
- * <p>A chunk must never be part of more than one flake. If it would the data this chunk includes would be shared by more than
- * one {@link snowflake.api.flake.IFlake flake} and could possibly cause irrepairable damage to the whole storage.</p>
- * <p>It can either be part of a {@link snowflake.api.flake.IFlake flake} or be free. A free chunk will be managed and possibly
- * assigned to a {@link snowflake.api.flake.IFlake flake} by the {@link snowflake.api.IStorage storage}.</p>
+ * <p>
+ * 		A chunk represents a part of the stored data provided by the {@link snowflake.api.IStorage storage}. Its
+ * 		start-address and its length uniquely identify a chunk. There won't be any other chunk with the same start-address.
+ * </p>
+ * <p>
+ * 		A chunk includes the data in the {@link snowflake.api.IStorage storage} at the addresses from {@link #start_adress} to
+ * 		{@link #start_adress} + {@link #length} - 1.
+ * </p>
+ * <p>
+ * 		A chunk must never be part of more than one flake. If it would the data this chunk includes would be shared by more than
+ * 		one {@link snowflake.api.flake.IFlake flake} and could possibly cause irrepairable damage to the whole storage.
+ * </p>
+ * <p>
+ * 		It can either be part of a {@link snowflake.api.flake.IFlake flake} or be free. A free chunk will be managed and possibly
+ * 		assigned to a {@link snowflake.api.flake.IFlake flake} by the {@link snowflake.api.IStorage storage}.
+ * </p>
  * 
  * @since JDK 1.8
- * @version 2015.12.14_0
+ * @version 2016.01.22_0
  * @author Johannes B. Latzel
  */
 public final class Chunk implements IChunkInformation {
@@ -60,15 +68,21 @@ public final class Chunk implements IChunkInformation {
 	
 	
 	/**
-	 * <p></p>
+	 * <p>used for saving</p>
 	 */
 	private final IChunkMemory chunk_memory;
 	
 	
 	/**
-	 * <p></p>
+	 * <p>true when the chunk needs to be saved, false otherwise</p>
 	 */
 	private boolean needs_to_be_saved;
+	
+	
+	/**
+	 * <p>indicates if the chunk is currently marked for clearing</p>
+	 */
+	private boolean needs_to_be_cleared;
 	
 	
 	/**
@@ -80,38 +94,16 @@ public final class Chunk implements IChunkInformation {
 	 * @throws IllegalArgumentException
 	 */
 	public Chunk(IChunkMemory chunk_memory, long start_address, long length, long chunk_table_index) {
-
-		ArgumentChecker.checkForNull(chunk_memory, "chunk_memory");
-		ArgumentChecker.checkForBoundaries(start_address, 0, Long.MAX_VALUE, "start_address");
-		ArgumentChecker.checkForBoundaries(length, 1, Long.MAX_VALUE, "length");
-		ArgumentChecker.checkForBoundaries(chunk_table_index, 0, Long.MAX_VALUE, "chunk_table_index");
-
-		this.chunk_memory = chunk_memory;
-		this.start_address = start_address;
-		this.length = length;
-		this.chunk_table_index = chunk_table_index;
+		
+		this.chunk_memory = ArgumentChecker.checkForNull(chunk_memory, "chunk_memory");
+		this.start_address = ArgumentChecker.checkForBoundaries(start_address, 0, Long.MAX_VALUE, "start_address");
+		this.length = ArgumentChecker.checkForBoundaries(length, 1, Long.MAX_VALUE, "length");
+		this.chunk_table_index = ArgumentChecker.checkForBoundaries(chunk_table_index, 0, Long.MAX_VALUE, "chunk_table_index");
 		position_in_flake = -1;
 		is_valid = true;
 		needs_to_be_saved = true;
+		needs_to_be_cleared = false;
 		
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
-	 * @see snowflake.api.IChunk#getStartAddress()
-	 */
-	@Override public long getStartAddress() {
-		return start_address;
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
-	 * @see snowflake.api.IChunk#getLength()
-	 */
-	@Override public long getLength() {
-		return length;
 	}
 	
 	
@@ -126,15 +118,6 @@ public final class Chunk implements IChunkInformation {
 	public boolean isNeighbourOf(Chunk chunk) {
 		return ( getStartAddress() == (chunk.getStartAddress() + chunk.getLength()) ) || 
 				( chunk.getStartAddress() == (getStartAddress() + getLength()) );
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
-	 * @see snowflake.api.IChunk#getPositionInFlake()
-	 */
-	@Override public long getPositionInFlake() {
-		return position_in_flake;
 	}
 	
 	
@@ -179,7 +162,7 @@ public final class Chunk implements IChunkInformation {
 		if( !isValid() ) {
 			return;
 		}
-		
+
 		chunk_memory.deleteChunk(this);
 		is_valid = false;
 		needs_to_be_saved = false;
@@ -188,10 +171,9 @@ public final class Chunk implements IChunkInformation {
 	
 	
 	/**
-	 * <p></p>
+	 * <p>saves this chunk</p>
 	 *
-	 * @param
-	 * @return
+	 * @param owner_flake the flake which owns this chunk or null, if this chunks is available
 	 */
 	public synchronized void save(Flake owner_flake) {
 		if( needsToBeSaved() ) {
@@ -201,21 +183,64 @@ public final class Chunk implements IChunkInformation {
 	}
 	
 	
+	/**
+	 * @return {@link #needs_to_be_cleared}
+	 */
+	public boolean needsToBeCleared() {
+		return needs_to_be_cleared;
+	}
+	
+	
+	/**
+	 * <p>setter for {@link #needs_to_be_cleared}</p>
+	 *
+	 * @param needs_to_be_cleared see {@link #needs_to_be_cleared}
+	 */
+	public void setNeedsToBeCleared(boolean needs_to_be_cleared) {
+		this.needs_to_be_cleared = needs_to_be_cleared;
+		needs_to_be_saved = true;
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.api.IChunk#getStartAddress()
+	 */
+	@Override public long getStartAddress() {
+		return start_address;
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.api.IChunk#getLength()
+	 */
+	@Override public long getLength() {
+		return length;
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.api.IChunk#getPositionInFlake()
+	 */
+	@Override public long getPositionInFlake() {
+		return position_in_flake;
+	}
+	
+	
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override public boolean equals(Object o) {
-		
 		if( ( o != null ) && ( o instanceof Chunk ) && ( o.hashCode() == hashCode() ) ) {
-			
 			Chunk chunk = (Chunk)o;
-			return ( chunk.getStartAddress() == getStartAddress() ) && ( chunk.getLength() == getLength() );
-			
+			return 		(chunk.getStartAddress() == getStartAddress())
+					&&  (chunk.getLength() == getLength())
+					&&  (chunk.getChunkTableIndex() == getChunkTableIndex());
 		}
-		
 		return false;
-		
 	}
 	
 	
@@ -233,7 +258,6 @@ public final class Chunk implements IChunkInformation {
 	 * @see java.lang.Object#toString()
 	 */
 	@Override public String toString() {
-		
 		StringBuilder string_builder = new StringBuilder(90);
 		string_builder.append("[start_address: ");
 		string_builder.append(Long.toString(getStartAddress()));
@@ -245,9 +269,7 @@ public final class Chunk implements IChunkInformation {
 		string_builder.append(Long.toString(getChunkTableIndex()));
 		string_builder.append("]");
 		string_builder.trimToSize();
-		
 		return string_builder.toString();
-		
 	}
 	
 	

@@ -14,7 +14,7 @@ import snowflake.api.configuration.IReadonlyStorageConfiguration;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.14_0
+ * @version 2016.01.18_0
  * @author Johannes B. Latzel
  */
 public final class StorageConfiguration implements IReadonlyStorageConfiguration {
@@ -169,7 +169,6 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 		boolean success = true;
 		
 		LinkedList<String> file_path_list = new LinkedList<>();
-		file_path_list.add(getChunkManagerIndexConfigurationFilePath());
 		file_path_list.add(getChunkTableFilePath());
 		file_path_list.add(getConfigurationFilePath());
 		file_path_list.add(getDataFilePath());
@@ -191,13 +190,13 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 */
 	public void setMaximumChunkDataTableSize(int maximum_chunk_data_table_size) {
 		configuration_manager.setElement(
-			StorageConfigurationElement.MaximumChunkTableSize.getName(), 
+			StorageConfigurationElement.MaximumChunkDataTableSize.getName(), 
 			Integer.toString(
 				ArgumentChecker.checkForBoundaries(
 					maximum_chunk_data_table_size, 
 					1,
 					Integer.MAX_VALUE, 
-					StorageConfigurationElement.MaximumChunkTableSize.getName()
+					StorageConfigurationElement.MaximumChunkDataTableSize.getName()
 				)
 			)
 		);
@@ -315,6 +314,27 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @param
 	 * @return
 	 */
+	public void setChunkRecyclingTreshhold(long chunk_recycling_treshhold) {
+		configuration_manager.setElement(
+			StorageConfigurationElement.ChunkRecyclingTreshhold.getName(), 
+			Long.toString(
+				ArgumentChecker.checkForBoundaries(
+					chunk_recycling_treshhold, 
+					1, 
+					Long.MAX_VALUE, 
+					StorageConfigurationElement.ChunkRecyclingTreshhold.getName()
+				)
+			)
+		);
+	}	
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
 	public void setDataFileIncreaseRate(double data_file_increase_rate) {
 		configuration_manager.setElement(
 			StorageConfigurationElement.DataFileIncreaseRate.getName(), 
@@ -342,23 +362,6 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 			ArgumentChecker.checkForEmptyString(
 				chunk_table_file_path, 
 				StorageConfigurationElement.ChunkTableFilePath.getName()
-			)
-		);
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *s
-	 * @param
-	 * @return
-	 */
-	public void setChunkManagerIndexConfigurationFilePath(String chunk_manager_index_configuration_file_path) {
-		configuration_manager.setElement(
-			StorageConfigurationElement.ChunkManagerIndexConfigurationFilePath.getName(), 
-			ArgumentChecker.checkForEmptyString(
-				chunk_manager_index_configuration_file_path, 
-				StorageConfigurationElement.ChunkManagerIndexConfigurationFilePath.getName()
 			)
 		);
 	}
@@ -419,7 +422,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getPreferredAvailableStorageSize()
 	 */
 	@Override public long getPreferredAvailableStorageSize() {
-		return getValue("preferred_available_storage_size", 0L);
+		return getValue(StorageConfigurationElement.PreferredAvailableStorageSize.toString(), 0L);
 	}
 	
 	
@@ -427,7 +430,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getDataFileIncreaseRate()
 	 */
 	@Override public double getDataFileIncreaseRate() {
-		return getValue("data_file_increase_rate", 0.1d);
+		return getValue(StorageConfigurationElement.DataFileIncreaseRate.toString(), 0.1d);
 	}
 	
 	
@@ -435,7 +438,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getMaximumChunkDataTableSize()
 	 */
 	@Override public int getMaximumChunkDataTableSize() {
-		return getValue("maximum_chunk_data_table_size", 1000);
+		return getValue(StorageConfigurationElement.MaximumChunkDataTableSize.toString(), 1000);
 	}
 	
 	
@@ -443,15 +446,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getChunkTableFilePath()
 	 */
 	@Override public String getChunkTableFilePath() {
-		return getValue("chunk_table_file_path", "");
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getChunkManagerIndexConfigurationFilePath()
-	 */
-	@Override public String getChunkManagerIndexConfigurationFilePath() {
-		return getValue("chunk_manager_index_configuration_file_path", "");
+		return getValue(StorageConfigurationElement.ChunkTableFilePath.toString(), "");
 	}
 	
 	
@@ -459,7 +454,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadOnlyFlakeManagerConfiguration#getDefragmentationTransferBufferSize()
 	 */
 	@Override public int getDefragmentationTransferBufferSize() {
-		return getValue("defragmentation_transfer_buffer_size", 8192);
+		return getValue(StorageConfigurationElement.DefragmentationTransferBufferSize.toString(), 8192);
 	}
 	
 	
@@ -467,7 +462,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadOnlyFlakeManagerConfiguration#getDefragmentationChunkSizeTreshhold()
 	 */
 	@Override public long getDefragmentationChunkSizeTreshhold() {
-		return getValue("defragmentation_chunk_size_treshhold", 200_000L);
+		return getValue(StorageConfigurationElement.DefragmentationChunkSizeTreshhold.toString(), 200_000L);
 	}
 	
 	
@@ -475,7 +470,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadonlyStorageConfiguration#getInitializationFilePath()
 	 */
 	@Override public String getInitializationFilePath() {
-		return getValue("initialization_file_path", "");
+		return getValue(StorageConfigurationElement.InitializationFilePath.toString(), "");
 	}
 	
 	
@@ -483,7 +478,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadonlyStorageConfiguration#getDataFilePath()
 	 */
 	@Override public String getDataFilePath() {
-		return getValue("data_file_path", "");
+		return getValue(StorageConfigurationElement.DataFilePath.toString(), "");
 	}
 	
 
@@ -491,7 +486,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadonlyStorageConfiguration#getConfigurationFilePath()
 	 */
 	@Override public String getConfigurationFilePath() {
-		return getValue("configuration_file_path", "");
+		return getValue(StorageConfigurationElement.ConfigurationFilePath.toString(), "");
 	}
 	
 	
@@ -499,7 +494,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadonlyStorageConfiguration#getClearArraySize()
 	 */
 	@Override public int getClearArraySize() {
-		return getValue("clear_array_size", 8192);
+		return getValue(StorageConfigurationElement.ClearArraySize.toString(), 8192);
 	}
 	
 	
@@ -507,7 +502,15 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getTresholdForChunkMerging()
 	 */
 	@Override public int getMaximumAvailableChunks() {
-		return getValue("maximum_available_chunks", 1000);
+		return getValue(StorageConfigurationElement.MaximumAvailableChunks.toString(), 1000);
+	}
+
+
+	/* (non-Javadoc)
+	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getChunkRecyclingTreshhold()
+	 */
+	@Override public long getChunkRecyclingTreshhold() {
+		return getValue(StorageConfigurationElement.ChunkRecyclingTreshhold.toString(), 8192);
 	}
 	
 }

@@ -15,7 +15,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.14_0
+ * @version 2016.01.19_0
  * @author Johannes B. Latzel
  */
 public final class ChunkUtility {
@@ -24,7 +24,7 @@ public final class ChunkUtility {
 	/**
 	 * <p></p>
 	 */
-	public final static int BINARY_CHUNK_SIZE = 32;
+	public final static int BINARY_CHUNK_SIZE = 33;
 	
 	
 	/**
@@ -54,7 +54,13 @@ public final class ChunkUtility {
 	/**
 	 * <p></p>
 	 */
-	private final static int CHECKSUM_POSITION = 28;
+	private final static int FLAG_VECTOR_POSITION = 28;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private final static int CHECKSUM_POSITION = 29;
 	
 	
 	/**
@@ -84,6 +90,7 @@ public final class ChunkUtility {
 		CRC32 checksum = new CRC32();
 		byte[] long_buffer = new byte[8];
 		byte[] int_buffer = new byte[4];
+		byte flag_vector = chunk_data.getFlagVector();
 
 		
 		TransformValue.toByteArray(chunk_data.getStartAddress(), long_buffer);
@@ -101,6 +108,9 @@ public final class ChunkUtility {
 		TransformValue.toByteArray(chunk_data.getIndexInFlake(), int_buffer);
 		checksum.update(int_buffer);
 		ArrayTool.transferValues(buffer, int_buffer, ChunkUtility.INDEX_IN_FLAKE_POSITION);
+		
+		checksum.update(flag_vector);
+		buffer[ChunkUtility.FLAG_VECTOR_POSITION] = flag_vector;
 		
 		// cast is necessary, because the actual checksum returned is 32 bit integer
 		TransformValue.toByteArray((int)checksum.getValue(), int_buffer);
@@ -139,6 +149,7 @@ public final class ChunkUtility {
 		long length;
 		long flake_identification;
 		int index_in_flake;
+		byte flag_vector;
 		
 
 		ArrayTool.transferValues(long_buffer, buffer, 0, ChunkUtility.START_ADDRESS_POSITION, long_buffer.length);
@@ -151,18 +162,21 @@ public final class ChunkUtility {
 		
 		ArrayTool.transferValues(long_buffer, buffer, 0, ChunkUtility.FLAKE_IDENTIFICATION_POSITION, long_buffer.length);
 		checksum.update(long_buffer);
-		flake_identification = TransformValue.toLong(long_buffer);		
+		flake_identification = TransformValue.toLong(long_buffer);	
 		
 		ArrayTool.transferValues(int_buffer, buffer, 0, ChunkUtility.INDEX_IN_FLAKE_POSITION, int_buffer.length);
 		checksum.update(int_buffer);
-		index_in_flake = TransformValue.toInteger(int_buffer);	
+		index_in_flake = TransformValue.toInteger(int_buffer);		
+		
+		flag_vector = buffer[ChunkUtility.FLAG_VECTOR_POSITION];
+		checksum.update(flag_vector);
 		
 		ArrayTool.transferValues(int_buffer, buffer, 0, ChunkUtility.CHECKSUM_POSITION, int_buffer.length);
 		read_in_checksum = TransformValue.toInteger(int_buffer);	
 		
 		// cast is necessary, because the actual checksum returned is 32 bit integer
 		if( (int)checksum.getValue() == read_in_checksum ) {
-			return new ChunkData(start_address, length, flake_identification, index_in_flake);
+			return new ChunkData(start_address, length, flake_identification, index_in_flake, flag_vector);
 		}
 		else {
 			throw new SecurityException("The read-in checksum does not match the calculated checksum!");
@@ -186,7 +200,6 @@ public final class ChunkUtility {
 			
 		}
 		
-		
 		long identification = FlakeManager.ROOT_IDENTIFICATION;
 		int index_in_flake = 0;
 		
@@ -201,8 +214,35 @@ public final class ChunkUtility {
 		}
 		
 		
-		return new ChunkData(chunk.getStartAddress(), chunk.getLength(), identification, index_in_flake);
+		return new ChunkData(chunk.getStartAddress(), chunk.getLength(), identification, index_in_flake, 
+				ChunkUtility.createFlagVector(chunk));
 		
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	private static byte createFlagVector(Chunk chunk) {
+		byte flag_vector = 0;
+		flag_vector |= chunk.needsToBeCleared() ? 1 : 0;
+		return flag_vector;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public static void configureChunk(Chunk chunk, byte flag_vector) {
+		if( (flag_vector & 1) == 1 ) {
+			chunk.setNeedsToBeCleared(true);
+		}
 	}
 	
 }
