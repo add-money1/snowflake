@@ -2,10 +2,10 @@ package snowflake.core.data;
 
 import java.util.zip.CRC32;
 
-import j3l.util.array.ArrayTool;
+import j3l.util.ArrayTool;
+import j3l.util.TransformValue;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
-import j3l.util.transform.TransformValue;
 import snowflake.core.flake.Flake;
 import snowflake.core.manager.ChunkManager;
 import snowflake.core.manager.FlakeManager;
@@ -15,7 +15,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.01.19_0
+ * @version 2016.02.06_0
  * @author Johannes B. Latzel
  */
 public final class ChunkUtility {

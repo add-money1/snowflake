@@ -16,7 +16,7 @@ import j3l.util.close.IClose;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.14_0
+ * @version 2015.12.24_0
  * @author Johannes B. Latzel
  */
 public final class DataTable<T extends IBinaryData> implements IClose<IOException> {
@@ -32,18 +32,6 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 	 * <p></p>
 	 */
 	private final LinkedList<BinaryDataWrapper<T>> pending_entries_buffer_list;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final Object pending_entries_lock;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final Object pending_entries_buffer_lock;
 	
 	
 	/**
@@ -91,8 +79,6 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 		
 		pending_entries_list = new LinkedList<>();
 		pending_entries_buffer_list = new LinkedList<>();
-		pending_entries_lock = new Object();
-		pending_entries_buffer_lock = new Object();
 		closure_state = ClosureState.None;
 		is_flushing = false;
 		
@@ -117,7 +103,7 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 		IBinaryData current_entry;
 		BinaryDataWrapper<T> current_wrapper = null;
 		
-		synchronized( pending_entries_lock ) {
+		synchronized( pending_entries_list ) {
 			
 			if( pending_entries_list.size() != 0 ) {
 				
@@ -176,13 +162,13 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 		}
 		
 		
-		synchronized( pending_entries_buffer_lock ) {
+		synchronized( pending_entries_buffer_list ) {
 			
 			if( pending_entries_buffer_list.size() == 0 ) {
 				return;
 			}
 			
-			synchronized( pending_entries_lock ) {
+			synchronized( pending_entries_list ) {
 				do {
 					pending_entries_list.add(pending_entries_buffer_list.removeFirst());
 				}
@@ -223,12 +209,12 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 		
 		if( wrapper != null ) {
 			if( isFlushing() ) {
-				synchronized( pending_entries_buffer_lock ) {
+				synchronized( pending_entries_buffer_list ) {
 					pending_entries_buffer_list.addLast(wrapper);
 				}
 			}
 			else {
-				synchronized( pending_entries_lock ) {
+				synchronized( pending_entries_list ) {
 					pending_entries_list.addLast(wrapper);
 					if( pending_entries_list.size() >= max_capacity ) {
 						flushParallel();
@@ -246,7 +232,7 @@ public final class DataTable<T extends IBinaryData> implements IClose<IOExceptio
 	 * @param
 	 * @return
 	 */
-	public void flushParallel() {
+	public synchronized void flushParallel() {
 		
 		//System.out.println("DataTable.addEntry() -> flush sollte nicht mit try eingwickelt werden!");
 		Thread flush_thread = new Thread(() -> {

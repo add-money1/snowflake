@@ -1,5 +1,52 @@
 	
 	
+	2016.02.18
+		
+		snowflake.core.manager.ChunkManager
+			-> changed "SortedList<Long, Chunk> available_chunk_list" to 
+			"BinaryTree<Chunk, Long> available_chunk_tree"
+			-> applied all changes so that available_chunk_tree can be used
+			-> fixed a bug in mergeChunks(long): the algorithm did not merge all neighboured chunks because
+				the min/max criteria were not right (they were both one off)
+			
+	
+	2016.02.15
+		
+		snowflake.core.manager.ChunkMergingManager
+			-> modified most methods for usage of BinaryTree<Chunk> (see 2016.02.14)
+		
+	
+	2016.02.14
+	
+		snowflake.core.manager.ChunkRecyclingManager
+			-> now uses java.util.TreeSet instead of a sorted list
+		
+		snowflake.core.manager.ChunkMergingManager
+			-> changed "SortedList<Long, Chunk> chunk_list" to "BinaryTree<Chunk, Long> chunk_tree"
+			-> changed mergeChunks(int) to mergeChunks(long)
+	
+	
+	2016.02.06
+	
+		snowflake.core.data.ChunkUtility
+			-> corrected imports
+			
+		snowflake.core.flake.Flake
+			-> corrected imports
+			-> changed all occurrences of ValidationChecker to ArgumentChecker
+		
+		snowflake.core.manager.FlakeManager
+			-> corrected imports		
+		
+		snowflake.core.manager
+		
+		
+		snowflake.core.manager
+		
+		
+		snowflake.core.manager
+	
+	
 	2016.01.24
 	
 		snwoflake.core.storage.Storage
@@ -9,6 +56,10 @@
 				bytes to write then there were remaining bytes in the chunk at which the write-operation
 				pointed
 			-> no more chunk-leaks and -overflows
+			
+		snowflake.core.data.DataTable
+			-> replaced all occurrences of pending_entries_lock with pending_entries_list
+			-> replaced all occurrences of pending_entries_buffer_lock with pending_entries_buffer_list
 	
 	
 	2016.01.23

@@ -7,10 +7,10 @@ import java.util.Random;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import j3l.util.RandomFactory;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
-import j3l.util.random.RandomFactory;
 import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
@@ -28,7 +28,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.14_0
+ * @version 2015.02.06_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose<IOException> {

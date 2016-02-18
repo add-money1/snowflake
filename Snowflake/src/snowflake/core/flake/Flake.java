@@ -6,7 +6,6 @@ import java.util.LinkedList;
 
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ClosureChecker;
-import j3l.util.check.ValidationChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import snowflake.api.chunk.IChunkInformation;
@@ -21,7 +20,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.18_0
+ * @version 2016.02.06_0
  * @author Johannes B. Latzel
  */
 public final class Flake implements IClose<IOException>, IFlake {
@@ -145,7 +144,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @return
 	 */
 	public int getIndexOfChunk(Chunk chunk) {
-		ValidationChecker.checkForValidation(this);
+		ArgumentChecker.checkForValidation(this);
 		return flake_data_manager.getIndexOfChunk(chunk);
 	}
 	
@@ -157,7 +156,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @return
 	 */
 	public void addChunks(Chunk[] chunks) {
-		ValidationChecker.checkForValidation(this);
+		ArgumentChecker.checkForValidation(this);
 		flake_data_manager.addChunks(chunks);
 	}
 	
@@ -169,7 +168,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @return
 	 */
 	public void addChunks(Collection<Chunk> chunk_collection) {
-		ValidationChecker.checkForValidation(this);
+		ArgumentChecker.checkForValidation(this);
 		flake_data_manager.addChunks(chunk_collection);
 	}
 	
@@ -181,7 +180,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @return
 	 */
 	public void addChunk(Chunk chunk) {
-		ValidationChecker.checkForValidation(this);
+		ArgumentChecker.checkForValidation(this);
 		flake_data_manager.addChunk(chunk);
 	}
 
@@ -264,7 +263,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#setLength(long)
 	 */
 	@Override public void setLength(long new_length) {
-		ValidationChecker.checkForValidation(this);
+		ArgumentChecker.checkForValidation(this);
 		if( getLength() != new_length ) {
 			flake_data_manager.setLength(new_length);
 		}
@@ -311,7 +310,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getChunks()
 	 */
 	@Override public IChunkInformation[] getChunks() {
-		ValidationChecker.checkForValidation(this);
+		ArgumentChecker.checkForValidation(this);
 		return flake_data_manager.getChunks();
 	}
 	
@@ -320,7 +319,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getChunkAtIndex(int)
 	 */
 	@Override public IChunkInformation getChunkAtIndex(int index) {
-		ValidationChecker.checkForValidation(this);
+		ArgumentChecker.checkForValidation(this);
 		return flake_data_manager.getChunkAtIndex(index);
 	}
 	
@@ -329,7 +328,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getChunkAtPositionInFlake(long)
 	 */
 	@Override public IChunkInformation getChunkAtPositionInFlake(long position_in_flake) {
-		ValidationChecker.checkForValidation(this);
+		ArgumentChecker.checkForValidation(this);
 		return flake_data_manager.getChunkAtPosition(position_in_flake);
 	}
 	

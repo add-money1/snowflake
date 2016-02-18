@@ -1,12 +1,11 @@
 package snowflake.core.manager;
 
 import java.util.ArrayList;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import j3l.util.IAdd;
 import j3l.util.check.ArgumentChecker;
-import j3l.util.collection.ListType;
-import j3l.util.collection.SortedList;
-import j3l.util.collection.interfaces.add.IAdd;
 import j3l.util.stream.IStream;
 import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
@@ -20,7 +19,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.01.20_0
+ * @version 2016.02.14_0
  * @author Johannes B. Latzel
  */
 public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> {
@@ -29,7 +28,7 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 	/**
 	 * <p></p>
 	 */
-	private final SortedList<Long, Chunk> chunk_recycling_list;
+	private final TreeSet<Chunk> chunk_recycling_tree;
 	
 	
 	/**
@@ -59,25 +58,24 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 	public ChunkRecyclingManager(IClearChunk clear_chunk, long cleaning_treshhold) {
 		this.clear_chunk = ArgumentChecker.checkForNull(clear_chunk, "clear_chunk");
 		this.cleaning_treshhold = ArgumentChecker.checkForBoundaries(cleaning_treshhold, 1, Long.MAX_VALUE, "cleaning_treshhold");
-		chunk_recycling_list = new SortedList<>(ListType.ArrayList, chunk -> new Long(chunk.getLength()));
+		chunk_recycling_tree = new TreeSet<>((l, r)->(new Long(l.getStartAddress())).compareTo(new Long(r.getStartAddress())));
 		recycled_chunk_list = new ArrayList<>();
 	}
 	
 	
 	/**
-	 * <p>recycles one of the chunks in {@link #chunk_recycling_list} and puts it into {@link #recycled_chunk_list}</p>
+	 * <p>recycles one of the chunks in {@link #chunk_recycling_tree} and puts it into {@link #recycled_chunk_list}</p>
 	 */
 	public void recycleChunk() {
 		
 		Chunk chunk = null;
 		
-		synchronized( chunk_recycling_list ) {
-			if( chunk_recycling_list.isEmpty() ) {
-				return;
-			}
-			else {
-				chunk = chunk_recycling_list.remove(chunk_recycling_list.size() / 2);
-			}
+		synchronized( chunk_recycling_tree ) {
+			chunk = chunk_recycling_tree.pollFirst();
+		}
+		
+		if( chunk == null ) {
+			return;
 		}
 		
 		long remaining_bytes = chunk.getLength();
@@ -89,8 +87,8 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 			}
 			catch( StorageException e ) {
 				e.printStackTrace();
-				synchronized( chunk_recycling_list ) {
-					chunk_recycling_list.add(chunk);
+				synchronized( chunk_recycling_tree ) {
+					chunk_recycling_tree.add(chunk);
 				}
 				return;
 			}
@@ -118,12 +116,12 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 			return false;
 		}
 		else {
-			synchronized( chunk_recycling_list ) {
-				if( !chunk_recycling_list.contains(chunk) ) {
-					return chunk_recycling_list.add(chunk);
+			synchronized( chunk_recycling_tree ) {
+				if( !chunk_recycling_tree.contains(chunk) ) {
+					return chunk_recycling_tree.add(chunk);
 				}
 				else {
-					return false;
+					throw new SecurityException("No chunk must ever be managed simultanious twice!");
 				}
 			}
 		}

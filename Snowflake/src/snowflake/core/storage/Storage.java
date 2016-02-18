@@ -31,7 +31,7 @@ import snowflake.core.manager.FlakeManager;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.01.23_0
+ * @version 2016.01.24_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IListenerAdapter, IStorageInformation, IManagerAdapter, 
