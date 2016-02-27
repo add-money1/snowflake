@@ -7,7 +7,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2016.02.23_0
  * @author Johannes B. Latzel
  */
 public final class BinaryDataWrapper<T extends IBinaryData> {
@@ -32,13 +32,8 @@ public final class BinaryDataWrapper<T extends IBinaryData> {
 	 * @return
 	 */ 
 	public BinaryDataWrapper(T binary_data, long table_index) {
-		
-		ArgumentChecker.checkForNull(binary_data, "binary_data");
-		ArgumentChecker.checkForBoundaries(table_index, 0, Long.MAX_VALUE, "table_index");
-		
-		this. binary_data = binary_data;
-		this.table_index = table_index;
-		
+		this.binary_data = ArgumentChecker.checkForNull(binary_data, "binary_data");
+		this.table_index = ArgumentChecker.checkForBoundaries(table_index, 0, Long.MAX_VALUE, "table_index");
 	}
 	
 	

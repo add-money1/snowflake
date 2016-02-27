@@ -7,7 +7,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.01.18_0
+ * @version 2016.02.22_0
  * @author Johannes B. Latzel
  */
 public enum StorageConfigurationElement {
@@ -15,7 +15,6 @@ public enum StorageConfigurationElement {
 	
 	PreferredAvailableStorageSize("preferred_available_storage_size"),
 	DataFileIncreaseRate("data_file_increase_rate"),
-	MaximumChunkDataTableSize("maximum_chunk_data_table_size"),
 	ChunkTableFilePath("chunk_table_file_path"),
 	ChunkManagerIndexConfigurationFilePath("chunk_manager_index_configuration_file_path"),
 	DefragmentationTransferBufferSize("defragmentation_transfer_buffer_size"),

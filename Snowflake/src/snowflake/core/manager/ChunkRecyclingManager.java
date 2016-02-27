@@ -1,15 +1,12 @@
 package snowflake.core.manager;
 
 import java.util.ArrayList;
-import java.util.TreeSet;
+import java.util.List;
 import java.util.stream.Stream;
 
 import j3l.util.IAdd;
 import j3l.util.check.ArgumentChecker;
-import j3l.util.stream.IStream;
-import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
-import j3l.util.stream.StreamMode;
 import snowflake.api.storage.StorageException;
 import snowflake.core.data.Chunk;
 import snowflake.core.storage.IClearChunk;
@@ -19,16 +16,16 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.14_0
+ * @version 2016.02.27_0
  * @author Johannes B. Latzel
  */
-public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> {
+public final class ChunkRecyclingManager implements IAdd<Chunk> {
 	
 	
 	/**
 	 * <p></p>
 	 */
-	private final TreeSet<Chunk> chunk_recycling_tree;
+	private final ArrayList<Chunk> chunk_recycling_list;
 	
 	
 	/**
@@ -58,8 +55,8 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 	public ChunkRecyclingManager(IClearChunk clear_chunk, long cleaning_treshhold) {
 		this.clear_chunk = ArgumentChecker.checkForNull(clear_chunk, "clear_chunk");
 		this.cleaning_treshhold = ArgumentChecker.checkForBoundaries(cleaning_treshhold, 1, Long.MAX_VALUE, "cleaning_treshhold");
-		chunk_recycling_tree = new TreeSet<>((l, r)->(new Long(l.getStartAddress())).compareTo(new Long(r.getStartAddress())));
-		recycled_chunk_list = new ArrayList<>();
+		chunk_recycling_list = new ArrayList<>(1000);
+		recycled_chunk_list = new ArrayList<>(1000);
 	}
 	
 	
@@ -70,8 +67,10 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 		
 		Chunk chunk = null;
 		
-		synchronized( chunk_recycling_tree ) {
-			chunk = chunk_recycling_tree.pollFirst();
+		synchronized( chunk_recycling_list ) {
+			if( !chunk_recycling_list.isEmpty() ) {
+				chunk = chunk_recycling_list.remove(chunk_recycling_list.size() - 1);
+			}
 		}
 		
 		if( chunk == null ) {
@@ -87,8 +86,8 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 			}
 			catch( StorageException e ) {
 				e.printStackTrace();
-				synchronized( chunk_recycling_tree ) {
-					chunk_recycling_tree.add(chunk);
+				synchronized( chunk_recycling_list ) {
+					chunk_recycling_list.add(chunk);
 				}
 				return;
 			}
@@ -106,6 +105,21 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 	
 	
 	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public boolean isEmpty() {
+		synchronized( chunk_recycling_list ) {
+			synchronized( recycled_chunk_list ) {
+				return chunk_recycling_list.isEmpty() && recycled_chunk_list.isEmpty();
+			}
+		}
+	}
+	
+	
+	/**
 	 * <p>adds a chunk to this manager</p>
 	 *
 	 * @param chunk the chunk
@@ -116,9 +130,9 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 			return false;
 		}
 		else {
-			synchronized( chunk_recycling_tree ) {
-				if( !chunk_recycling_tree.contains(chunk) ) {
-					return chunk_recycling_tree.add(chunk);
+			synchronized( chunk_recycling_list ) {
+				if( !chunk_recycling_list.contains(chunk) ) {
+					return chunk_recycling_list.add(chunk);
 				}
 				else {
 					throw new SecurityException("No chunk must ever be managed simultanious twice!");
@@ -129,17 +143,18 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 	
 	
 	/**
-	 * <p>returns a stream with all recycled chunks</p>
+	 * <p></p>
 	 *
-	 * @param stream_mode the {@link j3l.util.stream.StreamMode}
-	 * @return a {@link java.util.stream.Stream} of all recycled Chunks
+	 * @param
+	 * @return
 	 */
-	@Override public Stream<Chunk> getStream(StreamMode stream_mode) {
+	public List<Chunk> removeAll() {
+		ArrayList<Chunk> list;
 		synchronized( recycled_chunk_list ) {
-			Chunk[] elements = recycled_chunk_list.toArray(new Chunk[0]);
+			list = new ArrayList<>(recycled_chunk_list);
 			recycled_chunk_list.clear();
-			return StreamFactory.getStream(elements, stream_mode);
 		}
+		return list;
 	}
 	
 	
@@ -162,7 +177,6 @@ public final class ChunkRecyclingManager implements IStream<Chunk>, IAdd<Chunk> 
 			}
 		}
 		return return_value;
-	}
-	
+	}	
 	
 }

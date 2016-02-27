@@ -6,7 +6,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.01.18_0
+ * @version 2016.02.24_0
  * @author Johannes B. Latzel
  */
 public final class ChunkData implements IBinaryData {
@@ -51,7 +51,7 @@ public final class ChunkData implements IBinaryData {
 	public ChunkData(long start_address, long length, long flake_indentification, int index_in_flake, byte flag_vector) {
 
 		ArgumentChecker.checkForBoundaries(start_address, 0, Long.MAX_VALUE, "start_address");
-		ArgumentChecker.checkForBoundaries(length, 0, Integer.MAX_VALUE, "length");
+		ArgumentChecker.checkForBoundaries(length, 0, Long.MAX_VALUE, "length");
 		ArgumentChecker.checkForBoundaries(index_in_flake, 0, Integer.MAX_VALUE, "index_in_flake");
 		
 		this.start_address = start_address;

@@ -1,4 +1,77 @@
 	
+	2016.02.27
+	
+		snowflake.core.manager.ChunkRecyclingManager
+			-> "boolean isEmpty()" now checks both "chunk_recycling_list" and "recycled_chunk_list"
+				- fixed a bug (behaved like a leak)
+	
+		snowflake.core.manager.ChunkManager
+			-> removed debug-code
+	
+	
+	2016.02.24
+	
+		snowflake.core.manager.ChunkManager
+			-> modified "void mergeAvailableChunks(int)"
+			-> modified "void createAvailableChunk(long)"
+			-> modified "void loadChunks() throws IOException"
+			-> changed "Collection<Chunk> getAvailableChunks(long number_of_bytes)" to
+				"List<Chunk> getAvailableChunks(long number_of_bytes)" + modification
+			-> modified "void recycleChunk(Chunk chunk)"
+			
+		snowflake.core.manager.ChunkRecyclingManager
+			-> removed "Stream<Chunk> getStream(StreamMode)" and the implementation of "IStream<Chunk>"
+			-> changed "TreeSet<Chunk> chunk_recycling_tree" to "ArrayList<Chunk> chunk_recycling_list"
+			-> fixed huge bug in "List<Chunk> removeAll()": the chunks in "chunk_recycling_list"
+				where removed instead of the chunks in "recycled_chunks_list"
+			
+		snowflake.core.data.ChunkData
+			-> fixed wrong values in boundary-check (Long.MAX_VALUE instead of Integer.MAX_VALUE)
+	
+	
+	2016.02.23
+	
+		snowflake.core.data.DataTable
+			-> removed "void flush() throws IOException"
+			-> edited "addEntry(BinaryDataWrapper<T>)" so that it writes all changes right away
+			-> removed "ClosureState closure_state"
+			-> removed "open", "close", and "getState()"
+			-> no longer implements IClose<IOException>
+			
+		snowflake.core.data.BinaryDataWrapper
+			-> shortened constructor
+			
+		snowflake.core.manager.ChunkManage
+			-> removed "chunk_table_thread" and all occurences
+			-> modified "open()" and "close()" ("chunk_table_thread" and "data_table.close()"/"data_table.open()"
+				no longer needed) 
+	
+	
+	
+	2016.02.22
+	
+		snowflake.api.configuration.IReadOnlyChunkManagerConfiguration
+			-> removed "int getMaximumChunkDataTableSize()"
+			
+		snowflake.core.storage.StorageConfigurationElement
+			-> removed "MaximumChunkDataTableSize("maximum_chunk_data_table_size")"
+			
+		snowflake.core.storage.StorageConfiguration
+			-> removed "void setMaximumChunkDataTableSize(int maximum_chunk_data_table_size)"
+				and "int getMaximumChunkDataTableSize()"
+			
+		snowflake.core.data.DataTable
+			-> removed "LinkedList<BinaryDataWrapper<T>> pending_entries_buffer_list" and
+				"int max_capacity"
+			-> the elements of the table will be written as soon as possible (temporarly buffered in
+				"pending_entries_list")
+			-> removed "void transferBufferEntries()"
+			-> removed "is_flushing" and "boolean isFlushing()"
+			-> removed "void flushParallel()"
+			
+		snowflake.core.manager.ChunkManager
+			-> edited the constructor (see above: snowflake.core.data.DataTable)
+		
 	
 	2016.02.18
 		

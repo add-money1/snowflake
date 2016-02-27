@@ -5,8 +5,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import j3l.exception.ValueOverflowException;
@@ -26,6 +28,7 @@ import snowflake.api.chunk.IChunkManager;
 import snowflake.api.chunk.IChunkMemory;
 import snowflake.api.configuration.IReadOnlyChunkManagerConfiguration;
 import snowflake.api.storage.IStorageInformation;
+import snowflake.api.storage.StorageException;
 import snowflake.core.data.BinaryDataWrapper;
 import snowflake.core.data.Chunk;
 import snowflake.core.data.ChunkData;
@@ -40,7 +43,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.18_0
+ * @version 2016.02.27_0
  * @author Johannes B. Latzel
  */
 public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<IOException> {
@@ -140,8 +143,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		this.flake_modifier = ArgumentChecker.checkForNull(flake_modifier, "flake_modifier");
 		
 		File chunk_table_file = new File(chunk_manager_configuration.getChunkTableFilePath());
-		data_table = new DataTable<>(ArgumentChecker.checkForExistence(chunk_table_file, "chunk_table_file"),
-				chunk_manager_configuration.getMaximumChunkDataTableSize());
+		data_table = new DataTable<>(ArgumentChecker.checkForExistence(chunk_table_file, "chunk_table_file"));
 		
 		index_manager = new IndexManager();
 		chunk_recycling_manager = new ChunkRecyclingManager(clear_chunk, chunk_manager_configuration.getChunkRecyclingTreshhold());
@@ -156,11 +158,18 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 			while( isOpen() ) {
 				chunk_recycling_manager.recycleChunk();
 				if( Instant.now().getEpochSecond() - last_chunk_exchange > 5 ) {
-					chunk_merging_manager.addAll(chunk_recycling_manager.getStream(StreamMode.Sequential));
+					if( !chunk_recycling_manager.isEmpty() ) {
+						chunk_merging_manager.addAll(chunk_recycling_manager.removeAll());
+					}
 					last_chunk_exchange = Instant.now().getEpochSecond();
 				}
 				try {
-					Thread.sleep(25);
+					if( chunk_recycling_manager.isEmpty() ) {
+						Thread.sleep(10_000);
+					}
+					else {
+						Thread.sleep(2);
+					}
 				}
 				catch( InterruptedException e ) {
 					e.printStackTrace();
@@ -172,10 +181,9 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		
 		chunk_merging_thread = new Thread(() -> {
 			while( isOpen() ) {
-				chunk_merging_manager.addAll(chunk_recycling_manager.getStream(StreamMode.Sequential));
 				chunk_merging_manager.mergeChunks(1000);
 				try {
-					Thread.sleep(600_000);
+					Thread.sleep(60_000);
 				}
 				catch( InterruptedException e ) {
 					e.printStackTrace();
@@ -219,7 +227,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * @return
 	 * @throws IOException 
 	 */
-	private Collection<Chunk> getAvailableChunks(long number_of_bytes) {
+	private List<Chunk> getAvailableChunks(long number_of_bytes) {
 		
 		if( !isOpen() ) {
 			throw new SecurityException("The instance is not open!");
@@ -227,7 +235,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		
 		ArgumentChecker.checkForBoundaries(number_of_bytes, 1, Long.MAX_VALUE, "number_of_bytes");
 		
-		LinkedList<Chunk> chunk_list = new LinkedList<>();
+		ArrayList<Chunk> chunk_list = new ArrayList<>(100);
 		Chunk current_chunk;
 		long remaining_bytes = number_of_bytes;
 		long current_available_chunk_list_size;
@@ -326,7 +334,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 			throw new SecurityException("The ChunkManager is not open!");
 		}
 		
-		chunk_recycling_manager.getStream(StreamMode.Sequential).forEach(chunk_merging_manager::add);
+		chunk_merging_manager.addAll(chunk_recycling_manager.removeAll());
 		Chunk chunk = chunk_merging_manager.getChunk(minimum_length);
 		
 		if( chunk == null ) {
@@ -419,7 +427,6 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 				+ "\" must not be greater than " + (ChunkUtility.BINARY_CHUNK_SIZE * (long)(Integer.MAX_VALUE)) + "!");
 			}
 			
-			
 			remaining_bytes_in_file = length_of_file;
 			
 			while( remaining_bytes_in_file != 0 ) {	
@@ -454,7 +461,9 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 						
 						if( chunk_data.getFlakeIdentification() == FlakeManager.ROOT_IDENTIFICATION ) {
 							if( chunk.needsToBeCleared() ) {
-								chunk_recycling_manager.add(chunk);
+								if( !chunk_recycling_manager.add(chunk) ) {
+									throw new StorageException("Could not add a chunk to the chunk_recycling_manager!");
+								}
 							}
 							else {
 								addAvailableChunk(chunk);
@@ -511,7 +520,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		}
 		else {
 			synchronized( available_chunk_tree ) {
-				chunk_merging_manager.addAll(available_chunk_tree.stream(StreamMode.Parallel));
+				chunk_merging_manager.addAll(available_chunk_tree.toList());
 				available_chunk_tree.clear();
 			}
 			chunk_merging_manager.mergeChunks(nopc_treshold);
@@ -569,7 +578,6 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		}
 
 		closure_state = ClosureState.InOpening;
-		data_table.open();
 		loadChunks();
 		chunk_recyling_thread.start();
 		chunk_merging_thread.start();
@@ -590,7 +598,6 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		closure_state = ClosureState.InClosure;
 		chunk_recyling_thread.interrupt();
 		chunk_merging_thread.interrupt();
-		data_table.close();
 		closure_state = ClosureState.Closed;
 		
 	}
@@ -614,14 +621,11 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * @see snowflake.api.IChunkMemory#saveChunk(snowflake.core.Chunk)
 	 */
 	@Override public void saveChunk(Flake owner_flake, Chunk chunk) {
-		
 		if( !ArgumentChecker.checkForNull(chunk, "chunk").isValid() ) {
 			return;
 		}
-		
 		data_table.addEntry(new BinaryDataWrapper<>(ChunkUtility.getChunkData(owner_flake, chunk), 
 				chunk.getChunkTableIndex()));
-		
 	}
 	
 	
@@ -629,24 +633,18 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * @see snowflake.api.IChunkManager#appendChunk(snowflake.core.flake.Flake, long, snowflake.api.ChunkAppendingMode)
 	 */
 	@Override public void appendChunk(Flake flake, long number_of_bytes, ChunkAppendingMode chunk_appending_mode) {
-		
 		ArgumentChecker.checkForValidation(flake, "flake");
-		switch( chunk_appending_mode ) {
-		
+		switch( ArgumentChecker.checkForNull(chunk_appending_mode, "chunk_appending_mode") ) {
 			case SINGLE_CHUNK:
 				flake.addChunk(getAvailableChunk(number_of_bytes));
 				break;
-			
 			case MULTIPLE_CHUNKS:
 				flake.addChunks(getAvailableChunks(number_of_bytes));
 				break;
-				
 			default:
 				throw new IllegalArgumentException("Can not support chunk_appending_mode \"" 
 													+ chunk_appending_mode.toString() + "\"!");
-				
 		}
-		
 	}
 	
 	
@@ -658,7 +656,9 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 			chunk.setNeedsToBeCleared(true);
 			chunk.resetPositionInFlake();
 			chunk.save(null);
-			chunk_recycling_manager.add(chunk);
+			if( !chunk_recycling_manager.add(chunk) ) {
+				throw new StorageException("Could not add " + chunk.toString() + " to the chunk_recycling_manager!");
+			}
 		}
 	}
 	

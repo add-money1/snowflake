@@ -14,7 +14,7 @@ import snowflake.api.configuration.IReadonlyStorageConfiguration;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.01.18_0
+ * @version 2016.02.22_0
  * @author Johannes B. Latzel
  */
 public final class StorageConfiguration implements IReadonlyStorageConfiguration {
@@ -179,27 +179,6 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 		
 		return success;
 		
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *s
-	 * @param
-	 * @return
-	 */
-	public void setMaximumChunkDataTableSize(int maximum_chunk_data_table_size) {
-		configuration_manager.setElement(
-			StorageConfigurationElement.MaximumChunkDataTableSize.getName(), 
-			Integer.toString(
-				ArgumentChecker.checkForBoundaries(
-					maximum_chunk_data_table_size, 
-					1,
-					Integer.MAX_VALUE, 
-					StorageConfigurationElement.MaximumChunkDataTableSize.getName()
-				)
-			)
-		);
 	}
 	
 	
@@ -431,14 +410,6 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 */
 	@Override public double getDataFileIncreaseRate() {
 		return getValue(StorageConfigurationElement.DataFileIncreaseRate.toString(), 0.1d);
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getMaximumChunkDataTableSize()
-	 */
-	@Override public int getMaximumChunkDataTableSize() {
-		return getValue(StorageConfigurationElement.MaximumChunkDataTableSize.toString(), 1000);
 	}
 	
 	
