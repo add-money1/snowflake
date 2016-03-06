@@ -27,7 +27,7 @@ import snowflake.core.flake.Flake;
  * </p>
  * 
  * @since JDK 1.8
- * @version 2016.01.22_0
+ * @version 2016.03.06_0
  * @author Johannes B. Latzel
  */
 public final class Chunk implements IChunkInformation {
@@ -74,12 +74,6 @@ public final class Chunk implements IChunkInformation {
 	
 	
 	/**
-	 * <p>true when the chunk needs to be saved, false otherwise</p>
-	 */
-	private boolean needs_to_be_saved;
-	
-	
-	/**
 	 * <p>indicates if the chunk is currently marked for clearing</p>
 	 */
 	private boolean needs_to_be_cleared;
@@ -101,7 +95,6 @@ public final class Chunk implements IChunkInformation {
 		this.chunk_table_index = ArgumentChecker.checkForBoundaries(chunk_table_index, 0, Long.MAX_VALUE, "chunk_table_index");
 		position_in_flake = -1;
 		is_valid = true;
-		needs_to_be_saved = true;
 		needs_to_be_cleared = false;
 		
 	}
@@ -128,7 +121,6 @@ public final class Chunk implements IChunkInformation {
 	 */
 	public void setPositionInFlake(long position_in_flake) {
 		this.position_in_flake = position_in_flake;
-		needs_to_be_saved = true;
 	}
 	
 	
@@ -137,7 +129,6 @@ public final class Chunk implements IChunkInformation {
 	 */
 	public void resetPositionInFlake() {
 		position_in_flake = -1;
-		needs_to_be_saved = true;
 	}
 	
 	
@@ -165,7 +156,6 @@ public final class Chunk implements IChunkInformation {
 
 		chunk_memory.deleteChunk(this);
 		is_valid = false;
-		needs_to_be_saved = false;
 		
 	}
 	
@@ -176,10 +166,7 @@ public final class Chunk implements IChunkInformation {
 	 * @param owner_flake the flake which owns this chunk or null, if this chunks is available
 	 */
 	public synchronized void save(Flake owner_flake) {
-		if( needsToBeSaved() ) {
-			chunk_memory.saveChunk(owner_flake, this);
-			needs_to_be_saved = false;
-		}
+		chunk_memory.saveChunk(owner_flake, this);
 	}
 	
 	
@@ -198,7 +185,20 @@ public final class Chunk implements IChunkInformation {
 	 */
 	public void setNeedsToBeCleared(boolean needs_to_be_cleared) {
 		this.needs_to_be_cleared = needs_to_be_cleared;
-		needs_to_be_saved = true;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public boolean containsFlakePosition(long position) {
+		if( getPositionInFlake() < 0 ) {
+			return false;
+		}
+		return (getPositionInFlake() <= position) && (position < (getPositionInFlake() + getLength()));
 	}
 	
 	
@@ -287,33 +287,6 @@ public final class Chunk implements IChunkInformation {
 	 */
 	@Override public boolean isValid() {
 		return is_valid && ( getLength() > 0 ) && ( getStartAddress() >= 0 ) && ( getChunkTableIndex() >= 0 );
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IChunkInformationrmation#containsStoragePosition(long)
-	 */
-	@Override public boolean containsStoragePosition(long position_in_storage) {
-		return (getStartAddress() <= position_in_storage) && (position_in_storage < (getStartAddress() + getLength()));
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IChunkInformationrmation#containsFlakePosition(long)
-	 */
-	@Override public boolean containsFlakePosition(long position) {
-		if( getPositionInFlake() < 0 ) {
-			return false;
-		}
-		return (getPositionInFlake() <= position) && (position < (getPositionInFlake() + getLength()));
-	}
-
-
-	/* (non-Javadoc)
-	 * @see snowflake.api.IChunkInformationrmation#needsToBeSaved()
-	 */
-	@Override public boolean needsToBeSaved() {
-		return needs_to_be_saved;
 	}
 	
 

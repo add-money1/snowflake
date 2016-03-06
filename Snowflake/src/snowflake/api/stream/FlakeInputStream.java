@@ -16,7 +16,7 @@ import snowflake.core.storage.IRead;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.18_0
+ * @version 2016.02.28_0
  * @author Johannes B. Latzel
  */
 public final class FlakeInputStream extends InputStream implements IClose<IOException> {
@@ -103,11 +103,7 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 		if( !isOpen() ) {
 			throw new IOException("The stream is not open!");
 		}
-		else {
-			int read_in_byte_value = read.read(data_pointer);
-			data_pointer.increasePosition();
-			return read_in_byte_value;
-		}
+		return read.read(data_pointer);
 	}
 	
 	
@@ -119,11 +115,7 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 		if( !isOpen() ) {
 			throw new IOException("The stream is not open!");
 		}
-		else {
-			int read_in_bytes = read.read(data_pointer, buffer, offset, length);
-			data_pointer.changePosition(read_in_bytes);
-			return read_in_bytes;
-		}
+		return read.read(data_pointer, buffer, offset, length);
 	}
 	
 	

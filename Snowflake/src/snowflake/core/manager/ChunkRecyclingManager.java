@@ -1,12 +1,10 @@
 package snowflake.core.manager;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
-import j3l.util.IAdd;
 import j3l.util.check.ArgumentChecker;
-import j3l.util.stream.StreamFilter;
 import snowflake.api.storage.StorageException;
 import snowflake.core.data.Chunk;
 import snowflake.core.storage.IClearChunk;
@@ -16,10 +14,10 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.27_0
+ * @version 2016.03.06_0
  * @author Johannes B. Latzel
  */
-public final class ChunkRecyclingManager implements IAdd<Chunk> {
+public final class ChunkRecyclingManager {
 	
 	
 	/**
@@ -125,20 +123,41 @@ public final class ChunkRecyclingManager implements IAdd<Chunk> {
 	 * @param chunk the chunk
 	 * @return true if the chunk has been added, false otherwise
 	 */
-	@Override public boolean add(Chunk chunk) {
-		if( chunk == null || !chunk.isValid() ) {
-			return false;
-		}
-		else {
-			synchronized( chunk_recycling_list ) {
-				if( !chunk_recycling_list.contains(chunk) ) {
-					return chunk_recycling_list.add(chunk);
-				}
-				else {
-					throw new SecurityException("No chunk must ever be managed simultanious twice!");
-				}
+	public boolean add(Chunk chunk) {
+		ArgumentChecker.checkForValidation(chunk, "chunk");
+		chunk.setNeedsToBeCleared(true);
+		chunk.resetPositionInFlake();
+		chunk.save(null);
+		synchronized( chunk_recycling_list ) {
+			if( !chunk_recycling_list.contains(chunk) ) {
+				return chunk_recycling_list.add(chunk);
+			}
+			else {
+				throw new SecurityException("No chunk must ever be managed twice at the same time!");
 			}
 		}
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public boolean addAll(Collection<Chunk> chunk_collection) {
+		if( ArgumentChecker.checkForNull(chunk_collection, "chunk_collection").size() > 0 ) {
+			for( Chunk chunk : chunk_collection ) {
+				ArgumentChecker.checkForValidation(chunk, "chunk");
+				chunk.setNeedsToBeCleared(true);
+				chunk.resetPositionInFlake();
+				chunk.save(null);
+			}
+			synchronized( chunk_recycling_list ) {
+				return chunk_recycling_list.addAll(chunk_collection);
+			}
+		}
+		return false;
 	}
 	
 	
@@ -155,28 +174,6 @@ public final class ChunkRecyclingManager implements IAdd<Chunk> {
 			recycled_chunk_list.clear();
 		}
 		return list;
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see j3l.util.collection.interfaces.add.IExtendedAdd#addAll(java.util.stream.Stream)
-	 */
-	@Override public void addAll(Stream<? extends Chunk> stream) {
-		ArgumentChecker.checkForNull(stream, "stream").filter(StreamFilter::filterInvalid).forEach(this::add);
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see j3l.util.collection.interfaces.add.IExtendedAdd#addAll(java.lang.Object[])
-	 */
-	@Override public boolean addAll(Chunk[] chunk_array) {
-		boolean return_value = true;
-		for( Chunk chunk : ArgumentChecker.checkForNull(chunk_array, "chunk_array") ) {
-			if( StreamFilter.filterInvalid(chunk) ) {
-				return_value &= add(chunk);
-			}
-		}
-		return return_value;
 	}	
 	
 }

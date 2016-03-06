@@ -2,14 +2,15 @@ package snowflake.core.data;
 
 import j3l.util.check.ArgumentChecker;
 
+
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.11.23_0
+ * @version 2016.02.23_0
  * @author Johannes B. Latzel
  */
-public class TableMember {
+public final class TableMember<T extends IBinaryData> {
 	
 	
 	/**
@@ -21,7 +22,7 @@ public class TableMember {
 	/**
 	 * <p></p>
 	 */
-	private final IBinaryData binary_member;
+	private final IBinaryData binary_data;
 	
 	
 	/**
@@ -29,15 +30,10 @@ public class TableMember {
 	 *
 	 * @param
 	 * @return
-	 */
-	protected TableMember(IBinaryData binary_member, long table_index) {
-
-		ArgumentChecker.checkForNull(binary_member, "binary_member");
-		ArgumentChecker.checkForBoundaries(table_index, 0, Long.MAX_VALUE, "table_index");
-		
-		this.binary_member = binary_member;
-		this.table_index = table_index;
-		
+	 */ 
+	public TableMember(T binary_data, long table_index) {
+		this.binary_data = ArgumentChecker.checkForNull(binary_data, "binary_data");
+		this.table_index = ArgumentChecker.checkForBoundaries(table_index, 0, Long.MAX_VALUE, "table_index");
 	}
 	
 	
@@ -54,9 +50,34 @@ public class TableMember {
 	
 	/**
 	 * <p></p>
+	 *
+	 * @param
+	 * @return
 	 */
-	public void getBinaryData(byte[] buffer) {
-		binary_member.getBinaryData(buffer);
+	public IBinaryData getBinaryData() {
+		return binary_data;
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override public boolean equals(Object object) {
+		if( object != null && object instanceof TableMember<?> ) {
+			return ((TableMember<?>)object).getBinaryData().equals(getBinaryData());			
+		}
+		else {
+			return false;
+		}
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override public int hashCode() {
+		return binary_data.hashCode();
 	}
 
 }

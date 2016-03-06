@@ -16,7 +16,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.19_0
+ * @version 2016.02.28_0
  * @author Johannes B. Latzel
  */
 public final class FlakeOutputStream extends OutputStream implements IClose<IOException> {
@@ -98,7 +98,6 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 				flake.setLength( flake.getLength() + 1 );
 			}
 			write.write(data_pointer, (byte)(b));
-			data_pointer.increasePosition();
 		}		
 	}
 	
@@ -117,7 +116,6 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 				flake.setLength( flake.getLength() + length - remaining_bytes );
 			}
 			write.write(data_pointer, buffer, offset, length);
-			data_pointer.changePosition(length);
 		}
 	}
 	

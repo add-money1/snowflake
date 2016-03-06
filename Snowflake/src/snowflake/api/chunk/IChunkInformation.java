@@ -6,7 +6,7 @@ import j3l.util.check.IValidate;
  * <p>provides read-only informations of a Chunk</p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2016.03.06_0
  * @author Johannes B. Latzel
  */
 public interface IChunkInformation extends IValidate {
@@ -44,32 +44,5 @@ public interface IChunkInformation extends IValidate {
 	 * @return true, if the chunk is valid, else otherwise
 	 */
 	@Override boolean isValid();
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	boolean containsStoragePosition(long position_in_storage);
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	boolean containsFlakePosition(long position_in_flake);
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	boolean needsToBeSaved();
 	
 }

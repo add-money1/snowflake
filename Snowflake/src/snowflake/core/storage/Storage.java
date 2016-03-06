@@ -31,7 +31,7 @@ import snowflake.core.manager.FlakeManager;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.01.24_0
+ * @version 2016.02.28_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IListenerAdapter, IStorageInformation, IManagerAdapter, 
@@ -244,6 +244,7 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 			data_output_file.seek(data_pointer.getPositionInStorage());
 			data_output_file.write(b);
 		}
+		data_pointer.increasePosition();
 	}
 	
 	
@@ -272,6 +273,7 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 				advance_in_buffer = Math.min(remaining_bytes, remaining_bytes_in_chunk);
 				data_output_file.write(buffer, length - remaining_bytes + offset, advance_in_buffer);
 				remaining_bytes -= advance_in_buffer;
+				data_pointer.changePosition(advance_in_buffer);
 			}
 			while( remaining_bytes != 0 );
 		}
@@ -287,6 +289,7 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 				throw new IOException("Can not read from a eof-stated stream!");
 			}
 			data_input_file.seek(data_pointer.getPositionInStorage());
+			data_pointer.increasePosition();
 			return (byte)data_input_file.read();
 		}
 	}
@@ -296,20 +299,47 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.core.IRead#read(snowflake.api.DataPointer, byte[], int, int)
 	 */
 	@Override public int read(DataPointer data_pointer, byte[] buffer, int offset, int length) throws IOException {
-		long remaining_bytes_in_flake;
-		synchronized( read_lock ) {
-			if( data_pointer.isEOF() ) {
-				return 0;
-			}
-			data_input_file.seek(data_pointer.getPositionInStorage());
-			remaining_bytes_in_flake =  data_pointer.getRemainingBytes();
-			if( remaining_bytes_in_flake >= length ) {
-				return data_input_file.read(buffer, offset, length);
-			}
-			else {
-				return data_input_file.read(buffer, offset, (int)remaining_bytes_in_flake);
-			}
+		int remaining_bytes;
+		if( data_pointer.getRemainingBytes() < Integer.MAX_VALUE ) {
+			// cast ok, because data_pointer.getRemainingBytes() < Integer.MAX_VALUE
+			remaining_bytes = Math.min(length, (int)data_pointer.getRemainingBytes());
 		}
+		else {
+			remaining_bytes = Math.min(length, Integer.MAX_VALUE);
+		}
+		if( remaining_bytes == 0 ) {
+			return 0;
+		}
+		int read_in_bytes = 0;
+		int current_read_in_bytes;
+		int advance_in_buffer;
+		int remaining_bytes_in_chunk;
+		long actual_remaining_bytes_in_chunk;
+		synchronized( read_lock ) {
+			do {
+				data_input_file.seek(data_pointer.getPositionInStorage());
+				actual_remaining_bytes_in_chunk = data_pointer.getRemainingBytesInChunk();
+				if( actual_remaining_bytes_in_chunk >= Integer.MAX_VALUE ) {
+					remaining_bytes_in_chunk = Integer.MAX_VALUE;
+				}
+				else {
+					// cast to int is okay, because actual_remaining_bytes_in_chunk < Integer.MAX_VALUE
+					remaining_bytes_in_chunk = (int)actual_remaining_bytes_in_chunk;
+				}
+				advance_in_buffer = Math.min(remaining_bytes, remaining_bytes_in_chunk);
+				current_read_in_bytes = data_input_file.read(
+					buffer, length - remaining_bytes + offset, advance_in_buffer
+				);
+				if( current_read_in_bytes < 0 ) {
+					return read_in_bytes;
+				}
+				remaining_bytes -= current_read_in_bytes;
+				data_pointer.changePosition(current_read_in_bytes);
+				read_in_bytes += current_read_in_bytes;
+			}
+			while( remaining_bytes != 0 );
+		}
+		return read_in_bytes;
 	}
 	
 	

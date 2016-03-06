@@ -1,12 +1,11 @@
 package snowflake.core.manager;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import j3l.util.BinaryTree;
 import j3l.util.IAdd;
 import j3l.util.RandomFactory;
 import j3l.util.check.ArgumentChecker;
@@ -22,7 +21,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.15_0
+ * @version 2016.02.27_0
  * @author Johannes B. Latzel
  */
 public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInformation> {
@@ -31,7 +30,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	/**
 	 * <p></p>
 	 */
-	private final BinaryTree<Chunk, Long> chunk_tree;
+	private final ArrayList<Chunk> chunk_list;
 	
 	
 	/**
@@ -48,7 +47,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 */
 	public ChunkMergingManager(IChunkManager chunk_manager) {
 		this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, "chunk_manager");
-		chunk_tree = new BinaryTree<>(chunk -> new Long(chunk.getStartAddress()));
+		chunk_list = new ArrayList<>();
 	}
 	
 	
@@ -59,20 +58,23 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 */
 	public void mergeChunks(long nopc_treshold) {
 		
-		List<Chunk> available_chunks;
+		ArrayList<Chunk> available_chunks;
 		long actual_nopc_treshold;
 		
-		synchronized( chunk_tree ) {
-			long chunk_list_size = chunk_tree.getSize();
+		synchronized( chunk_list ) {
+			long chunk_list_size = chunk_list.size();
 			if( chunk_list_size  > 1 ) {
 				if( nopc_treshold > chunk_list_size ) {
 					actual_nopc_treshold = chunk_list_size;
-					available_chunks = chunk_tree.removeAll();
+					available_chunks = new ArrayList<>(chunk_list);
+					chunk_list.clear();
 				}
 				else {
 					actual_nopc_treshold = nopc_treshold;
-					available_chunks = new LinkedList<>();
-					available_chunks = chunk_tree.removeSome(actual_nopc_treshold);
+					available_chunks = new ArrayList<>();
+					for(int a=0;a<actual_nopc_treshold;a++) {
+						available_chunks.add(chunk_list.get(chunk_list.size() - 1));
+					}
 				}
 			}
 			else {
@@ -144,25 +146,12 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 */
 	public Chunk getChunk(long minimum_length) {
 		Predicate<Chunk> filter = chunk -> chunk != null && chunk.getLength() >= minimum_length;
-		synchronized( chunk_tree ) {
-			Chunk available_chunk = chunk_tree.stream(StreamMode.Parallel).filter(filter).findAny().orElse(null);
-			if( available_chunk != null && !chunk_tree.remove(available_chunk) ) {
+		synchronized( chunk_list ) {
+			Chunk available_chunk = chunk_list.parallelStream().filter(filter).findAny().orElse(null);
+			if( available_chunk != null && !chunk_list.remove(available_chunk) ) {
 				return null;
 			}
 			return available_chunk;
-		}
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	public boolean contains(Chunk chunk) {
-		synchronized( chunk_tree ) {
-			return chunk_tree.contains(chunk);
 		}
 	}
 	
@@ -175,9 +164,9 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 		if( chunk == null ) {
 			return false;
 		}
-		synchronized( chunk_tree ) {
-			if( !chunk_tree.contains(chunk) ) {
-				return chunk_tree.add(chunk);
+		synchronized( chunk_list ) {
+			if( !chunk_list.contains(chunk) ) {
+				return chunk_list.add(chunk);
 			}
 			else {
 				return false;
@@ -190,8 +179,19 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * @see j3l.util.stream.IStream#getStream(j3l.util.stream.StreamMode)
 	 */
 	@Override public Stream<IChunkInformation> getStream(StreamMode stream_mode) {
-		synchronized( chunk_tree ) {
-			return chunk_tree.stream(stream_mode).filter(StreamFilter::filterNull).<IChunkInformation>map(_i->_i);
+		Stream<Chunk> stream;
+		synchronized( chunk_list ) {
+			switch( ArgumentChecker.checkForNull(stream_mode, "stream_mode") ) {
+			case Parallel:
+				stream = chunk_list.parallelStream();
+				break;
+			case Sequential:
+				stream = chunk_list.stream();
+				break;
+			default:
+				throw new IllegalArgumentException("Can not provide StreamMode " + stream_mode.toString() + ".");
+			}
+			return stream.filter(StreamFilter::filterNull).<IChunkInformation>map(_i->_i);
 		}
 	}
 	

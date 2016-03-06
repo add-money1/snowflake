@@ -15,7 +15,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.01.06_0
+ * @version 2016.06.03_0
  * @author Johannes B. Latzel
  */
 public final class FlakeDataManager {
@@ -195,7 +195,7 @@ public final class FlakeDataManager {
 	 */
 	public void recycle() {
 		synchronized( chunk_lock ) {
-			chunk_manager.recycleChunks(chunk_list, StreamMode.Sequential);
+			chunk_manager.recycleChunks(chunk_list);
 			chunk_list.clear();
 			is_length_changed = true;
 			is_consistency_checked = false;

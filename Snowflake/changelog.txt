@@ -1,4 +1,95 @@
 	
+	
+	2016.03.06
+	
+		snowflake.api.chunk.IChunkManager
+			-> removed "void appendChunk(Flake, long, ChunkAppendingMode)"
+			-> "void recycleChunks(Collection<Chunk>)" is now abstract
+			-> removed "void recycleChunks(Collection<Chunk>, StreamMode)"
+			-> removed "void recycleChunks(Stream<Chunk>)"
+			-> removed "void recycleChunks(Chunk[], StreamMode)"
+			-> removed "void recycleChunks(Chunk[])"
+			
+		snowflake.api.chunk.ChunkAppendingMode
+			-> deleted class
+			
+		snowflake.core.manager.ChunkManager
+			-> changed "void appendChunk(Flake, long, ChunkAppendingMode)" to 
+				"void appendChunk(Flake, long)" and modified method
+			-> now implements "void recycleChunks(Collection<Chunk>)"
+			-> modified "void recycleChunk(Chunk)"
+		
+		snowflake.api.chunk.ChunkAttribute
+			-> deleted enum
+		
+		snowflake.api.chunk.ChunkProcessingMode
+			-> deleted enum
+			
+		snowflake.core.data.Chunk
+			-> removed "needs_to_be_saved" and "boolean needsToBeSaved()"
+			-> removed "boolean containsStoragePosition(long)"
+			-> does not implement "boolean containsFlakePosition(long)" from IChunkInformation - 
+				instead provides the method as its own member
+		
+		snowflake.api.chunk.IChunkInformation
+			-> removed "boolean needsToBeSaved()"
+			-> removed "boolean containsStoragePosition(long)"
+			-> removed "boolean containsFlakePosition(long)"
+		
+		snwoflake.core.flake.FlakdDataManager
+			-> modified "recycle"
+		
+		snowflake.core.manager.ChunkRecyclingManager
+			-> no longer implements "IAdd<Chunk>"
+			-> added "boolean addAll(Collection<Chunk>)"
+			-> modified "boolean add(Chunk)"
+			
+		snowflake.core.data.DataTable
+			-> modified "void trim()", because it deadlocked with "long getAvailableIndex()"
+				(both locked "data_table" and "available_index_tree", but in different orders...)
+		
+	
+	2016.02.29
+			
+		snowflake.core.data.TableMember
+			-> deleted class
+	
+		snowflake.core.data.BinaryDataWrapper
+			-> renamed class to "TableMember"
+			
+		snowflake.core.manager.IndexManager
+			-> merged functionality into "snowflake.core.data.DataTable" and deleted the class
+			
+		snowflake.core.data.DataTable
+			-> now fulfills the services of "snowflake.core.manager.IndexManager"
+			-> added "long getAvailableIndex()"
+			-> added "void addAvailableIndex(long index)"
+			-> added "void trim()"
+			
+		snowflake.core.manager.ChunkManager
+			-> removed "IndexManager index_manager" and substituted all its references for "data_table"
+	
+	
+	2016.02.28
+	
+		snowflake.core.storage.Storage
+			-> "int read(DataPointer data_pointer, byte[] buffer, int offset, int length)
+			 throws IOException", "byte read(DataPointer data_pointer) throws IOException",
+			 "void write(DataPointer data_pointer, byte[] buffer, int offset, int length)
+			 throws IOException", and "void write(DataPointer data_pointer, byte b) throws IOException"
+			 now increase the position of the data_pointer
+			-> "int read(DataPointer data_pointer, byte[] buffer, int offset, int length)
+			 throws IOException" completetly rewritten (did not read in as much bytes as stated
+			 by length, but as much as were in the chunk the data_pointer pointed currently at)
+			
+		snowflake.api.stream.FlakeOutputStream
+			-> "void write(int b) throws IOException" and "void write(byte[] buffer, int offset, int length)
+			 throws IOException" no longer increase the position of the DataPointer
+			
+		snowflake.api.stream.FlakeInputStream
+			-> "int read() throws IOException" and "int read(byte[] buffer, int offset, int length)
+			 throws IOException" no longer increase the position of the DataPointer
+			
 	2016.02.27
 	
 		snowflake.core.manager.ChunkRecyclingManager
@@ -7,6 +98,10 @@
 	
 		snowflake.core.manager.ChunkManager
 			-> removed debug-code
+		
+		snowflake.core.manager.ChunkMergingManager
+			-> changed "BinaryTree<Chunk, Long> chunk_tree" to "ArrayList<Chunk> chunk_list"
+			-> removed "boolean contains(Chunk chunk)"
 	
 	
 	2016.02.24
