@@ -10,8 +10,10 @@ import j3l.util.IAdd;
 import j3l.util.RandomFactory;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.stream.IStream;
+import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
+import snowflake.api.GlobalString;
 import snowflake.api.chunk.IChunkInformation;
 import snowflake.api.chunk.IChunkManager;
 import snowflake.core.data.Chunk;
@@ -21,7 +23,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.27_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInformation> {
@@ -46,7 +48,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * @return
 	 */
 	public ChunkMergingManager(IChunkManager chunk_manager) {
-		this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, "chunk_manager");
+		this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
 		chunk_list = new ArrayList<>();
 	}
 	
@@ -179,20 +181,8 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	 * @see j3l.util.stream.IStream#getStream(j3l.util.stream.StreamMode)
 	 */
 	@Override public Stream<IChunkInformation> getStream(StreamMode stream_mode) {
-		Stream<Chunk> stream;
-		synchronized( chunk_list ) {
-			switch( ArgumentChecker.checkForNull(stream_mode, "stream_mode") ) {
-			case Parallel:
-				stream = chunk_list.parallelStream();
-				break;
-			case Sequential:
-				stream = chunk_list.stream();
-				break;
-			default:
-				throw new IllegalArgumentException("Can not provide StreamMode " + stream_mode.toString() + ".");
-			}
-			return stream.filter(StreamFilter::filterNull).<IChunkInformation>map(_i->_i);
-		}
+		return StreamFactory.getStream(chunk_list, stream_mode)
+				.filter(StreamFilter::filterNull).<IChunkInformation>map(_i->_i);
 	}
 	
 }

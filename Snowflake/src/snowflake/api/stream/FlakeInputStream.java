@@ -6,6 +6,7 @@ import java.io.InputStream;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
+import snowflake.api.GlobalString;
 import snowflake.api.flake.DataPointer;
 import snowflake.core.flake.Flake;
 import snowflake.core.flake.IFlakeStreamManager;
@@ -16,7 +17,7 @@ import snowflake.core.storage.IRead;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.28_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class FlakeInputStream extends InputStream implements IClose<IOException> {
@@ -71,15 +72,12 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	 * @return
 	 */
 	public FlakeInputStream(Flake flake, IRead read, IFlakeStreamManager flake_stream_manager) {
-		
-		ArgumentChecker.checkForNull(read, "read");
-		ArgumentChecker.checkForNull(flake_stream_manager, "flake_stream_manager");
-		
-		this.read = read;
-		this.flake_stream_manager = flake_stream_manager;
+		this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
+		this.flake_stream_manager = ArgumentChecker.checkForNull(
+			flake_stream_manager, GlobalString.FlakeStreamManager.toString()
+		);
 		data_pointer = new DataPointer(flake, 0L);
 		closure_state = ClosureState.None;
-		
 		mark(0);
 		open();
 	}

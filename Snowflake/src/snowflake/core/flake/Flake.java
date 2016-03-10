@@ -8,6 +8,7 @@ import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ClosureChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
+import snowflake.api.GlobalString;
 import snowflake.api.chunk.IChunkInformation;
 import snowflake.api.flake.IFlake;
 import snowflake.api.flake.Lock;
@@ -20,7 +21,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.06_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class Flake implements IClose<IOException>, IFlake {
@@ -81,14 +82,12 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @return
 	 */
 	public Flake(long identification) {
-		
 		this.identification = identification;
 		flake_lock_manager = new FlakeLockManager();
 		closure_state = ClosureState.None;
 		is_damaged = false;
 		is_deleted = false;
 		is_chunk_merging = false;
-		
 	}
 	
 	
@@ -99,13 +98,12 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @return
 	 */
 	public void setFlakeStreamManager(FlakeStreamManager flake_stream_manager) {
-		
 		if( hasBeenOpened() ) {
 			throw new SecurityException("Can not change the flake_stream_manager after the flake has been opened!");
 		}
-		
-		ArgumentChecker.checkForNull(flake_stream_manager,"flake_stream_manager");
-		this.flake_stream_manager = flake_stream_manager;
+		this.flake_stream_manager = ArgumentChecker.checkForNull(
+			flake_stream_manager, GlobalString.FlakeStreamManager.toString()
+		);
 	}
 	
 	
@@ -116,13 +114,12 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @return
 	 */
 	public void setFlakeDataManager(FlakeDataManager flake_data_manager) {
-
 		if( hasBeenOpened() ) {
 			throw new SecurityException("Can not change the flake_stream_manager after the flake has been opened!");
 		}
-
-		ArgumentChecker.checkForNull(flake_data_manager,"flake_data_manager");
-		this.flake_data_manager = flake_data_manager;
+		this.flake_data_manager = 
+			ArgumentChecker.checkForNull(flake_data_manager, GlobalString.FlakeDataManager.toString()
+		);
 	}
 	
 	

@@ -7,6 +7,7 @@ import java.util.LinkedList;
 
 import j3l.configuration.ConfigurationManager;
 import j3l.util.check.ArgumentChecker;
+import snowflake.api.GlobalString;
 import snowflake.api.configuration.IReadonlyStorageConfiguration;
 
 
@@ -14,7 +15,7 @@ import snowflake.api.configuration.IReadonlyStorageConfiguration;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.22_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class StorageConfiguration implements IReadonlyStorageConfiguration {
@@ -34,7 +35,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @throws IOException 
 	 */
 	public StorageConfiguration(File configuration_file) throws IOException {
-		ArgumentChecker.checkForNull(configuration_file, "configuration_file");
+		ArgumentChecker.checkForNull(configuration_file, GlobalString.ConfigurationFile.toString());
 		if( !configuration_file.exists() ) {
 			try {
 				configuration_file.createNewFile();
@@ -59,7 +60,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @return
 	 */
 	private int getValue(String name, int default_value) {
-		ArgumentChecker.checkForEmptyString(name, "name");
+		ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
 		String value_string = configuration_manager.getValue(name);
 		int actual_value = default_value;
 		if( !value_string.equals("") ) {
@@ -84,7 +85,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @return
 	 */
 	private long getValue(String name, long default_value) {
-		ArgumentChecker.checkForEmptyString(name, "name");
+		ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
 		String value_string = configuration_manager.getValue(name);
 		long actual_value = default_value;
 		if( !value_string.equals("") ) {
@@ -109,7 +110,7 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 * @return
 	 */
 	private double getValue(String name, double default_value) {
-		ArgumentChecker.checkForEmptyString(name, "name");
+		ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
 		String value_string = configuration_manager.getValue(name);
 		double actual_value = default_value;
 		if( !value_string.equals("") ) {

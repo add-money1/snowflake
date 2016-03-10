@@ -1,7 +1,5 @@
 package snowflake.core.manager;
 
-import java.util.stream.LongStream;
-
 import j3l.util.close.IStateClosure;
 import snowflake.core.data.Chunk;
 
@@ -10,7 +8,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.07_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public interface IFlakeModifier extends IStateClosure {
@@ -31,7 +29,7 @@ public interface IFlakeModifier extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	void openFlakes(LongStream flake_identification_stream);
+	void openFlakes();
 	
 	
 }

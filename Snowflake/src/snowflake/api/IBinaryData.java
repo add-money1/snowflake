@@ -1,4 +1,4 @@
-package snowflake.core.data;
+package snowflake.api;
 
 /**
  * <p></p>

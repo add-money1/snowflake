@@ -1,4 +1,4 @@
-package snowflake.core.data;
+package snowflake.api;
 
 import j3l.util.check.ArgumentChecker;
 
@@ -7,7 +7,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.23_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class TableMember<T extends IBinaryData> {
@@ -32,8 +32,10 @@ public final class TableMember<T extends IBinaryData> {
 	 * @return
 	 */ 
 	public TableMember(T binary_data, long table_index) {
-		this.binary_data = ArgumentChecker.checkForNull(binary_data, "binary_data");
-		this.table_index = ArgumentChecker.checkForBoundaries(table_index, 0, Long.MAX_VALUE, "table_index");
+		this.binary_data = ArgumentChecker.checkForNull(binary_data, GlobalString.BinaryData.toString());
+		this.table_index = ArgumentChecker.checkForBoundaries(
+			table_index, 0, Long.MAX_VALUE, GlobalString.TableIndex.toString()
+		);
 	}
 	
 	

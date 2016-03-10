@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.api.GlobalString;
 import snowflake.api.storage.StorageException;
 import snowflake.core.data.Chunk;
 import snowflake.core.storage.IClearChunk;
@@ -14,7 +15,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.06_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class ChunkRecyclingManager {
@@ -51,8 +52,10 @@ public final class ChunkRecyclingManager {
 	 * @return
 	 */
 	public ChunkRecyclingManager(IClearChunk clear_chunk, long cleaning_treshhold) {
-		this.clear_chunk = ArgumentChecker.checkForNull(clear_chunk, "clear_chunk");
-		this.cleaning_treshhold = ArgumentChecker.checkForBoundaries(cleaning_treshhold, 1, Long.MAX_VALUE, "cleaning_treshhold");
+		this.clear_chunk = ArgumentChecker.checkForNull(clear_chunk, GlobalString.ClearChunk.toString());
+		this.cleaning_treshhold = ArgumentChecker.checkForBoundaries(
+			cleaning_treshhold, 1, Long.MAX_VALUE, GlobalString.CleaningTreshhold.toString()
+		);
 		chunk_recycling_list = new ArrayList<>(1000);
 		recycled_chunk_list = new ArrayList<>(1000);
 	}
@@ -124,7 +127,7 @@ public final class ChunkRecyclingManager {
 	 * @return true if the chunk has been added, false otherwise
 	 */
 	public boolean add(Chunk chunk) {
-		ArgumentChecker.checkForValidation(chunk, "chunk");
+		ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
 		chunk.setNeedsToBeCleared(true);
 		chunk.resetPositionInFlake();
 		chunk.save(null);
@@ -146,9 +149,9 @@ public final class ChunkRecyclingManager {
 	 * @return
 	 */
 	public boolean addAll(Collection<Chunk> chunk_collection) {
-		if( ArgumentChecker.checkForNull(chunk_collection, "chunk_collection").size() > 0 ) {
+		if( ArgumentChecker.checkForNull(chunk_collection, GlobalString.ChunkCollection.toString()).size() > 0 ) {
 			for( Chunk chunk : chunk_collection ) {
-				ArgumentChecker.checkForValidation(chunk, "chunk");
+				ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
 				chunk.setNeedsToBeCleared(true);
 				chunk.resetPositionInFlake();
 				chunk.save(null);

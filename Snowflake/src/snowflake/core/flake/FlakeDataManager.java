@@ -6,6 +6,7 @@ import java.util.Collection;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamMode;
+import snowflake.api.GlobalString;
 import snowflake.api.chunk.IChunkInformation;
 import snowflake.api.chunk.IChunkManager;
 import snowflake.core.data.Chunk;
@@ -15,7 +16,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.03_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class FlakeDataManager {
@@ -105,26 +106,19 @@ public final class FlakeDataManager {
 	 * @return
 	 */
 	public FlakeDataManager(Flake flake, IChunkManager chunk_manager, int initial_chunk_list_size) {
-		
-		ArgumentChecker.checkForNull(chunk_manager, "chunk_manager");
-		ArgumentChecker.checkForNull(flake, "flake");
-		
-		this.chunk_manager = chunk_manager;
-		this.flake = flake;
-		
+		this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
+		this.flake = ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString());
 		if( initial_chunk_list_size > 0 ) {
 			chunk_list = new ArrayList<>(initial_chunk_list_size);
 		}
 		else {
 			chunk_list = new ArrayList<>(0);
 		}
-		
 		chunk_lock = new Object();
 		length = 0;
 		is_length_changed = true;
 		is_consistency_checked = false;
 		is_consistent = false;
-		
 	}
 	
 	
@@ -527,8 +521,9 @@ public final class FlakeDataManager {
 	 */
 	public IChunkInformation getChunkAtIndex(int index) {
 		synchronized( chunk_lock ) {
-			ArgumentChecker.checkForBoundaries(index, 0, chunk_list.size() - 1, "index");
-			return chunk_list.get(index);
+			return chunk_list.get(
+				ArgumentChecker.checkForBoundaries(index, 0, chunk_list.size() - 1, GlobalString.Index.toString())
+			);
 		}
 	}
 
@@ -539,7 +534,7 @@ public final class FlakeDataManager {
 	 */
 	public IChunkInformation getChunkAtPosition(long position_in_flake) {
 		
-		ArgumentChecker.checkForBoundaries(position_in_flake, 0, getLength() - 1, "position_in_flake");
+		ArgumentChecker.checkForBoundaries(position_in_flake, 0, getLength() - 1, GlobalString.PositionInFlake.toString());
 		int chunk_list_size;
 		
 		synchronized( chunk_lock ) {
@@ -578,7 +573,7 @@ public final class FlakeDataManager {
 	 */
 	private IChunkInformation getChunkAtPositionLinearSearch(long position_in_flake) {
 		
-		ArgumentChecker.checkForBoundaries(position_in_flake, 0, getLength() - 1, "position_in_flake");
+		ArgumentChecker.checkForBoundaries(position_in_flake, 0, getLength() - 1, GlobalString.PositionInFlake.toString());
 		
 		synchronized( chunk_lock ) {
 			
@@ -682,8 +677,8 @@ public final class FlakeDataManager {
 	 * @return
 	 */
 	public void insertChunk(Chunk chunk, int index) {
-		ArgumentChecker.checkForNull(chunk, "chunk");
-		ArgumentChecker.checkForBoundaries(index, 0, Integer.MAX_VALUE, "index");
+		ArgumentChecker.checkForNull(chunk, GlobalString.Chunk.toString());
+		ArgumentChecker.checkForBoundaries(index, 0, Integer.MAX_VALUE, GlobalString.Index.toString());
 		synchronized( chunk_lock ) {
 			if( chunk_list.contains(chunk) ) {
 				throw new SecurityException("The flake already contains this chunk: " + chunk.toString() + "!");

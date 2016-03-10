@@ -14,6 +14,7 @@ import j3l.util.check.ClosureChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import j3l.util.stream.StreamMode;
+import snowflake.api.GlobalString;
 import snowflake.api.chunk.IChunkInformation;
 import snowflake.api.flake.DataPointer;
 import snowflake.api.flake.IFlake;
@@ -31,7 +32,7 @@ import snowflake.core.manager.FlakeManager;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.02.28_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IListenerAdapter, IStorageInformation, IManagerAdapter, 
@@ -114,12 +115,13 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 */
 	public Storage(StorageConfiguration storage_configuration) throws IOException {
 		
-		ArgumentChecker.checkForNull(storage_configuration, "storage_configuration");
-		this.storage_configuration = storage_configuration;
+		this.storage_configuration = ArgumentChecker.checkForNull(
+			storage_configuration, GlobalString.StorageConfiguration.toString()
+		);
 		
 		flake_manager = new FlakeManager(this, this);
 		chunk_manager = new ChunkManager(this, this, storage_configuration, this, flake_manager);
-
+		
 		data_input_file = new RandomAccessFile(storage_configuration.getDataFilePath(), "r");
 		data_output_file = new RandomAccessFile(storage_configuration.getDataFilePath(), "rw");
 		
@@ -446,7 +448,7 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.core.IAllocateSpace#allocateSpace(long)
 	 */
 	@Override public ChunkData allocateSpace(long number_of_bytes) {
-		ArgumentChecker.checkForBoundaries(number_of_bytes, 1, Long.MAX_VALUE, "number_of_bytes");
+		ArgumentChecker.checkForBoundaries(number_of_bytes, 1, Long.MAX_VALUE, GlobalString.NumberOfBytes.toString());
 		ChunkData chunk_data;
 		long new_length;
 		long current_length;

@@ -1,12 +1,14 @@
 package snowflake.core.data;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.api.GlobalString;
+import snowflake.api.IBinaryData;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.24_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class ChunkData implements IBinaryData {
@@ -49,17 +51,15 @@ public final class ChunkData implements IBinaryData {
 	 * @return
 	 */
 	public ChunkData(long start_address, long length, long flake_indentification, int index_in_flake, byte flag_vector) {
-
-		ArgumentChecker.checkForBoundaries(start_address, 0, Long.MAX_VALUE, "start_address");
-		ArgumentChecker.checkForBoundaries(length, 0, Long.MAX_VALUE, "length");
-		ArgumentChecker.checkForBoundaries(index_in_flake, 0, Integer.MAX_VALUE, "index_in_flake");
-		
-		this.start_address = start_address;
-		this.length = length;
+		this.start_address = ArgumentChecker.checkForBoundaries(
+			start_address, 0, Long.MAX_VALUE, GlobalString.StartAdress.toString()
+		);
+		this.length = ArgumentChecker.checkForBoundaries(length, 0, Long.MAX_VALUE, GlobalString.Length.toString());
 		this.flake_identification = flake_indentification;
-		this.index_in_flake = index_in_flake;
+		this.index_in_flake = ArgumentChecker.checkForBoundaries(
+			index_in_flake, 0, Integer.MAX_VALUE, GlobalString.IndexInFlake.toString()
+		);
 		this.flag_vector = flag_vector;
-		
 	}
 	
 	

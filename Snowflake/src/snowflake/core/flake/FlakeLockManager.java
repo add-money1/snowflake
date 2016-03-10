@@ -1,6 +1,7 @@
 package snowflake.core.flake;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.api.GlobalString;
 import snowflake.api.flake.Lock;
 
 
@@ -8,7 +9,7 @@ import snowflake.api.flake.Lock;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class FlakeLockManager {
@@ -48,7 +49,7 @@ public final class FlakeLockManager {
 		if( isLocked() ) {
 			throw new SecurityException("The instance is currently locked by: \"" + lock_owner.toString() + "\".");
 		}
-		lock_owner = ArgumentChecker.checkForNull(owner, "owner");
+		lock_owner = ArgumentChecker.checkForNull(owner, GlobalString.Owner.toString());
 		is_locked = true;
 		return new Lock(this);
 	}

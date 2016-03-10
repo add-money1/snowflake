@@ -1,5 +1,95 @@
 	
 	
+	2016.03.10
+		
+		snowflake.api.GlobalString
+			-> added:
+				Flake("flake"),
+				PositionInFlake("position_in_flake"),
+				FlakeLockManager("flake_lock_manager"),
+				Read("read"),
+				Write("write"),
+				FlakeStreamManager("flake_stream_manager"),
+				ChunkMemory("chunk_memory"),
+				StartAdress("start_address"),
+				Length("length"),
+				ChunkTableIndex("chunk_table_index"),
+				IndexInFlake("index_in_flake"),
+				ChunkData("chunk_data"),
+				Buffer("buffer"),
+				Chunk("chunk"),
+				TableFile("table_file"),
+				BinaryData("binary_data"),
+				TableIndex("table_index"),
+				FlakeDataManager("flake_data_manager"),
+				Owner("owner"),
+				ChunkManager("chunk_manager"),
+				Index("index"),
+				FlakeIdentificationStream("flake_identification_stream"),
+				ClearChunk("clear_chunk"),
+				CleaningTreshhold("cleaning_treshhold"),
+				ChunkCollection("chunk_collection"),
+				ChunkManagerConfiguration("chunk_manager_configuration"),
+				StorageInformation("storage_information"),
+				AllocateSpace("allocate_space"),
+				FlakeModifier("flake_modifier"),
+				ChunkTableFile("chunk_table_file"),
+				NumberOfBytes("number_of_bytes"),
+				Chunks("chunks"),
+				Position("position"),
+				Name("name"),
+				StorageConfiguration("storage_configuration"),
+				ConfigurationFile("configuration_file")
+				
+	
+		changed String-literals in method-calls of j3l.util.check.ArgumentChecker to constants from
+			snowflake.api.GlobalString in the following classes:
+				-> snowflake.api.flake: Lock
+				-> snowflake.api.stream: FlakeInputStream, FlakeOutputStream
+				-> snowflake.core.data: Chunk, ChunkData, ChunkUtility, DataTable, TableMember
+				-> snowflake.core.flake: Flake, FlakeLockManager, FlakeDataManager, FlakeStreamManager
+				-> snowflake.core.manager: FlakeManager, ChunkRecyclingManager, ChunkMergingManager,
+											ChunkManager
+				-> snowflake.core.storage: IRead, IWrite, StorageConfigurationElement, Storage,
+											StorageConfiguration
+		
+		snowflake.core.data.DataTable
+			-> moved to snowflake.api
+		
+		snowflake.core.data.IBinaryData
+			-> moved to snowflake.api
+		
+		snowflake.core.data.TableMember
+			-> moved to snowflake.api
+		
+		snowflake.core.manager.ChunkMergingManager
+			-> changed "Stream<IChunkInformation> getStream(StreamMode)" completely
+		
+		snowlfake.core.manager.IFlakeModifier
+			-> changed "void openFlakes(LongStream )" to "void openFlakes()"
+		
+		snowlfake.core.manager.FlakeManager
+			-> changed "void openFlakes(LongStream )" to "void openFlakes()" and its implementation
+		
+		snowflake.core.manager.ChunkManager
+			-> modified "synchronized void loadChunks() throws IOException" so that chunks which need
+				to be cleared are buffered in "recycle_chunk_buffer_list" and are later added to the
+				"chunk_recycling_manager" as a bunch
+	
+	
+	
+	2016.03.07
+		
+		snowflake.api.GlobalString
+			-> new enum
+			-> stores common used Strings (e.g. for usage with methods of j3l.util.check.ArgumentChecker)
+			
+		snowflake.api.flake.DataPointer
+			-> changed String-literals in method-calls of j3l.util.check.ArgumentChecker to constants from
+				snowflake.api.GlobalString
+	
+	
+	
 	2016.03.06
 	
 		snowflake.api.chunk.IChunkManager

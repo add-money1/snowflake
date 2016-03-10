@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Random;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import j3l.util.RandomFactory;
@@ -14,6 +13,7 @@ import j3l.util.close.IClose;
 import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
+import snowflake.api.GlobalString;
 import snowflake.api.flake.IFlake;
 import snowflake.api.flake.IFlakeManager;
 import snowflake.core.data.Chunk;
@@ -28,7 +28,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.02.06_0
+ * @version 2015.03.10_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose<IOException> {
@@ -83,17 +83,12 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 	 * @return
 	 */
 	public FlakeManager(IRead read, IWrite write) {
-
-		ArgumentChecker.checkForNull(read, "read");
-		ArgumentChecker.checkForNull(write, "write");
-		
-		this.read = read;
-		this.write = write;
+		this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
+		this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
 		flake_table = new Hashtable<>();
 		closure_state = ClosureState.None;
 		flake_creation_lock = new Object();
 		random = RandomFactory.createRandom();
-		
 	}
 	
 	
@@ -244,28 +239,15 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 		
 		// will eventually be closed by this instance
 		@SuppressWarnings("resource") Flake flake = flake_table.get(new Long(identification));
-		ArgumentChecker.checkForNull(flake, "flake").insertChunk(chunk, index);
+		ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString()).insertChunk(chunk, index);
 	}
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.core.manager.IFlakeModifier#openFlakes(java.util.stream.Stream)
+	 * @see snowflake.core.manager.IFlakeModifier#openFlakes()
 	 */
-	@Override public void openFlakes(LongStream flake_identification_stream) {
-		ArgumentChecker.checkForNull(flake_identification_stream, "flake_identification_stream")
-		.filter(identification -> flakeExists(identification)).forEach(identification -> {
-			// will eventually be closed by this instance
-			@SuppressWarnings("resource") Flake flake = flake_table.get(new Long(identification));
-			if( flake != null ) {
-				try {
-					flake.open();
-				}
-				catch( Exception e ) {
-					e.printStackTrace();
-					throw e;
-				}
-			}
-		});
+	@Override public void openFlakes() {
+		flake_table.values().forEach(Flake::open);
 	}
 	
 	

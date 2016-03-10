@@ -6,6 +6,7 @@ import j3l.util.ArrayTool;
 import j3l.util.TransformValue;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
+import snowflake.api.GlobalString;
 import snowflake.core.flake.Flake;
 import snowflake.core.manager.ChunkManager;
 import snowflake.core.manager.FlakeManager;
@@ -15,7 +16,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.06_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class ChunkUtility {
@@ -71,8 +72,8 @@ public final class ChunkUtility {
 	 */
 	public static void getBinaryData(ChunkData chunk_data, byte[] buffer) {
 
-		ArgumentChecker.checkForNull(chunk_data, "chunk_data");
-		ArgumentChecker.checkForNull(buffer, "buffer");
+		ArgumentChecker.checkForNull(chunk_data, GlobalString.ChunkData.toString());
+		ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
 		
 		if( buffer.length != ChunkUtility.BINARY_CHUNK_SIZE ) {
 			throw new IllegalArgumentException("The length of the buffer must be equal to " + ChunkUtility.BINARY_CHUNK_SIZE);
@@ -127,7 +128,7 @@ public final class ChunkUtility {
 	 */
 	public static ChunkData getChunkData(byte[] buffer) {
 		
-		ArgumentChecker.checkForNull(buffer, "buffer");
+		ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
 		
 		if( buffer.length != ChunkUtility.BINARY_CHUNK_SIZE ) {
 			throw new IllegalArgumentException("The length of the buffer must be equal to ChunkUtility.BINARY_CHUNK_SIZE: "
@@ -193,12 +194,7 @@ public final class ChunkUtility {
 	 */
 	public static ChunkData getChunkData(Flake owner_flake, Chunk chunk) {
 
-		ArgumentChecker.checkForNull(chunk, "chunk");
-		
-		if( !chunk.isValid() ) {
-			throw new SecurityException("The chunk must be valid!");
-			
-		}
+		ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
 		
 		long identification = FlakeManager.ROOT_IDENTIFICATION;
 		int index_in_flake = 0;

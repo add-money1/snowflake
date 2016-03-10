@@ -1,4 +1,4 @@
-package snowflake.core.data;
+package snowflake.api;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,13 +9,14 @@ import java.util.TreeSet;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
 import snowflake.api.storage.StorageException;
+import snowflake.core.data.ChunkUtility;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.29_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class DataTable<T extends IBinaryData> {
@@ -40,15 +41,12 @@ public final class DataTable<T extends IBinaryData> {
 	 * @return
 	 */
 	public DataTable(File table_file) {
-		ArgumentChecker.checkForNull(table_file, "table_file");
-		if( !table_file.isFile() ) {
-			throw new IllegalArgumentException("The table_file must exist and be a file!");
-		}
+		ArgumentChecker.checkForExistence(table_file, GlobalString.TableFile.toString());
 		try {
 			this.table_file = new RandomAccessFile(table_file, "rw");
 		}
 		catch( FileNotFoundException e ) {
-			throw new StorageException("The table_file could not be found!", e);
+			throw new StorageException("The " + GlobalString.TableFile.toString() + " could not be found!", e);
 		}
 		available_index_tree = new TreeSet<>();
 	}

@@ -3,6 +3,7 @@ package snowflake.core.data;
 import java.io.IOException;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.api.GlobalString;
 import snowflake.api.chunk.IChunkInformation;
 import snowflake.api.chunk.IChunkMemory;
 import snowflake.core.flake.Flake;
@@ -27,7 +28,7 @@ import snowflake.core.flake.Flake;
  * </p>
  * 
  * @since JDK 1.8
- * @version 2016.03.06_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class Chunk implements IChunkInformation {
@@ -89,10 +90,14 @@ public final class Chunk implements IChunkInformation {
 	 */
 	public Chunk(IChunkMemory chunk_memory, long start_address, long length, long chunk_table_index) {
 		
-		this.chunk_memory = ArgumentChecker.checkForNull(chunk_memory, "chunk_memory");
-		this.start_address = ArgumentChecker.checkForBoundaries(start_address, 0, Long.MAX_VALUE, "start_address");
-		this.length = ArgumentChecker.checkForBoundaries(length, 1, Long.MAX_VALUE, "length");
-		this.chunk_table_index = ArgumentChecker.checkForBoundaries(chunk_table_index, 0, Long.MAX_VALUE, "chunk_table_index");
+		this.chunk_memory = ArgumentChecker.checkForNull(chunk_memory, GlobalString.ChunkMemory.toString());
+		this.start_address = ArgumentChecker.checkForBoundaries(
+			start_address, 0, Long.MAX_VALUE, GlobalString.StartAdress.toString()
+		);
+		this.length = ArgumentChecker.checkForBoundaries(length, 1, Long.MAX_VALUE, GlobalString.Length.toString());
+		this.chunk_table_index = ArgumentChecker.checkForBoundaries(
+			chunk_table_index, 0, Long.MAX_VALUE, GlobalString.ChunkTableIndex.toString()
+		);
 		position_in_flake = -1;
 		is_valid = true;
 		needs_to_be_cleared = false;

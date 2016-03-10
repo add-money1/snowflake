@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 import j3l.util.check.ArgumentChecker;
 import j3l.util.close.IStateClosure;
+import snowflake.api.GlobalString;
 import snowflake.api.stream.FlakeInputStream;
 import snowflake.api.stream.FlakeOutputStream;
 import snowflake.core.storage.IRead;
@@ -17,7 +18,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.18_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class FlakeStreamManager implements IFlakeStreamManager {
@@ -54,16 +55,10 @@ public final class FlakeStreamManager implements IFlakeStreamManager {
 	 * @return
 	 */
 	public FlakeStreamManager(IRead read, IWrite write) {
-		
-		ArgumentChecker.checkForNull(read, "read");
-		ArgumentChecker.checkForNull(write, "write");
-		
-		this.read = read;
-		this.write = write;
-		
+		this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
+		this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
 		stream_creation_lock = new Object();
 		stream_list = null;
-		
 	}
 	
 	

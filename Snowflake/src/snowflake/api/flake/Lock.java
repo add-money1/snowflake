@@ -1,6 +1,7 @@
 package snowflake.api.flake;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.api.GlobalString;
 import snowflake.core.flake.FlakeLockManager;
 
 
@@ -8,7 +9,7 @@ import snowflake.core.flake.FlakeLockManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.12_0
+ * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
 public final class Lock {
@@ -33,8 +34,7 @@ public final class Lock {
 	 * @return
 	 */
 	public Lock(FlakeLockManager flake_lock_manager) {
-		ArgumentChecker.checkForNull(flake_lock_manager, "flake_lock_manager");
-		this.flake_lock_manager = flake_lock_manager;
+		this.flake_lock_manager = ArgumentChecker.checkForNull(flake_lock_manager, GlobalString.FlakeLockManager.toString());
 		is_valid = true;
 	}
 	
@@ -89,7 +89,7 @@ public final class Lock {
 	 * @see java.lang.Object#toString()
 	 */
 	@Override public String toString() {
-		return "Lock by \"" + getOwner() + "\"";
+		return "Lock owned by \"" + getOwner() + "\"";
 	}
 	
 }
