@@ -75,6 +75,16 @@
 			-> modified "synchronized void loadChunks() throws IOException" so that chunks which need
 				to be cleared are buffered in "recycle_chunk_buffer_list" and are later added to the
 				"chunk_recycling_manager" as a bunch
+		
+		snowflake.api.storage.IStorageInformation
+			-> replaced all occurrences of "BigInteger" with "long" and "BigDecimal" with "double"
+			-> modified "long getNumberOfChunks()"
+			
+		snwoflake.core.storage.Storage
+			-> replaced all occurrences of "BigInteger" with "long" and "BigDecimal" with "double"
+			-> modified "getFreeSpace()", "getUsedSpace()", "getAverageNumberOfChunksPerFlake()",
+				"getNumberOfUsedChunks()", "getNumberOfFreeChunks()", "getAverageFlakeSize()",
+				"getAverageNumberOfChunksPerFlake()", "getAverageChunkSize()"
 	
 	
 	

@@ -2,9 +2,6 @@ package snowflake.core.storage;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.stream.Stream;
@@ -13,6 +10,7 @@ import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ClosureChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
+import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.api.GlobalString;
 import snowflake.api.chunk.IChunkInformation;
@@ -32,7 +30,7 @@ import snowflake.core.manager.FlakeManager;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.03.11_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IListenerAdapter, IStorageInformation, IManagerAdapter, 
@@ -349,24 +347,21 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * (non-Javadoc)
 	 * @see snowflake.api.storage.IStorageInformation#getFreeSpace()
 	 */
-	@Override public BigInteger getFreeSpace() {
+	@Override public long getFreeSpace() {
 		checkForOpen();
-		ClosureChecker.checkForOpen(this, "ChunkManager");
-		return chunk_manager.streamAvailableChunks(StreamMode.Parallel)
-				.<BigInteger>map(chunk -> new BigInteger(Long.toString(chunk.getLength())))
-				.reduce(new BigInteger(new byte[] {0}), (a,b) -> a.add(b));
+		ClosureChecker.checkForOpen(chunk_manager, "ChunkManager");
+		return chunk_manager.streamAvailableChunks(StreamMode.Parallel).mapToLong(chunk -> chunk.getLength()).sum();
 	}
 	
 	
 	/* (non-Javadoc)
 	 * @see snowflake.api.storage.IStorageInformation#getUsedSpace()
 	 */
-	@Override public BigInteger getUsedSpace() {
+	@Override public long getUsedSpace() {
 		checkForOpen();
-		ClosureChecker.checkForOpen(this, "FlakeManager");
-		return flake_manager.streamFlakes(StreamMode.Parallel).filter(flake -> flake != null && flake.isValid())
-			.<BigInteger>map(flake -> new BigInteger(Long.toString(flake.getLength())))
-			.reduce(new BigInteger(new byte[] {0}), (a,b) -> a.add(b));
+		ClosureChecker.checkForOpen(flake_manager, "FlakeManager");
+		return flake_manager.streamFlakes(StreamMode.Parallel).filter(StreamFilter::filterInvalid)
+			.mapToLong(flake -> flake.getLength()).sum();
 	}
 	
 	
@@ -470,7 +465,7 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfFlakes()
 	 */
 	@Override public int getNumberOfFlakes() {
-		ClosureChecker.checkForOpen(this, "FlakeManager");
+		ClosureChecker.checkForOpen(flake_manager, "FlakeManager");
 		long number_of_flakes = flake_manager.streamFlakes(StreamMode.Parallel).count();
 		if( number_of_flakes > Integer.MAX_VALUE ) {
 			return Integer.MAX_VALUE;
@@ -486,7 +481,7 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfDamagedFlakes()
 	 */
 	@Override public int getNumberOfDamagedFlakes() {
-		ClosureChecker.checkForOpen(this, "FlakeManager");
+		ClosureChecker.checkForOpen(flake_manager, "FlakeManager");
 		long number_of_damaged_flakes = flake_manager.streamFlakes(StreamMode.Parallel).filter(flake -> flake.isDamaged()).count();
 		if( number_of_damaged_flakes > Integer.MAX_VALUE ) {
 			return Integer.MAX_VALUE;
@@ -503,41 +498,21 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	@Override public double getAverageFlakeSize() {
 		long number_of_flakes = getNumberOfFlakes();
 		if( number_of_flakes == 0 ) {
-			return new BigDecimal(0).doubleValue();
+			return 0d;
 		}
-		BigDecimal used_space = new BigDecimal(getUsedSpace());
-		return used_space.divide(
-					new BigDecimal(
-						new BigInteger(
-							Long.toString(number_of_flakes)
-						)
-					),
-					10,
-					RoundingMode.HALF_UP
-				).doubleValue();		
+		return (double)number_of_flakes / getUsedSpace();	
 	}
 	
 	
 	/* (non-Javadoc)
 	 * @see snowflake.api.storage.IStorageInformation#getAverageNumberOfChunksPerFlake()
 	 */
-	@Override public BigDecimal getAverageNumberOfChunksPerFlake() {
+	@Override public double getAverageNumberOfChunksPerFlake() {
 		long number_of_flakes = getNumberOfFlakes();
 		if( number_of_flakes == 0 ) {
-			return new BigDecimal(0);
+			return 0d;
 		}
-		BigDecimal average = new BigDecimal(getNumberOfUsedChunks());
-		return average.divide(
-			new BigDecimal(
-				new BigInteger(
-					Long.toString(
-							number_of_flakes
-					)
-				)
-			),
-			10,
-			RoundingMode.HALF_UP
-		);
+		return (double)getNumberOfUsedChunks() / number_of_flakes;
 	}
 	
 	
@@ -545,11 +520,9 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * (non-Javadoc)
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfUsedChunks()
 	 */
-	@Override public BigInteger getNumberOfUsedChunks() {
+	@Override public long getNumberOfUsedChunks() {
 		checkForOpen();
-		return flake_manager.streamFlakes(StreamMode.Parallel).<BigInteger>map(flake -> {
-			return new BigInteger(Integer.toString(flake.getNumberOfChunks()));
-		}).reduce((x,y) -> x.add(y)).orElse(new BigInteger(new byte[] {0}));
+		return flake_manager.streamFlakes(StreamMode.Parallel).mapToLong(flake -> flake.getNumberOfChunks()).sum();
 	}
 	
 	
@@ -557,25 +530,22 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * (non-Javadoc)
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfFreeChunks()
 	 */
-	@Override public BigInteger getNumberOfFreeChunks() {
+	@Override public long getNumberOfFreeChunks() {
 		checkForOpen();
-		return new BigInteger(Long.toString(chunk_manager.streamAvailableChunks(StreamMode.Parallel).count()));
+		return chunk_manager.streamAvailableChunks(StreamMode.Parallel).count();
 	}
 	
 	
 	/* (non-Javadoc)
 	 * @see snowflake.api.storage.IStorageInformation#getAverageChunkSize()
 	 */
-	@Override public BigDecimal getAverageChunkSize() {
-		BigInteger number_of_chunks = getNumberOfChunks();
-		if( number_of_chunks.compareTo(BigInteger.ZERO) == 0 ) {
-			return BigDecimal.ZERO;
+	@Override public double getAverageChunkSize() {
+		long number_of_chunks = getNumberOfChunks();
+		if( number_of_chunks == 0 ) {
+			return 0d;
 		}
 		checkForOpen();
-		BigDecimal average = new BigDecimal(getAllocatedSpace());
-		return average.divide(new BigDecimal(number_of_chunks),
-				10,
-				RoundingMode.HALF_UP);
+		return (double)getAllocatedSpace() / number_of_chunks;
 	}
 	
 	

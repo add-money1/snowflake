@@ -1,8 +1,5 @@
 package snowflake.api.storage;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 import j3l.util.close.IStateClosure;
 
 
@@ -10,7 +7,7 @@ import j3l.util.close.IStateClosure;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.14_0
+ * @version 2016.03.11_0
  * @author Johannes B. Latzel
  */
 public interface IStorageInformation extends IStateClosure {
@@ -31,7 +28,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	BigInteger getUsedSpace();
+	long getUsedSpace();
 	
 	
 	/**
@@ -40,7 +37,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	BigInteger getFreeSpace();
+	long getFreeSpace();
 	
 	
 	/**
@@ -76,7 +73,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	BigDecimal getAverageNumberOfChunksPerFlake();
+	double getAverageNumberOfChunksPerFlake();
 	
 	
 	/**
@@ -85,8 +82,12 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	default BigInteger getNumberOfChunks() {
-		return getNumberOfUsedChunks().add(getNumberOfFreeChunks());
+	default long getNumberOfChunks() {
+		long chunks = getNumberOfUsedChunks() + getNumberOfFreeChunks();
+		if( chunks < 0 ) {
+			return Long.MAX_VALUE;
+		}
+		return chunks;
 	}
 	
 	
@@ -96,7 +97,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	BigInteger getNumberOfUsedChunks();
+	long getNumberOfUsedChunks();
 	
 	
 	/**
@@ -105,7 +106,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	BigInteger getNumberOfFreeChunks();
+	long getNumberOfFreeChunks();
 	
 	
 	/**
@@ -114,6 +115,6 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	BigDecimal getAverageChunkSize();
+	double getAverageChunkSize();
 	
 }
