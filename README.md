@@ -1,3 +1,3 @@
 # snowflake
 
-No specifics yet.
+- Read Snowflake/changelog.txt for detailed changes
