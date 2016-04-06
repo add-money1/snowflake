@@ -1,27 +1,31 @@
 package snowflake.core.storage;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.EventListener;
+import java.util.HashMap;
 import java.util.stream.Stream;
 
+import j3l.util.ArrayTool;
 import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ClosureChecker;
+import j3l.util.check.ElementChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.api.GlobalString;
 import snowflake.api.chunk.IChunkInformation;
-import snowflake.api.flake.DataPointer;
 import snowflake.api.flake.IFlake;
-import snowflake.api.storage.IListenerAdapter;
 import snowflake.api.storage.IManagerAdapter;
 import snowflake.api.storage.IStorageInformation;
 import snowflake.api.storage.StorageException;
 import snowflake.core.data.Chunk;
 import snowflake.core.data.ChunkData;
+import snowflake.core.data.ChunkUtility;
 import snowflake.core.manager.ChunkManager;
 import snowflake.core.manager.FlakeManager;
 
@@ -30,11 +34,11 @@ import snowflake.core.manager.FlakeManager;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.03.11_0
+ * @version 2016.04.04_0
  * @author Johannes B. Latzel
  */
-public final class Storage implements IListenerAdapter, IStorageInformation, IManagerAdapter, 
-												IRead, IWrite, IAllocateSpace, IClearChunk, IClose<IOException> {
+public final class Storage implements IStorageInformation, IManagerAdapter, IAllocateSpace, 
+										IClearChunk, IClose<IOException>, IGetIOAccess {
 	
 	
 		
@@ -65,37 +69,7 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	/**
 	 * <p></p>
 	 */
-	private final RandomAccessFile data_input_file;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final RandomAccessFile data_output_file;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final Object write_lock;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final Object read_lock;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final Object event_lock;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final ArrayList<EventListener> event_lister_list;
+	private final RandomAccessFile data_file;
 	
 	
 	/**
@@ -112,25 +86,15 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @throws IOException 
 	 */
 	public Storage(StorageConfiguration storage_configuration) throws IOException {
-		
 		this.storage_configuration = ArgumentChecker.checkForNull(
 			storage_configuration, GlobalString.StorageConfiguration.toString()
 		);
-		
-		flake_manager = new FlakeManager(this, this);
-		chunk_manager = new ChunkManager(this, this, storage_configuration, this, flake_manager);
-		
-		data_input_file = new RandomAccessFile(storage_configuration.getDataFilePath(), "r");
-		data_output_file = new RandomAccessFile(storage_configuration.getDataFilePath(), "rw");
-		
-		clear_array = new byte[ storage_configuration.getClearArraySize() ];
-		
-		event_lister_list = new ArrayList<>();
-		read_lock = new Object();
-		write_lock = new Object();
-		event_lock = new Object();
-		closure_state = ClosureState.None;
-		
+		flake_manager 			= 	new FlakeManager(this);
+		chunk_manager 			= 	new ChunkManager(this, this, storage_configuration, this);
+		data_file 				= 	new RandomAccessFile(storage_configuration.getDataFilePath(), "rw");
+		clear_array 			= 	new byte[ storage_configuration.getClearArraySize() ];
+		closure_state 			= 	ClosureState.None;
+		open();
 	}
 	
 	
@@ -140,10 +104,151 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @param
 	 * @return
 	 */
-	private void checkForOpen() {
-		ClosureChecker.checkForOpen(this, "Storage");
-		ClosureChecker.checkForOpen(flake_manager, "flake_manager");
-		ClosureChecker.checkForOpen(chunk_manager, "chunk_manager");
+	private void loadChunks() throws IOException {
+		
+		if( !isInOpening() ) {
+			return;
+		}
+		
+		
+		long current_chunk_number = 0;
+		int position_in_input_buffer = 0;
+		int max_bytes_in_buffer;
+		int bytes_in_buffer;
+		long length_of_file;
+		long current_position = 0;
+		long remaining_bytes_in_file;
+		byte[] input_buffer = new byte[ ChunkUtility.BINARY_CHUNK_SIZE * 250 ];
+		byte[] chunk_buffer = new byte[ ChunkUtility.BINARY_CHUNK_SIZE ];
+		ChunkData chunk_data;
+		Chunk chunk;
+		
+		ArrayList<Chunk> recycle_chunk_list = new ArrayList<>(1000);
+		ArrayList<Chunk> available_chunk_list = new ArrayList<>(1000);
+		ArrayList<Long> available_index_list = new ArrayList<>(1000);
+		HashMap<Long, ArrayList<Chunk>> flake_list = new HashMap<>();
+		ArrayList<Chunk> current_flake_chunk_list;
+		Long current_flake_identification;
+		
+		File chunk_table_file = new File(storage_configuration.getChunkTableFilePath());
+		
+		
+		length_of_file = chunk_table_file.length();
+		
+		if( length_of_file == 0 ) {
+			return;
+		}
+		else if( length_of_file % ChunkUtility.BINARY_CHUNK_SIZE != 0 ) {
+			throw new SecurityException("The file \"" + storage_configuration.getChunkTableFilePath()
+			+ "\" has been damaged!");
+		}
+		
+		
+		try (BufferedInputStream input_stream = new BufferedInputStream(new FileInputStream(chunk_table_file))) {
+			
+			
+			// important, because (int)(length_of_file / ChunkUtility.BINARY_CHUNK_SIZE) could overflow!
+			if( length_of_file > (ChunkUtility.BINARY_CHUNK_SIZE * (long)(Integer.MAX_VALUE)) ) {
+				throw new IOException("The size of the file \"" + storage_configuration.getChunkTableFilePath() 
+				+ "\" must not be greater than " + (ChunkUtility.BINARY_CHUNK_SIZE * (long)(Integer.MAX_VALUE)) + "!");
+			}
+			
+			remaining_bytes_in_file = length_of_file;
+			
+			while( remaining_bytes_in_file != 0 ) {	
+				
+				position_in_input_buffer = 0;
+				
+				if( remaining_bytes_in_file >= input_buffer.length ) {
+					max_bytes_in_buffer = input_buffer.length;
+				}
+				else {
+					// cast is okay, because remaining_bytes_in_file is smaller than input_buffer.length which is int
+					max_bytes_in_buffer = (int)(remaining_bytes_in_file);						
+				}
+
+				bytes_in_buffer = input_stream.read(input_buffer, 0, max_bytes_in_buffer);
+				current_position += bytes_in_buffer;
+				
+				// will always have at least 8 bytes of data and at max buffer.length bytes
+				// will always contain a number of bytes which can be divided by 8
+				while( position_in_input_buffer != bytes_in_buffer ) {
+					
+					
+					ArrayTool.transferValues(chunk_buffer, input_buffer, 0, position_in_input_buffer, chunk_buffer.length);
+					position_in_input_buffer += chunk_buffer.length;
+					
+					if( !ElementChecker.checkAllElementsForZero(chunk_buffer) ) {
+						
+						chunk_data = ChunkUtility.getChunkData(chunk_buffer);
+						chunk = new Chunk(chunk_manager, chunk_data.getStartAddress(), 
+								chunk_data.getChunkLength(), current_chunk_number);
+						ChunkUtility.configureChunk(chunk, chunk_data.getFlagVector());
+						
+						if( chunk_data.getFlakeIdentification() == FlakeManager.ROOT_IDENTIFICATION ) {
+							
+							if( chunk.needsToBeCleared() ) {
+								recycle_chunk_list.add(chunk);
+							}
+							else {
+								available_chunk_list.add(chunk);
+							}
+							
+						}
+						else {
+							int current_index_in_flake = chunk_data.getIndexInFlake();
+							current_flake_identification = new Long(chunk_data.getFlakeIdentification());
+							if( !flake_list.containsKey(current_flake_identification) ) {
+								flake_list.put(current_flake_identification, new ArrayList<>(1));
+							}
+							current_flake_chunk_list = flake_list.get(current_flake_identification);
+							if( current_flake_chunk_list.size() < current_index_in_flake ) {
+								do {
+									current_flake_chunk_list.add(null);
+								}
+								while( current_flake_chunk_list.size() < chunk_data.getIndexInFlake() );
+							}
+							current_flake_chunk_list.add(current_index_in_flake, chunk);
+							// flake_modifier.addChunkToFlake(current_flake_identification.longValue(), chunk, 
+							//		chunk_data.getIndexInFlake(), this);
+						}
+						
+					}
+					else {
+						// index is available
+						available_index_list.add(new Long(current_chunk_number));
+					}
+					
+					current_chunk_number++;
+					
+				}
+				
+				
+				remaining_bytes_in_file = length_of_file - current_position;
+				
+			}
+			
+		}
+		catch (IOException e) {
+			throw new IOException("Can not read from the chunk-table-file \""
+					+ storage_configuration.getChunkTableFilePath() + "\" at position: " + current_position
+					+ " | chunk: " + current_chunk_number, e);
+		}
+		
+		chunk_manager.addAvailableChunks(available_chunk_list);
+		chunk_manager.recycleChunks(recycle_chunk_list);
+		chunk_manager.setInitialIndices(available_index_list);
+		
+		for( Long identification : flake_list.keySet() ) {
+			current_flake_chunk_list = flake_list.get(identification);
+			for(int a=current_flake_chunk_list.size()-1;a>=0;a--) {
+				if( current_flake_chunk_list.get(a) == null ) {
+					current_flake_chunk_list.remove(a);
+				}
+			}
+			flake_manager.declareFlake(identification.longValue(), chunk_manager, current_flake_chunk_list);
+		}
+		
 	}
 	
 				
@@ -157,6 +262,8 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 		}
 		
 		closure_state = ClosureState.InOpening;
+		
+		loadChunks();
 		
 		flake_manager.open();
 		chunk_manager.open();
@@ -196,20 +303,9 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	
 	/*
 	 * (non-Javadoc)
-	 * @see snowflake.api.storage.IManagerAdapter#declareFlake(long)
-	 */
-	@Override public IFlake declareFlake(long identification) {
-		checkForOpen();
-		return flake_manager.declareFlake(identification, chunk_manager);
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
 	 * @see snowflake.api.storage.IManagerAdapter#createFlake()
 	 */
 	@Override public IFlake createFlake() {
-		checkForOpen();
 		return flake_manager.createFlake(chunk_manager);
 	}
 	
@@ -219,7 +315,6 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.api.storage.IManagerAdapter#getFlake(long)
 	 */
 	@Override public IFlake getFlake(long indentification) {
-		checkForOpen();
 		return flake_manager.getFlake(indentification);
 	}
 	
@@ -228,175 +323,7 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.api.IFlakeManager#flakeExists(long)
 	 */
 	@Override public boolean flakeExists(long identification) {
-		checkForOpen();
 		return flake_manager.flakeExists(identification);
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.core.IWrite#write(snowflake.api.DataPointer, byte)
-	 */
-	@Override public void write(DataPointer data_pointer, byte b) throws IOException {
-		if( data_pointer.getRemainingBytes() < 1 ) {
-			throw new IndexOutOfBoundsException("The length must not succeed the number of available bytes in the flake!");
-		}
-		synchronized( write_lock ) {
-			data_output_file.seek(data_pointer.getPositionInStorage());
-			data_output_file.write(b);
-		}
-		data_pointer.increasePosition();
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.core.IWrite#write(snowflake.api.DataPointer, byte[], int, int)
-	 */
-	@Override public void write(DataPointer data_pointer, byte[] buffer, int offset, int length) throws IOException {
-		int remaining_bytes = length;
-		int advance_in_buffer;
-		int remaining_bytes_in_chunk;
-		long actual_remaining_bytes_in_chunk;
-		if( data_pointer.getRemainingBytes() < remaining_bytes ) {
-			throw new IndexOutOfBoundsException("The length must not succeed the number of available bytes in the flake!");
-		}
-		synchronized( write_lock ) {
-			do {
-				data_output_file.seek(data_pointer.getPositionInStorage());
-				actual_remaining_bytes_in_chunk = data_pointer.getRemainingBytesInChunk();
-				if( actual_remaining_bytes_in_chunk >= Integer.MAX_VALUE ) {
-					remaining_bytes_in_chunk = Integer.MAX_VALUE;
-				}
-				else {
-					// cast to int is okay, because actual_remaining_bytes_in_chunk < Integer.MAX_VALUE
-					remaining_bytes_in_chunk = (int)actual_remaining_bytes_in_chunk;
-				}
-				advance_in_buffer = Math.min(remaining_bytes, remaining_bytes_in_chunk);
-				data_output_file.write(buffer, length - remaining_bytes + offset, advance_in_buffer);
-				remaining_bytes -= advance_in_buffer;
-				data_pointer.changePosition(advance_in_buffer);
-			}
-			while( remaining_bytes != 0 );
-		}
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.core.IRead#read(snowflake.api.DataPointer)
-	 */
-	@Override public byte read(DataPointer data_pointer) throws IOException {
-		synchronized( read_lock ) {
-			if( data_pointer.isEOF() ) {
-				throw new IOException("Can not read from a eof-stated stream!");
-			}
-			data_input_file.seek(data_pointer.getPositionInStorage());
-			data_pointer.increasePosition();
-			return (byte)data_input_file.read();
-		}
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.core.IRead#read(snowflake.api.DataPointer, byte[], int, int)
-	 */
-	@Override public int read(DataPointer data_pointer, byte[] buffer, int offset, int length) throws IOException {
-		int remaining_bytes;
-		if( data_pointer.getRemainingBytes() < Integer.MAX_VALUE ) {
-			// cast ok, because data_pointer.getRemainingBytes() < Integer.MAX_VALUE
-			remaining_bytes = Math.min(length, (int)data_pointer.getRemainingBytes());
-		}
-		else {
-			remaining_bytes = Math.min(length, Integer.MAX_VALUE);
-		}
-		if( remaining_bytes == 0 ) {
-			return 0;
-		}
-		int read_in_bytes = 0;
-		int current_read_in_bytes;
-		int advance_in_buffer;
-		int remaining_bytes_in_chunk;
-		long actual_remaining_bytes_in_chunk;
-		synchronized( read_lock ) {
-			do {
-				data_input_file.seek(data_pointer.getPositionInStorage());
-				actual_remaining_bytes_in_chunk = data_pointer.getRemainingBytesInChunk();
-				if( actual_remaining_bytes_in_chunk >= Integer.MAX_VALUE ) {
-					remaining_bytes_in_chunk = Integer.MAX_VALUE;
-				}
-				else {
-					// cast to int is okay, because actual_remaining_bytes_in_chunk < Integer.MAX_VALUE
-					remaining_bytes_in_chunk = (int)actual_remaining_bytes_in_chunk;
-				}
-				advance_in_buffer = Math.min(remaining_bytes, remaining_bytes_in_chunk);
-				current_read_in_bytes = data_input_file.read(
-					buffer, length - remaining_bytes + offset, advance_in_buffer
-				);
-				if( current_read_in_bytes < 0 ) {
-					return read_in_bytes;
-				}
-				remaining_bytes -= current_read_in_bytes;
-				data_pointer.changePosition(current_read_in_bytes);
-				read_in_bytes += current_read_in_bytes;
-			}
-			while( remaining_bytes != 0 );
-		}
-		return read_in_bytes;
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
-	 * @see snowflake.api.storage.IStorageInformation#getFreeSpace()
-	 */
-	@Override public long getFreeSpace() {
-		checkForOpen();
-		ClosureChecker.checkForOpen(chunk_manager, "ChunkManager");
-		return chunk_manager.streamAvailableChunks(StreamMode.Parallel).mapToLong(chunk -> chunk.getLength()).sum();
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.storage.IStorageInformation#getUsedSpace()
-	 */
-	@Override public long getUsedSpace() {
-		checkForOpen();
-		ClosureChecker.checkForOpen(flake_manager, "FlakeManager");
-		return flake_manager.streamFlakes(StreamMode.Parallel).filter(StreamFilter::filterInvalid)
-			.mapToLong(flake -> flake.getLength()).sum();
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
-	 * @see snowflake.api.storage.IStorageInformation#getAllocatedSpace()
-	 */
-	@Override public long getAllocatedSpace() {
-		synchronized( read_lock ) {
-			try {
-				return data_input_file.length();
-			} catch (IOException e) {
-				throw new StorageException("Failed to retrieve the number of allocated bytes!", e);
-			}
-		}
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.storage.IListenerAdapter#addListener(java.util.EventListener)
-	 */
-	@Override public void addListener(EventListener event_listener) {
-		synchronized( event_lock ) {
-			event_lister_list.add(event_listener);
-		}
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.storage.IListenerAdapter#removeListener(java.util.EventListener)
-	 */
-	@Override public void removeListener(EventListener event_listener) {
-		synchronized( event_lock ) {
-			event_lister_list.remove(event_listener);
-		}
 	}
 	
 	
@@ -415,19 +342,19 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 		
 		long remaining_bytes = length;
 		int clear_array_size = clear_array.length;
-		synchronized( write_lock ) {
+		synchronized( data_file ) {
 			try {
-				data_output_file.seek(chunk.getStartAddress() + offset);
+				data_file.seek(chunk.getStartAddress() + offset);
 				if( remaining_bytes > clear_array.length ) {
 					do {
-						data_output_file.write(clear_array, 0, clear_array_size);
+						data_file.write(clear_array, 0, clear_array_size);
 						remaining_bytes -= clear_array_size;
 					}
 					while( remaining_bytes >= clear_array_size );
 				}
 				if( remaining_bytes > 0 ) {
 					// cast is okay, because remaining_bytes is smaller than or equal to clear_array.length (which is int)
-					data_output_file.write(clear_array, 0, (int)remaining_bytes);
+					data_file.write(clear_array, 0, (int)remaining_bytes);
 					remaining_bytes = 0;
 				}
 			}
@@ -447,12 +374,20 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 		ChunkData chunk_data;
 		long new_length;
 		long current_length;
-		synchronized( write_lock ) {
+		synchronized( data_file ) {
+			long maximum_storage_size = storage_configuration.getMaximumStorageSize();
 			current_length = getAllocatedSpace();
-			new_length = current_length + number_of_bytes;
-			chunk_data = new ChunkData(current_length, number_of_bytes, FlakeManager.ROOT_IDENTIFICATION, 0, (byte)0);
+			if( current_length > maximum_storage_size ) {
+				throw new StorageException("The storage is larger than the " 
+						+ StorageConfigurationElement.MaximumStorageSize.getName());
+			}
+			new_length = Math.min(current_length + number_of_bytes, maximum_storage_size);
+			if( new_length == current_length ) {
+				throw new StorageException("There is not enough capacity available to allocate a new chunk!");
+			}
+			chunk_data = new ChunkData(current_length, new_length - current_length, FlakeManager.ROOT_IDENTIFICATION, 0, (byte)0);
 			try {
-				data_output_file.setLength(new_length);
+				data_file.setLength(new_length);
 			} catch (IOException e) {
 				throw new StorageException("Failed to allocate \"" + number_of_bytes  + "\" bytes!", e);
 			}
@@ -462,10 +397,25 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	
 	
 	/* (non-Javadoc)
+	 * @see snowflake.api.storage.IManagerAdapter#getFlakes(j3l.util.interfaces.StreamMode)
+	 */
+	@Override public Stream<IFlake> getFlakes(StreamMode stream_mode) {
+		return flake_manager.streamFlakes(stream_mode);
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.api.storage.IManagerAdapter#getAvailableChunks(j3l.util.interfaces.StreamMode)
+	 */
+	@Override public Stream<IChunkInformation> getAvailableChunks(StreamMode stream_mode) {
+		return chunk_manager.streamAvailableChunks(stream_mode);
+	}
+	
+	
+	/* (non-Javadoc)
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfFlakes()
 	 */
 	@Override public int getNumberOfFlakes() {
-		ClosureChecker.checkForOpen(flake_manager, "FlakeManager");
 		long number_of_flakes = flake_manager.streamFlakes(StreamMode.Parallel).count();
 		if( number_of_flakes > Integer.MAX_VALUE ) {
 			return Integer.MAX_VALUE;
@@ -481,7 +431,6 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfDamagedFlakes()
 	 */
 	@Override public int getNumberOfDamagedFlakes() {
-		ClosureChecker.checkForOpen(flake_manager, "FlakeManager");
 		long number_of_damaged_flakes = flake_manager.streamFlakes(StreamMode.Parallel).filter(flake -> flake.isDamaged()).count();
 		if( number_of_damaged_flakes > Integer.MAX_VALUE ) {
 			return Integer.MAX_VALUE;
@@ -521,7 +470,6 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfUsedChunks()
 	 */
 	@Override public long getNumberOfUsedChunks() {
-		checkForOpen();
 		return flake_manager.streamFlakes(StreamMode.Parallel).mapToLong(flake -> flake.getNumberOfChunks()).sum();
 	}
 	
@@ -531,7 +479,6 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfFreeChunks()
 	 */
 	@Override public long getNumberOfFreeChunks() {
-		checkForOpen();
 		return chunk_manager.streamAvailableChunks(StreamMode.Parallel).count();
 	}
 	
@@ -544,36 +491,57 @@ public final class Storage implements IListenerAdapter, IStorageInformation, IMa
 		if( number_of_chunks == 0 ) {
 			return 0d;
 		}
-		checkForOpen();
 		return (double)getAllocatedSpace() / number_of_chunks;
 	}
 	
 	
-	/* (non-Javadoc)
-	 * @see snowflake.api.storage.IManagerAdapter#mergeAvailableChunks(int)
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.api.storage.IStorageInformation#getFreeSpace()
 	 */
-	@Override public void mergeAvailableChunks(int number_of_attempts) {
-		checkForOpen();
-		chunk_manager.mergeAvailableChunks(number_of_attempts);
+	@Override public long getFreeSpace() {
+		return chunk_manager.streamAvailableChunks(StreamMode.Parallel).mapToLong(chunk -> chunk.getLength()).sum();
 	}
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.api.storage.IManagerAdapter#getFlakes(j3l.util.interfaces.StreamMode)
+	 * @see snowflake.api.storage.IStorageInformation#getUsedSpace()
 	 */
-	@Override public Stream<IFlake> getFlakes(StreamMode stream_mode) {
-		checkForOpen();
-		return flake_manager.streamFlakes(stream_mode);
+	@Override public long getUsedSpace() {
+		return flake_manager.streamFlakes(StreamMode.Parallel).filter(StreamFilter::filterInvalid)
+			.mapToLong(flake -> flake.getLength()).sum();
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.api.storage.IStorageInformation#getAllocatedSpace()
+	 */
+	@Override public long getAllocatedSpace() {
+		synchronized( data_file ) {
+			try {
+				return data_file.length();
+			} catch (IOException e) {
+				throw new StorageException("Failed to retrieve the number of allocated bytes!", e);
+			}
+		}
 	}
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.api.storage.IManagerAdapter#getAvailableChunks(j3l.util.interfaces.StreamMode)
+	 * @see snowflake.core.storage.IGetIOAccess#getIOAccess()
 	 */
-	@Override public Stream<IChunkInformation> getAvailableChunks(StreamMode stream_mode) {
-		checkForOpen();
-		return chunk_manager.streamAvailableChunks(stream_mode);
+	@SuppressWarnings("resource") @Override public IOAccess getIOAccess() {
+		RandomAccessFile random_access_file;
+		try {
+			random_access_file = new RandomAccessFile(storage_configuration.getDataFilePath(), "rw");
+		}
+		catch( FileNotFoundException e ) {
+			throw new StorageException("Can not create a new " + GlobalString.IOAccess.toString()
+					+ ", because the " + GlobalString.DataFile.toString() + " does not exist!", e);
+		}
+		IOAccess io_access = new IOAccess(random_access_file);
+		return io_access;
 	}
-	
 	
 }

@@ -6,22 +6,20 @@ import java.util.LinkedList;
 import java.util.stream.Stream;
 
 import j3l.util.check.ArgumentChecker;
-import j3l.util.close.IStateClosure;
 import snowflake.api.GlobalString;
 import snowflake.api.stream.FlakeInputStream;
 import snowflake.api.stream.FlakeOutputStream;
-import snowflake.core.storage.IRead;
-import snowflake.core.storage.IWrite;
+import snowflake.core.storage.IGetIOAccess;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.04.06_0
  * @author Johannes B. Latzel
  */
-public final class FlakeStreamManager implements IFlakeStreamManager {
+public final class FlakeStreamManager implements IRemoveStream {
 	
 	
 	/**
@@ -33,13 +31,7 @@ public final class FlakeStreamManager implements IFlakeStreamManager {
 	/**
 	 * <p></p>
 	 */
-	private final IWrite write;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final IRead read;
+	private final IGetIOAccess io_access_getter;
 	
 	
 	/**
@@ -54,26 +46,10 @@ public final class FlakeStreamManager implements IFlakeStreamManager {
 	 * @param
 	 * @return
 	 */
-	public FlakeStreamManager(IRead read, IWrite write) {
-		this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
-		this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
+	public FlakeStreamManager(IGetIOAccess io_access_getter) {
+		this.io_access_getter = ArgumentChecker.checkForNull(io_access_getter, GlobalString.IOAccessGetter.toString());
 		stream_creation_lock = new Object();
 		stream_list = null;
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
-	 * @see snowflake.core.flake.IFlakeStreamManager#removeStream(j3l.util.interfaces.IStateClosure)
-	 */
-	@Override public void removeStream(IStateClosure closeable_stream) {
-		if( (closeable_stream instanceof FlakeOutputStream || closeable_stream instanceof FlakeInputStream)
-				&& closeable_stream.isClosed() ) {
-			synchronized( stream_creation_lock ) {
-				stream_list.remove(closeable_stream);
-			}
-		}
-		
 	}
 	
 	
@@ -108,7 +84,7 @@ public final class FlakeStreamManager implements IFlakeStreamManager {
 			if( stream_list == null ) {
 				stream_list = new LinkedList<>();
 			}
-			FlakeOutputStream stream = new FlakeOutputStream(flake, write, this);
+			FlakeOutputStream stream = new FlakeOutputStream(flake, io_access_getter.getIOAccess(), this);
 			stream_list.add(stream);
 			return stream;	
 		}
@@ -126,7 +102,7 @@ public final class FlakeStreamManager implements IFlakeStreamManager {
 			if( stream_list == null ) {
 				stream_list = new LinkedList<>();
 			}
-			FlakeInputStream stream = new FlakeInputStream(flake, read, this);
+			FlakeInputStream stream = new FlakeInputStream(flake, io_access_getter.getIOAccess(), this);
 			stream_list.add(stream);
 			return stream;
 		}
@@ -171,6 +147,20 @@ public final class FlakeStreamManager implements IFlakeStreamManager {
 		}
 		
 		return exception_list;
+		
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.core.flake.IRemoveStream#removeStream(java.io.Closeable)
+	 */
+	@Override public void removeStream(Closeable closeable_stream) {
+		if( (closeable_stream instanceof FlakeOutputStream || closeable_stream instanceof FlakeInputStream) ) {
+			synchronized( stream_creation_lock ) {
+				stream_list.remove(closeable_stream);
+			}
+		}
 		
 	}
 	

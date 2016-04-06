@@ -1,15 +1,15 @@
 package snowflake.core.flake;
 
-import j3l.util.close.IStateClosure;
+import java.io.Closeable;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.05_0
+ * @version 2015.04.06_0
  * @author Johannes B. Latzel
  */
-public interface IFlakeStreamManager {
+public interface IRemoveStream {
 	
 	
 	/**
@@ -18,6 +18,6 @@ public interface IFlakeStreamManager {
 	 * @param
 	 * @return
 	 */
-	void removeStream(IStateClosure closeable_stream);
+	void removeStream(Closeable closeable_stream);
 	
 }

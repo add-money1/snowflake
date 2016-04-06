@@ -4,12 +4,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import j3l.util.check.ArgumentChecker;
-import j3l.util.close.ClosureState;
-import j3l.util.close.IClose;
 import snowflake.api.GlobalString;
 import snowflake.api.flake.DataPointer;
 import snowflake.core.flake.Flake;
-import snowflake.core.flake.IFlakeStreamManager;
+import snowflake.core.flake.IRemoveStream;
 import snowflake.core.storage.IWrite;
 
 
@@ -17,10 +15,10 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.04.06_0
  * @author Johannes B. Latzel
  */
-public final class FlakeOutputStream extends OutputStream implements IClose<IOException> {
+public final class FlakeOutputStream extends OutputStream {
 		
 	
 	/**
@@ -38,7 +36,7 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 	/**
 	 * <p></p>
 	 */
-	private ClosureState closure_state;
+	private boolean is_closed;
 	
 	
 	/**
@@ -50,7 +48,7 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 	/**
 	 * <p></p>
 	 */
-	private final IFlakeStreamManager flake_stream_manager;
+	private final IRemoveStream flake_stream_manager;
 	
 	
 	/**
@@ -59,15 +57,14 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 	 * @param
 	 * @return
 	 */
-	public FlakeOutputStream(Flake flake, IWrite write, IFlakeStreamManager flake_stream_manager) {
+	public FlakeOutputStream(Flake flake, IWrite write, IRemoveStream flake_stream_manager) {
 		this.flake = ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString());
 		this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
 		this.flake_stream_manager = ArgumentChecker.checkForNull(
 			flake_stream_manager, GlobalString.FlakeStreamManager.toString()
 		);
 		data_pointer = new DataPointer(flake, 0L);
-		closure_state = ClosureState.None;
-		open();
+		is_closed = false;
 	}
 	
 	
@@ -82,11 +79,48 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 	}
 	
 	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void trim() {
+		flake.setLength(data_pointer.getPositionInFlake());
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void ensureCapacity(long number_of_bytes) {
+		if( number_of_bytes > flake.getLength() ) {
+			flake.setLength(number_of_bytes);
+		}
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void ensureRemainingCapacity(long number_of_bytes) {
+		if( number_of_bytes > data_pointer.getRemainingBytes() ) {
+			flake.setLength(data_pointer.getPositionInFlake() + number_of_bytes);
+		}
+	}
+	
+	
 	/* (non-Javadoc)
 	 * @see java.io.OutputStream#write(int)
 	 */
 	@Override public void write(int b) throws IOException {
-		if( !isOpen() ) {
+		if( is_closed ) {
 			throw new IOException("The stream is not open!");
 		}
 		else {
@@ -103,7 +137,7 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 	 * @see java.io.OutputStream#write(byte[], int, int)
 	 */
 	@Override public void write(byte[] buffer, int offset, int length) throws IOException {
-		if( !isOpen() ) {
+		if( is_closed ) {
 			throw new IOException("The stream is not open!");
 		}
 		else {
@@ -116,46 +150,27 @@ public final class FlakeOutputStream extends OutputStream implements IClose<IOEx
 	}
 	
 	
-	/* (non-Javadoc)
-	 * @see j3l.util.interfaces.IStateClosure#getClosureState()
-	 */
-	@Override public ClosureState getClosureState() {
-		return closure_state;
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see j3l.util.interfaces.IClose#open()
-	 */
-	@Override public void open() {
-		if( !hasBeenOpened() ) {
-			closure_state = ClosureState.Open;
-		}
-	}
-	
-	
 	/*
 	 * (non-Javadoc)
 	 * @see java.io.OutputStream#close()
 	 */
-	@Override public void close() throws IOException {
-		
-		if( !isOpen() ) {
+	@Override public synchronized void close() throws IOException {
+		if( is_closed ) {
 			return;
 		}
-		
-		closure_state = ClosureState.InClosure;
-		
 		try {
 			flush();
 		}
 		catch( IOException e ) {
 			throw new IOException("Failed to flush the stream!", e);
 		}
-		finally {
-			closure_state = ClosureState.Closed;
-			flake_stream_manager.removeStream(this);
+		try {
+			write.close();
 		}
-		
+		catch( IOException e ) {
+			throw new IOException("Failed to close the " + GlobalString.Write.toString()+ "!", e);
+		}
+		flake_stream_manager.removeStream(this);
+		is_closed = true;
 	}
 }

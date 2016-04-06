@@ -1,6 +1,5 @@
 package snowflake.core.manager;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Random;
@@ -16,22 +15,22 @@ import j3l.util.stream.StreamMode;
 import snowflake.api.GlobalString;
 import snowflake.api.flake.IFlake;
 import snowflake.api.flake.IFlakeManager;
+import snowflake.api.storage.StorageException;
 import snowflake.core.data.Chunk;
 import snowflake.core.flake.Flake;
 import snowflake.core.flake.FlakeDataManager;
 import snowflake.core.flake.FlakeStreamManager;
-import snowflake.core.storage.IRead;
-import snowflake.core.storage.IWrite;
+import snowflake.core.storage.IGetIOAccess;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.03.10_0
+ * @version 2015.04.04_0
  * @author Johannes B. Latzel
  */
-public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose<IOException> {
+public final class FlakeManager implements IFlakeManager, IClose<StorageException> {
 	
 	
 	/**
@@ -43,13 +42,7 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 	/**
 	 * <p></p>
 	 */
-	private final IWrite write;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final IRead read;
+	private final IGetIOAccess io_access_getter;
 	
 	
 	/**
@@ -82,9 +75,8 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 	 * @param
 	 * @return
 	 */
-	public FlakeManager(IRead read, IWrite write) {
-		this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
-		this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
+	public FlakeManager(IGetIOAccess io_access_getter) {
+		this.io_access_getter = ArgumentChecker.checkForNull(io_access_getter, GlobalString.IOAccessGetter.toString());
 		flake_table = new Hashtable<>();
 		closure_state = ClosureState.None;
 		flake_creation_lock = new Object();
@@ -115,13 +107,14 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 	/* (non-Javadoc)
 	 * @see j3l.util.interfaces.IClose#open()
 	 */
-	@Override public void open() throws IOException {
+	@Override public void open() {
 		
 		if( hasBeenOpened() ) {
 			return;
 		}
 		
-		closure_state = ClosureState.InOpening;		
+		closure_state = ClosureState.InOpening;
+		flake_table.values().forEach(Flake::open);
 		closure_state = ClosureState.Open;
 		
 	}
@@ -130,7 +123,7 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 	/* (non-Javadoc)
 	 * @see j3l.util.interfaces.IClose#close()
 	 */
-	@Override public void close() throws IOException {
+	@Override public void close() {
 		
 		if( !isOpen() ) {
 			return;
@@ -165,8 +158,8 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 			flake = new Flake(identification);
 			flake_table.put(new Long(identification), flake);
 			
-			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager));
-			flake.setFlakeStreamManager(new FlakeStreamManager(read, write));
+			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager), null);
+			flake.setFlakeStreamManager(new FlakeStreamManager(io_access_getter));
 			flake.open();
 			
 		}
@@ -197,11 +190,24 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 	}
 	
 	
-	/*
-	 * (non-Javadoc)
-	 * @see snowflake.api.IFlakeManager#declareFlake(long, snowflake.core.manager.ChunkManager)
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
 	 */
-	@Override public IFlake declareFlake(long identification, ChunkManager chunk_manager) {
+	public IFlake declareFlake(long identification, ChunkManager chunk_manager) {
+		return declareFlake(identification, chunk_manager, null);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public IFlake declareFlake(long identification, ChunkManager chunk_manager, ArrayList<Chunk> initial_chunk_list) {
 		
 		if( identification == FlakeManager.ROOT_IDENTIFICATION ) {
 			throw new IllegalArgumentException("The identification must not be equal to the ROOT_IDENTIFICATION "
@@ -218,37 +224,14 @@ public final class FlakeManager implements IFlakeManager, IFlakeModifier, IClose
 		synchronized( flake_creation_lock ) {
 			flake = new Flake(identification);
 			
-			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager));
-			flake.setFlakeStreamManager(new FlakeStreamManager(read, write));
-
+			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager), initial_chunk_list);
+			flake.setFlakeStreamManager(new FlakeStreamManager(io_access_getter));
+			
 			flake_table.put(new Long(identification), flake);
 		}
 		
 		return flake;
 		
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.core.manager.IFlakeModifier#addChunkToFlake(long, snowflake.core.Chunk, int)
-	 */
-	@Override public void addChunkToFlake(long identification, Chunk chunk, int index, ChunkManager chunk_manager) {
-		if( !flakeExists(identification) ) {
-			declareFlake(identification, chunk_manager);
-		}
-		
-		// will eventually be closed by this instance
-		@SuppressWarnings("resource") Flake flake = flake_table.get(new Long(identification));
-		ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString()).insertChunk(chunk, index);
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.core.manager.IFlakeModifier#openFlakes()
-	 */
-	@Override public void openFlakes() {
-		flake_table.values().forEach(Flake::open);
-	}
-	
+	}	
 	
 }

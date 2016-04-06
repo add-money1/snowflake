@@ -10,7 +10,7 @@ import snowflake.core.flake.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.04.01_0
  * @author Johannes B. Latzel
  */
 public final class DataPointer {	
@@ -184,7 +184,7 @@ public final class DataPointer {
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override public int hashCode() {
-		return Long.hashCode(getPositionInStorage());
+		return super.hashCode();
 	}
 	
 	

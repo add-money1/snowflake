@@ -1,6 +1,7 @@
  package snowflake.core.flake;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -21,7 +22,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.03.14_0
  * @author Johannes B. Latzel
  */
 public final class Flake implements IClose<IOException>, IFlake {
@@ -113,13 +114,14 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @param
 	 * @return
 	 */
-	public void setFlakeDataManager(FlakeDataManager flake_data_manager) {
+	public void setFlakeDataManager(FlakeDataManager flake_data_manager, ArrayList<Chunk> initial_chunk_list) {
 		if( hasBeenOpened() ) {
 			throw new SecurityException("Can not change the flake_stream_manager after the flake has been opened!");
 		}
 		this.flake_data_manager = 
 			ArgumentChecker.checkForNull(flake_data_manager, GlobalString.FlakeDataManager.toString()
 		);
+		flake_data_manager.setInitialChunks(initial_chunk_list);
 	}
 	
 	

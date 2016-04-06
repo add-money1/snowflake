@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.TreeSet;
 
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
+import j3l.util.stream.StreamFilter;
 import snowflake.api.storage.StorageException;
 import snowflake.core.data.ChunkUtility;
 
@@ -16,7 +18,7 @@ import snowflake.core.data.ChunkUtility;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.03.14_0
  * @author Johannes B. Latzel
  */
 public final class DataTable<T extends IBinaryData> {
@@ -125,6 +127,24 @@ public final class DataTable<T extends IBinaryData> {
 				throw new Error("An index must never exist more than once!");
 			}
 			available_index_tree.add(boxed_index);
+		}
+	}
+
+
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void addAvailableIndices(ArrayList<Long> available_index_list) {
+		synchronized( available_index_tree ) {
+			available_index_list.parallelStream().filter(StreamFilter::filterNull).forEach(index -> {
+				if( available_index_tree.contains(index) ) {
+					throw new Error("An index must never exist more than once!");
+				}
+				available_index_tree.add(index);
+			});
 		}
 	}
 	

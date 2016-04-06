@@ -11,19 +11,10 @@ import snowflake.api.flake.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.05_0
+ * @version 2016.03.13_0
  * @author Johannes B. Latzel
  */
 public interface IManagerAdapter {
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	IFlake declareFlake(long identification);
 	
 	
 	/**
@@ -51,15 +42,6 @@ public interface IManagerAdapter {
 	 * @return
 	 */
 	 boolean flakeExists(long identification);
-	 
-	 
-	 /**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	 void mergeAvailableChunks(int number_of_attempts);
 	 
 	 
 	 /**

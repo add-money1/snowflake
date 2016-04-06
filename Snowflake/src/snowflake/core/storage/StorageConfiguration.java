@@ -15,7 +15,7 @@ import snowflake.api.configuration.IReadonlyStorageConfiguration;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.03.14_0
  * @author Johannes B. Latzel
  */
 public final class StorageConfiguration implements IReadonlyStorageConfiguration {
@@ -306,7 +306,28 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 				)
 			)
 		);
-	}	
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void setMaximumStorageSize(long maximum_storage_size) {
+		configuration_manager.setElement(
+			StorageConfigurationElement.MaximumStorageSize.getName(), 
+			Long.toString(
+				ArgumentChecker.checkForBoundaries(
+					maximum_storage_size, 
+					1, 
+					Long.MAX_VALUE, 
+					StorageConfigurationElement.MaximumStorageSize.getName()
+				)
+			)
+		);
+	}
 	
 	
 	/**
@@ -483,6 +504,14 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 */
 	@Override public long getChunkRecyclingTreshhold() {
 		return getValue(StorageConfigurationElement.ChunkRecyclingTreshhold.toString(), 8192);
+	}
+
+
+	/* (non-Javadoc)
+	 * @see snowflake.api.configuration.IReadonlyStorageConfiguration#getMaximumStorageSize()
+	 */
+	@Override public long getMaximumStorageSize() {
+		return getValue(StorageConfigurationElement.MaximumStorageSize.toString(), Long.MAX_VALUE);
 	}
 	
 }

@@ -1,4 +1,165 @@
 	
+	2016.04.06
+	
+		snowflake.core.storage.IRead
+			-> now extends "java.io.Closeable"
+			-> minor modifications in "int read(byte[])"
+			
+		snowflake.core.storage.IWrite
+			-> now extends "java.io.Closeable"
+			-> minor modifications in "void write(byte[])"
+			
+		snowflake.core.flake.FlakeStreamManager
+			-> changed "void removeStream(IStateClosure)" to "void removeStream(Closeable)"
+			
+		snowflake.api.stream.FlakeInputStream
+			-> changed "void close()" to "void close() throws IOException"
+			-> modified "void close() throws IOException" so that it closes the "read"
+			
+		snowflake.api.stream.FlakeOutputStream
+			-> modified "void close() throws IOException" so that it closes the "write"
+			
+		snowflake.core.flake.IFlakeStreamManager
+			-> changed name of the class to "IRemoveStream"
+		
+		snowflake.core.storage.IOAccess
+			-> no longer implements "java.io.Closeable" explicitly (inherited by "IRead" and "IWrite")
+	
+	2016.04.04
+		
+		snowflake.core.storage.Storage
+			-> no longer implements "IRead" and "IWrite"
+			-> now implements "IGetIOAccess"
+			-> removed "RandomAccessFile data_output_file"
+			-> changed "data_output_file" to "data_file"
+			
+		snowflake.core.storage.IOAccess
+			-> added class
+			
+		snowflake.core.storage.IGetIOAccess
+			-> added interface
+			
+		snowflake.api.GlobalString
+			-> added IOAccessGetter("io_access_getter") and IOAccess("io_access")
+			
+		snowflake.core.manager.FlakeManager
+			-> removed "IRead read" and "IWrite write"
+			-> added "IGetIOAccess io_access_getter"
+			
+		snowflake.core.flake.FlakeStreamManager
+			-> removed "IRead read" and "IWrite write"
+			-> added "IGetIOAccess io_access_getter"
+			
+		snowflake.api.stream.FlakeOutputStream
+			-> removed "boolean trim_on_close"
+			-> no longer implements "IClose<IOException>"
+			-> removed "ClosureState closure_state"
+			-> added "boolean closed"
+			
+		snowflake.api.stream.FlakeInputStream
+			-> no longer implements "IClose<IOException>"
+			-> removed "ClosureState closure_state"
+			-> added "boolean closed"
+			
+		snowflake.core.flake.IFlakeStreamManager
+			-> changed "void removeStream(IStateClosure)" to "void removeStream(Closeable)"		
+	
+	2016.04.01
+	
+		snowflake.api.stream.FlakeOutputStream
+			-> modified "void close() throws IOException" so that it trims the flake if necessary
+			-> added "void trim()", "void ensureCapacity(long)", and "void ensureRemainingCapacity(long)"
+		
+		snowflake.core.storage.StreamDescription
+			-> created class
+			
+		snowflake.api.GlobalString
+			-> added StreamDescription("stream_description") and DataFile("data_file")
+			
+		snwoflake.api.flake.DataPointer
+			-> modified "int hashCode()" so that it now returns the hash-code implemented by Object
+			
+		snowflake.core.storage.Storage
+			-> added "HashMap<DataPointer, StreamDescription> stream_description_map"
+			-> added "void writeUnsyncronized(DataPointer, byte) throws IOException"
+	
+	
+	2016.03.14
+	
+		snowflake.core.manager.ChunkManager
+			-> removed "IFlakeModifier flake_modifier"
+			-> added "void setInitialIndices(ArrayList<Long>)"
+			-> modified "void createAvailableChunk(long)" so that it now tries to pull all available chunks
+				from other Managers (like ChunkMergingManager) before actually creating a new chunk
+		
+		snowflake.core.manager.IFlakeModifier
+			-> deleted class
+			
+		snowflake.api.data.DataTable
+			-> added "void addAvailableIndices(ArrayList<Integer>)"
+			
+		snwoflake.api.flake.IFlakeManager
+			-> removed "IFlake declareFlake(long, ChunkManager)"
+			
+		snowflake.core.manager.FlakeManager
+			-> added "IFlake declareFlake(long, ChunkManager, ArrayList<Chunk>)"
+			-> "IFlake declareFlake(long, ChunkManager)" now calls 
+				"IFlake declareFlake(long, ChunkManager, ArrayList<Chunk>)"
+			-> no longer implements " IClose<IOException>" but  " IClose<StorageException>" instead
+			-> "void open()" and "void close()" no longer throw "java.io.IOException"
+			-> "void open()" now opens all flakes
+		
+		snowflake.core.flake.Flake
+			-> changed "void setFlakeDataManager(FlakeDataManager)"
+				to "void setFlakeDataManager(FlakeDataManager, ArrayList<Chunk>)"
+		
+		snwoflake.core.flake.FlakeDataManager
+			-> added "void setInitialChunks(ArrayList<Chunk>)"
+			
+		sndwoflake.api.configuration.IReadonlyStorageConfiguration
+			-> added "long getMaximumStorageSize()"
+			
+		snowflake.core.storage.StorageConfiguration
+			-> implemented "long getMaximumStorageSize()"
+			-> added "void setMaximumStorageSize(long)" so that a maximum size of the storage can be set
+			
+		snowflake.core.storage.StorageConfigurationElement
+			-> added MaximumStorageSize("maximum_storage_size")
+			
+		snowflake.core.storage.Storage
+			-> modified "ChunkData allocateSpace(long)" so that it restricts the size of the storage to
+				the maximum size
+			-> modified "void loadChunks() throws IOException" so that the loading is more efficient due to
+				to buffering all Chunks before distributing them to the Managers and Flakes
+				
+		snowflake.core.manager.ChunkMergingManager
+			-> added "Collection<Chunk> removeAll()"
+			-> added "boolean isEmpty()"
+	
+	2016.03.13
+	
+		snowflake.core.storage.Storage
+			-> replaced all occurrences of "write_lock" with "data_output_file"
+			-> replaced all occurrences of "read_lock" with "data_input_file"
+			-> replaced all occurrences of "event_lock" with "event_lister_list"
+			-> removed implementation of "IFlake declareFlake(long)"
+			-> removed implementation of "void mergeAvailableChunks(int)"
+			-> now opens itself when constructed
+			-> removed "void checkForOpen()"
+			-> removed all occurrences of "j3l.util.checker.ClosureChecker"
+			
+		snowflake.api.storage.IManagerAdapter
+			-> removed "IFlake declareFlake(long)"
+			-> removed "void mergeAvailableChunks(int)"
+			
+			
+		snowflake.core.manager.ChunkManager
+			-> removed "void mergeAvailableChunks(int)"
+			-> does not longer load chunks on start-up
+			
+		snowflake.api.storage.IListenerAdapter
+			-> deleted interface
+	
 	
 	2016.03.10
 		

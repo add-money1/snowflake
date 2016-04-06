@@ -1,6 +1,7 @@
 package snowflake.core.manager;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.function.Predicate;
@@ -23,7 +24,7 @@ import snowflake.core.data.Chunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.03.14_0
  * @author Johannes B. Latzel
  */
 public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInformation> {
@@ -154,6 +155,35 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 				return null;
 			}
 			return available_chunk;
+		}
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public Collection<Chunk> removeAll() {
+		ArrayList<Chunk> list;
+		synchronized( chunk_list ) {
+			list = new ArrayList<>(chunk_list);
+			chunk_list.clear();
+		}
+		return list;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public boolean isEmpty() {
+		synchronized( chunk_list ) {
+			return chunk_list.isEmpty();
 		}
 	}
 	

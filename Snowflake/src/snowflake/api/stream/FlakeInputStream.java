@@ -4,12 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import j3l.util.check.ArgumentChecker;
-import j3l.util.close.ClosureState;
-import j3l.util.close.IClose;
 import snowflake.api.GlobalString;
 import snowflake.api.flake.DataPointer;
 import snowflake.core.flake.Flake;
-import snowflake.core.flake.IFlakeStreamManager;
+import snowflake.core.flake.IRemoveStream;
 import snowflake.core.storage.IRead;
 
 
@@ -17,10 +15,10 @@ import snowflake.core.storage.IRead;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.04.06_0
  * @author Johannes B. Latzel
  */
-public final class FlakeInputStream extends InputStream implements IClose<IOException> {
+public final class FlakeInputStream extends InputStream {
 		
 	
 	/**
@@ -50,7 +48,7 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	/**
 	 * <p></p>
 	 */
-	private ClosureState closure_state;
+	private boolean is_closed;
 	
 	
 	/**
@@ -62,7 +60,7 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	/**
 	 * <p></p>
 	 */
-	private final IFlakeStreamManager flake_stream_manager;
+	private final IRemoveStream flake_stream_manager;
 	
 	
 	/**
@@ -71,15 +69,14 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	 * @param
 	 * @return
 	 */
-	public FlakeInputStream(Flake flake, IRead read, IFlakeStreamManager flake_stream_manager) {
+	public FlakeInputStream(Flake flake, IRead read, IRemoveStream flake_stream_manager) {
 		this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
 		this.flake_stream_manager = ArgumentChecker.checkForNull(
 			flake_stream_manager, GlobalString.FlakeStreamManager.toString()
 		);
 		data_pointer = new DataPointer(flake, 0L);
-		closure_state = ClosureState.None;
+		is_closed = false;
 		mark(0);
-		open();
 	}
 	
 	
@@ -98,7 +95,7 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	 * @see java.io.InputStream#read()
 	 */
 	@Override public int read() throws IOException {
-		if( !isOpen() ) {
+		if( is_closed ) {
 			throw new IOException("The stream is not open!");
 		}
 		return read.read(data_pointer);
@@ -110,7 +107,7 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	 * @see java.io.InputStream#read(byte[], int, int)
 	 */
 	@Override public int read(byte[] buffer, int offset, int length) throws IOException {
-		if( !isOpen() ) {
+		if( is_closed ) {
 			throw new IOException("The stream is not open!");
 		}
 		return read.read(data_pointer, buffer, offset, length);
@@ -122,13 +119,10 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	 * @see java.io.InputStream#skip(long)
 	 */
 	@Override public long skip(long number_of_bytes) {
-		
-		if( number_of_bytes <= 0  || !isOpen() ) {
+		if( number_of_bytes <= 0  || is_closed ) {
 			return 0;
 		}
-		
 		long remaining_bytes = data_pointer.getRemainingBytes();
-		
 		if( number_of_bytes >= remaining_bytes ) {
 			data_pointer.seekEOF();
 			return remaining_bytes;
@@ -137,7 +131,6 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 			data_pointer.changePosition(number_of_bytes);
 			return number_of_bytes;
 		}
-		
 	}
 	
 	
@@ -146,6 +139,9 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	 * @see java.io.InputStream#available()
 	 */
 	@Override public int available() {
+		if( is_closed ) {
+			return 0;
+		}
 		// cast is okay, because this method only returns an estimate
 		return (int)data_pointer.getRemainingBytes();
 	}
@@ -155,8 +151,13 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	 * (non-Javadoc)
 	 * @see java.io.InputStream#close()
 	 */
-	@Override public void close() {
-		closure_state = ClosureState.Closed;
+	@Override public void close() throws IOException {
+		try {
+			read.close();
+		}
+		catch( IOException e ) {
+			throw new IOException("Failed to close the " + GlobalString.Read.toString()+ "!", e);
+		}
 		flake_stream_manager.removeStream(this);
 	}
 	
@@ -167,7 +168,7 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	 */
 	@Override public synchronized void mark(int read_limit) {
 		
-		if( read_limit < 0 || isClosed() ) {
+		if( read_limit < 0 || is_closed ) {
 			return;
 		}
 		
@@ -199,22 +200,6 @@ public final class FlakeInputStream extends InputStream implements IClose<IOExce
 	 */
 	@Override public boolean markSupported() {
 		return true;
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see j3l.util.interfaces.IClose#open()
-	 */
-	@Override public void open() {
-		closure_state = ClosureState.Open;
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see j3l.util.interfaces.IStateClosure#getClosureState()
-	 */
-	@Override public ClosureState getClosureState() {
-		return closure_state;
 	}
 	
 }
