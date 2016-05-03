@@ -1,13 +1,12 @@
-package snowflake.api.stream;
+package snowflake.api;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.api.GlobalString;
-import snowflake.api.flake.DataPointer;
 import snowflake.core.flake.Flake;
 import snowflake.core.flake.IRemoveStream;
+import snowflake.core.manager.IReturnChannel;
 import snowflake.core.storage.IWrite;
 
 
@@ -15,7 +14,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.06_0
+ * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
 public final class FlakeOutputStream extends OutputStream {
@@ -53,15 +52,24 @@ public final class FlakeOutputStream extends OutputStream {
 	
 	/**
 	 * <p></p>
+	 */
+	private final IReturnChannel channel_returner;
+	
+	
+	/**
+	 * <p></p>
 	 *
 	 * @param
 	 * @return
 	 */
-	public FlakeOutputStream(Flake flake, IWrite write, IRemoveStream flake_stream_manager) {
+	public FlakeOutputStream(Flake flake, IWrite write, IRemoveStream flake_stream_manager, IReturnChannel channel_returner) {
 		this.flake = ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString());
 		this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
 		this.flake_stream_manager = ArgumentChecker.checkForNull(
 			flake_stream_manager, GlobalString.FlakeStreamManager.toString()
+		);
+		this.channel_returner = ArgumentChecker.checkForNull(
+			channel_returner, GlobalString.ChannelReturner.toString()
 		);
 		data_pointer = new DataPointer(flake, 0L);
 		is_closed = false;
@@ -164,13 +172,8 @@ public final class FlakeOutputStream extends OutputStream {
 		catch( IOException e ) {
 			throw new IOException("Failed to flush the stream!", e);
 		}
-		try {
-			write.close();
-		}
-		catch( IOException e ) {
-			throw new IOException("Failed to close the " + GlobalString.Write.toString()+ "!", e);
-		}
 		flake_stream_manager.removeStream(this);
+		channel_returner.returnChannel(write);
 		is_closed = true;
 	}
 }

@@ -13,21 +13,19 @@ import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.api.GlobalString;
-import snowflake.api.flake.IFlake;
-import snowflake.api.flake.IFlakeManager;
-import snowflake.api.storage.StorageException;
-import snowflake.core.data.Chunk;
+import snowflake.api.IFlake;
+import snowflake.api.StorageException;
+import snowflake.core.Chunk;
 import snowflake.core.flake.Flake;
 import snowflake.core.flake.FlakeDataManager;
 import snowflake.core.flake.FlakeStreamManager;
-import snowflake.core.storage.IGetIOAccess;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.04.04_0
+ * @version 2015.04.07_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IClose<StorageException> {
@@ -42,7 +40,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	/**
 	 * <p></p>
 	 */
-	private final IGetIOAccess io_access_getter;
+	private final IManageChannel channel_manager;
 	
 	
 	/**
@@ -75,8 +73,8 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	 * @param
 	 * @return
 	 */
-	public FlakeManager(IGetIOAccess io_access_getter) {
-		this.io_access_getter = ArgumentChecker.checkForNull(io_access_getter, GlobalString.IOAccessGetter.toString());
+	public FlakeManager(IManageChannel channel_manager) {
+		this.channel_manager = ArgumentChecker.checkForNull(channel_manager, GlobalString.ChannelManager.toString());
 		flake_table = new Hashtable<>();
 		closure_state = ClosureState.None;
 		flake_creation_lock = new Object();
@@ -159,7 +157,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 			flake_table.put(new Long(identification), flake);
 			
 			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager), null);
-			flake.setFlakeStreamManager(new FlakeStreamManager(io_access_getter));
+			flake.setFlakeStreamManager(new FlakeStreamManager(channel_manager));
 			flake.open();
 			
 		}
@@ -225,7 +223,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 			flake = new Flake(identification);
 			
 			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager), initial_chunk_list);
-			flake.setFlakeStreamManager(new FlakeStreamManager(io_access_getter));
+			flake.setFlakeStreamManager(new FlakeStreamManager(channel_manager));
 			
 			flake_table.put(new Long(identification), flake);
 		}

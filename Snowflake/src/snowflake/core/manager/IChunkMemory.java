@@ -1,6 +1,6 @@
-package snowflake.api.chunk;
+package snowflake.core.manager;
 
-import snowflake.core.data.Chunk;
+import snowflake.core.Chunk;
 import snowflake.core.flake.Flake;
 
 
@@ -8,7 +8,7 @@ import snowflake.core.flake.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.11.27_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
 public interface IChunkMemory {

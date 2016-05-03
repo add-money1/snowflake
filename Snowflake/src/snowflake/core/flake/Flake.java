@@ -6,23 +6,21 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ClosureChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
+import snowflake.api.FlakeInputStream;
+import snowflake.api.FlakeOutputStream;
 import snowflake.api.GlobalString;
-import snowflake.api.chunk.IChunkInformation;
-import snowflake.api.flake.IFlake;
-import snowflake.api.flake.Lock;
-import snowflake.api.stream.FlakeInputStream;
-import snowflake.api.stream.FlakeOutputStream;
-import snowflake.core.data.Chunk;
+import snowflake.api.IFlake;
+import snowflake.core.Chunk;
+import snowflake.core.IChunk;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.14_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
 public final class Flake implements IClose<IOException>, IFlake {
@@ -32,12 +30,6 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * <p></p>
 	 */
 	private FlakeDataManager flake_data_manager;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final FlakeLockManager flake_lock_manager;
 	
 	
 	/**
@@ -72,23 +64,15 @@ public final class Flake implements IClose<IOException>, IFlake {
 	
 	/**
 	 * <p></p>
-	 */
-	private boolean is_chunk_merging;
-	
-	
-	/**
-	 * <p></p>
 	 *
 	 * @param
 	 * @return
 	 */
 	public Flake(long identification) {
 		this.identification = identification;
-		flake_lock_manager = new FlakeLockManager();
 		closure_state = ClosureState.None;
 		is_damaged = false;
 		is_deleted = false;
-		is_chunk_merging = false;
 	}
 	
 	
@@ -209,32 +193,20 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#delete()
 	 */
 	@Override public synchronized boolean delete() {
-		
 		if( !isValid() ) {
 			close();
 			flake_data_manager.recycle();
 			is_deleted = true;
 			return true;
 		}
-		
-		Lock lock;
-		
-		if( !hasBeenOpened() || isLocked() ) {
+		if( !hasBeenOpened() ) {
 			return false;
 		}
-		else {
-			lock = lock(this);
-		}
-		
-		
 		if( isOpen() ) {
 			close();
 		}
-		
 		flake_data_manager.recycle();
 		is_deleted = true;
-		lock.releaseLock();
-		
 		return true;
 	}
 	
@@ -278,26 +250,6 @@ public final class Flake implements IClose<IOException>, IFlake {
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.api.IFlake#mergeChunks()
-	 */
-	@Override public synchronized void mergeChunks() {
-		if( needsChunkMerging() ) {
-			is_chunk_merging = true;
-			flake_data_manager.mergeChunks();
-			is_chunk_merging = false;
-		}
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IFlake#needsChunkMerging()
-	 */
-	@Override public boolean needsChunkMerging() {
-		return isValid() && flake_data_manager.needsChunkMerging();
-	}
-	
-	
-	/* (non-Javadoc)
 	 * @see snowflake.api.IFlake#isDamaged()
 	 */
 	@Override public boolean isDamaged() {
@@ -308,7 +260,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	/* (non-Javadoc)
 	 * @see snowflake.api.IFlake#getChunks()
 	 */
-	@Override public IChunkInformation[] getChunks() {
+	@Override public IChunk[] getChunks() {
 		ArgumentChecker.checkForValidation(this);
 		return flake_data_manager.getChunks();
 	}
@@ -317,7 +269,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	/* (non-Javadoc)
 	 * @see snowflake.api.IFlake#getChunkAtIndex(int)
 	 */
-	@Override public IChunkInformation getChunkAtIndex(int index) {
+	@Override public IChunk getChunkAtIndex(int index) {
 		ArgumentChecker.checkForValidation(this);
 		return flake_data_manager.getChunkAtIndex(index);
 	}
@@ -326,7 +278,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	/* (non-Javadoc)
 	 * @see snowflake.api.IFlake#getChunkAtPositionInFlake(long)
 	 */
-	@Override public IChunkInformation getChunkAtPositionInFlake(long position_in_flake) {
+	@Override public IChunk getChunkAtPositionInFlake(long position_in_flake) {
 		ArgumentChecker.checkForValidation(this);
 		return flake_data_manager.getChunkAtPosition(position_in_flake);
 	}
@@ -336,7 +288,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getFlakeInputStream()
 	 */
 	@Override public FlakeInputStream getFlakeInputStream() throws IOException {
-		if( !isStreamable() ) {
+		if( !isValid() ) {
 			throw new SecurityException("The flake can not be streamed!");
 		}
 		return flake_stream_manager.getFlakeInputStream(this);
@@ -347,33 +299,13 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getFlakeOutputStream()
 	 */
 	@Override public FlakeOutputStream getFlakeOutputStream() throws IOException {
-		
-		if( !isStreamable() ) {
+		if( !isValid() ) {
 			throw new SecurityException("The flake can not be streamed!");
 		}
-		
 		if( isWriting() ) {
 			throw new SecurityException("Can not create a FlakeOutputStream while another is still writing to this flake!");
 		}
-		
 		return flake_stream_manager.getFlakeOutputStream(this);
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IFlake#isLocked()
-	 */
-	@Override public boolean isLocked() {
-		return isValid() && flake_lock_manager.isLocked();
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IFlake#lock(java.lang.Object)
-	 */
-	@Override public Lock lock(Object owner) {
-		ClosureChecker.checkForOpen(this, toString());
-		return flake_lock_manager.lock(owner);
 	}
 	
 	
@@ -484,14 +416,6 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 */
 	@Override public boolean isWriting() {
 		return isValid() && flake_stream_manager.isWriting();
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IFlake#isChunkMerging()
-	 */
-	@Override public boolean isChunkMerging() {
-		return is_chunk_merging;
 	}
 	
 }

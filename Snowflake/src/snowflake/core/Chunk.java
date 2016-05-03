@@ -1,12 +1,11 @@
-package snowflake.core.data;
+package snowflake.core;
 
 import java.io.IOException;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.api.GlobalString;
-import snowflake.api.chunk.IChunkInformation;
-import snowflake.api.chunk.IChunkMemory;
 import snowflake.core.flake.Flake;
+import snowflake.core.manager.IChunkMemory;
 
 
 /**
@@ -20,18 +19,18 @@ import snowflake.core.flake.Flake;
  * </p>
  * <p>
  * 		A chunk must never be part of more than one flake. If it would the data this chunk includes would be shared by more than
- * 		one {@link snowflake.api.flake.IFlake flake} and could possibly cause irrepairable damage to the whole storage.
+ * 		one {@link snowflake.api.IFlake flake} and could possibly cause irrepairable damage to the whole storage.
  * </p>
  * <p>
- * 		It can either be part of a {@link snowflake.api.flake.IFlake flake} or be free. A free chunk will be managed and possibly
- * 		assigned to a {@link snowflake.api.flake.IFlake flake} by the {@link snowflake.api.IStorage storage}.
+ * 		It can either be part of a {@link snowflake.api.IFlake flake} or be free. A free chunk will be managed and possibly
+ * 		assigned to a {@link snowflake.api.IFlake flake} by the {@link snowflake.api.IStorage storage}.
  * </p>
  * 
  * @since JDK 1.8
  * @version 2016.03.10_0
  * @author Johannes B. Latzel
  */
-public final class Chunk implements IChunkInformation {
+public final class Chunk implements IChunk {
 	
 	
 	/**
@@ -54,9 +53,9 @@ public final class Chunk implements IChunkInformation {
 	
 	
 	/**
-	 * <p>the unique position inside the {@link snowflake.api.flake.IFlake flake} - This position will always be unique
+	 * <p>the unique position inside the {@link snowflake.api.IFlake flake} - This position will always be unique
 	 * for the specific flake.</p>
-	 * <p>If this chunk is not part of a {@link snowflake.api.flake.IFlake flake} than this field must have a negative value
+	 * <p>If this chunk is not part of a {@link snowflake.api.IFlake flake} than this field must have a negative value
 	 * to state that it is a free chunk.</p>
 	 */
 	private long position_in_flake;
@@ -140,7 +139,7 @@ public final class Chunk implements IChunkInformation {
 	/**
 	 * <p>tests the {@link #position_in_flake} for positivity (e.g. if this chunk is part of a  {@link #position_in_flake})</p>
 	 *
-	 * @return true if it is part of a {@link snowflake.api.flake.IFlake flake}, false otherwise
+	 * @return true if it is part of a {@link snowflake.api.IFlake flake}, false otherwise
 	 */
 	public boolean isPartOfFlake() {
 		return position_in_flake >= 0;

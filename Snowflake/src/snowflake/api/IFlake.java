@@ -1,16 +1,20 @@
-package snowflake.api.storage;
+package snowflake.api;
 
+import java.io.IOException;
+
+import j3l.util.check.IValidate;
 import j3l.util.close.IStateClosure;
+import snowflake.core.IChunk;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.11_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
-public interface IStorageInformation extends IStateClosure {
+public interface IFlake extends IStateClosure, IValidate {
 	
 	
 	/**
@@ -19,7 +23,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	long getAllocatedSpace();
+	boolean delete();
 	
 	
 	/**
@@ -28,7 +32,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	long getUsedSpace();
+	long getLength();
 	
 	
 	/**
@@ -37,7 +41,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	long getFreeSpace();
+	void setLength(long new_length);
 	
 	
 	/**
@@ -46,7 +50,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	int getNumberOfFlakes();
+	boolean isWriting();
 	
 	
 	/**
@@ -55,7 +59,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	int getNumberOfDamagedFlakes();
+	int getNumberOfChunks();
 	
 	
 	/**
@@ -64,7 +68,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	double getAverageFlakeSize();
+	boolean isDamaged();
 	
 	
 	/**
@@ -73,7 +77,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	double getAverageNumberOfChunksPerFlake();
+	IChunk[] getChunks();
 	
 	
 	/**
@@ -82,13 +86,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	default long getNumberOfChunks() {
-		long chunks = getNumberOfUsedChunks() + getNumberOfFreeChunks();
-		if( chunks < 0 ) {
-			return Long.MAX_VALUE;
-		}
-		return chunks;
-	}
+	IChunk getChunkAtIndex(int index);
 	
 	
 	/**
@@ -97,7 +95,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	long getNumberOfUsedChunks();
+	IChunk getChunkAtPositionInFlake(long position_in_flake);
 	
 	
 	/**
@@ -106,7 +104,7 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	long getNumberOfFreeChunks();
+	FlakeInputStream getFlakeInputStream() throws IOException;
 	
 	
 	/**
@@ -115,6 +113,21 @@ public interface IStorageInformation extends IStateClosure {
 	 * @param
 	 * @return
 	 */
-	double getAverageChunkSize();
+	FlakeOutputStream getFlakeOutputStream() throws IOException;
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	long getIdentification();
+	
+	
+	/**
+	 * <p></p>
+	 */
+	boolean isDeleted();
 	
 }

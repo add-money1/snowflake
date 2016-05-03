@@ -1,21 +1,21 @@
 package snowflake.core.storage;
 
-import java.io.Closeable;
 import java.io.IOException;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.api.DataPointer;
 import snowflake.api.GlobalString;
-import snowflake.api.flake.DataPointer;
+import snowflake.core.Returnable;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.06_0
+ * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
-public interface IRead extends Closeable {
+public interface IRead extends Returnable {
 	
 	
 	/**

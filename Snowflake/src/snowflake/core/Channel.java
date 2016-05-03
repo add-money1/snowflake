@@ -1,21 +1,24 @@
-package snowflake.core.storage;
+package snowflake.core;
 
+import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.api.DataPointer;
 import snowflake.api.GlobalString;
-import snowflake.api.flake.DataPointer;
+import snowflake.core.storage.IRead;
+import snowflake.core.storage.IWrite;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.06_0
+ * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
-public final class IOAccess implements IRead, IWrite {
+public final class Channel implements IRead, IWrite, Closeable {
 	
 	
 	/**
@@ -31,7 +34,7 @@ public final class IOAccess implements IRead, IWrite {
 	 * @return
 	 * @throws FileNotFoundException 
 	 */
-	public IOAccess(RandomAccessFile data_file) {
+	public Channel(RandomAccessFile data_file) {
 		this.data_file = ArgumentChecker.checkForNull(data_file, GlobalString.DataFile.toString());
 	}
 	
@@ -143,6 +146,7 @@ public final class IOAccess implements IRead, IWrite {
 	 */
 	@Override public void close() throws IOException {
 		data_file.close();
+		System.out.println("close");
 	}
 	
 }

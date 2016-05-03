@@ -1,22 +1,23 @@
 package snowflake.core.flake;
 
 import java.io.Closeable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.stream.Stream;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.api.FlakeInputStream;
+import snowflake.api.FlakeOutputStream;
 import snowflake.api.GlobalString;
-import snowflake.api.stream.FlakeInputStream;
-import snowflake.api.stream.FlakeOutputStream;
-import snowflake.core.storage.IGetIOAccess;
+import snowflake.core.manager.IManageChannel;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.06_0
+ * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
 public final class FlakeStreamManager implements IRemoveStream {
@@ -31,7 +32,7 @@ public final class FlakeStreamManager implements IRemoveStream {
 	/**
 	 * <p></p>
 	 */
-	private final IGetIOAccess io_access_getter;
+	private final IManageChannel channel_manager;
 	
 	
 	/**
@@ -46,8 +47,8 @@ public final class FlakeStreamManager implements IRemoveStream {
 	 * @param
 	 * @return
 	 */
-	public FlakeStreamManager(IGetIOAccess io_access_getter) {
-		this.io_access_getter = ArgumentChecker.checkForNull(io_access_getter, GlobalString.IOAccessGetter.toString());
+	public FlakeStreamManager(IManageChannel channel_getter) {
+		this.channel_manager = ArgumentChecker.checkForNull(channel_getter, GlobalString.ChannelManager.toString());
 		stream_creation_lock = new Object();
 		stream_list = null;
 	}
@@ -78,13 +79,14 @@ public final class FlakeStreamManager implements IRemoveStream {
 	 *
 	 * @param
 	 * @return
+	 * @throws FileNotFoundException 
 	 */
 	public FlakeOutputStream getFlakeOutputStream(Flake flake) {
 		synchronized( stream_creation_lock ) {	
 			if( stream_list == null ) {
 				stream_list = new LinkedList<>();
 			}
-			FlakeOutputStream stream = new FlakeOutputStream(flake, io_access_getter.getIOAccess(), this);
+			FlakeOutputStream stream = new FlakeOutputStream(flake, channel_manager.getChannel(), this, channel_manager);
 			stream_list.add(stream);
 			return stream;	
 		}
@@ -96,13 +98,14 @@ public final class FlakeStreamManager implements IRemoveStream {
 	 *
 	 * @param
 	 * @return
+	 * @throws FileNotFoundException 
 	 */
 	public FlakeInputStream getFlakeInputStream(Flake flake) {		
 		synchronized( stream_creation_lock ) {	
 			if( stream_list == null ) {
 				stream_list = new LinkedList<>();
 			}
-			FlakeInputStream stream = new FlakeInputStream(flake, io_access_getter.getIOAccess(), this);
+			FlakeInputStream stream = new FlakeInputStream(flake, channel_manager.getChannel(), this, channel_manager);
 			stream_list.add(stream);
 			return stream;
 		}
@@ -161,7 +164,6 @@ public final class FlakeStreamManager implements IRemoveStream {
 				stream_list.remove(closeable_stream);
 			}
 		}
-		
 	}
 	
 }

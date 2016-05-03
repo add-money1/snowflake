@@ -5,16 +5,16 @@ import java.util.Collection;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.api.GlobalString;
-import snowflake.api.chunk.IChunkInformation;
-import snowflake.api.chunk.IChunkManager;
-import snowflake.core.data.Chunk;
+import snowflake.core.Chunk;
+import snowflake.core.IChunk;
+import snowflake.core.manager.IChunkManager;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.14_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
 public final class FlakeDataManager {
@@ -475,93 +475,7 @@ public final class FlakeDataManager {
 	 * @param
 	 * @return
 	 */
-	public void mergeChunks() {
-		
-		if( getNumberOfChunks() < 2 ) {
-			return;
-		}
-		
-		Chunk current_chunk;
-		Chunk following_chunk;
-		int current_chunk_index = 0;
-		int chunk_list_size;
-		
-		synchronized( chunk_lock ) {
-			
-			chunk_list_size = chunk_list.size();
-			
-			do {
-				
-				current_chunk = chunk_list.get(current_chunk_index);
-				following_chunk = chunk_list.get(current_chunk_index + 1);
-				
-				if( current_chunk.isNeighbourOf(following_chunk) ) {
-					// re-inserts the merged chunk at the position of the current_chunk
-					chunk_list.add(
-						current_chunk_index, 
-						chunk_manager.mergeChunks(
-								new Chunk[] {
-									chunk_list.remove(current_chunk_index),
-									// okay, because the elements in the chunk_list move one 
-									// to the left after index current_chunk_index
-									// so the following_chunk is now at position current_chunk_index
-									chunk_list.remove(current_chunk_index)
-								})
-					);
-					chunk_list_size--;
-				}
-				else {
-					// only move the index to ensure that even a newly merged chunk
-					// may be considered for merging with the following chunk
-					current_chunk_index++;
-				}
-				
-			}
-			while( current_chunk_index < chunk_list_size - 1 );
-			
-			
-			// fixes the position of the chunks inside the flake
-			Chunk previous_chunk = chunk_list.get(0);
-			previous_chunk.setPositionInFlake(0);
-			previous_chunk.save(flake);
-			
-			for(int a=1;a<chunk_list_size;a++) {
-				current_chunk = chunk_list.get(a);
-				current_chunk.setPositionInFlake(previous_chunk.getPositionInFlake() + previous_chunk.getLength());
-				current_chunk.save(flake);
-				previous_chunk = current_chunk;
-			}
-			
-		}
-		
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	public boolean needsChunkMerging() {
-		synchronized( chunk_lock ) {
-			for(int a=0,n=chunk_list.size()-1;a<n;a++) {
-				if(chunk_list.get(a).isNeighbourOf(chunk_list.get(a+1))) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	public IChunkInformation[] getChunks() {
+	public IChunk[] getChunks() {
 		synchronized( chunk_lock ) {
 			return chunk_list.toArray(new Chunk[0]);
 		}
@@ -574,7 +488,7 @@ public final class FlakeDataManager {
 	 * @param
 	 * @return
 	 */
-	public IChunkInformation getChunkAtIndex(int index) {
+	public IChunk getChunkAtIndex(int index) {
 		synchronized( chunk_lock ) {
 			return chunk_list.get(
 				ArgumentChecker.checkForBoundaries(index, 0, chunk_list.size() - 1, GlobalString.Index.toString())
@@ -587,7 +501,7 @@ public final class FlakeDataManager {
 	 * @param position_in_flake
 	 * @return
 	 */
-	public IChunkInformation getChunkAtPosition(long position_in_flake) {
+	public IChunk getChunkAtPosition(long position_in_flake) {
 		
 		ArgumentChecker.checkForBoundaries(position_in_flake, 0, getLength() - 1, GlobalString.PositionInFlake.toString());
 		int chunk_list_size;
@@ -626,7 +540,7 @@ public final class FlakeDataManager {
 	 * @param
 	 * @return
 	 */
-	private IChunkInformation getChunkAtPositionLinearSearch(long position_in_flake) {
+	private IChunk getChunkAtPositionLinearSearch(long position_in_flake) {
 		
 		ArgumentChecker.checkForBoundaries(position_in_flake, 0, getLength() - 1, GlobalString.PositionInFlake.toString());
 		
@@ -654,7 +568,7 @@ public final class FlakeDataManager {
 	 * @param
 	 * @return
 	 */
-	private IChunkInformation getChunkAtPositionBinarySearch(long position_in_flake) {
+	private IChunk getChunkAtPositionBinarySearch(long position_in_flake) {
 		
 		if( !isConsistent() ) {
 			return getChunkAtPositionLinearSearch(position_in_flake);

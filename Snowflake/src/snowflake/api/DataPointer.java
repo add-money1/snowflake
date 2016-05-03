@@ -1,8 +1,7 @@
-package snowflake.api.flake;
+package snowflake.api;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.api.GlobalString;
-import snowflake.api.chunk.IChunkInformation;
+import snowflake.core.IChunk;
 import snowflake.core.flake.Flake;
 
 
@@ -10,7 +9,7 @@ import snowflake.core.flake.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.01_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
 public final class DataPointer {	
@@ -60,26 +59,11 @@ public final class DataPointer {
 	 * @return
 	 */
 	public long getPositionInStorage() {
-		
 		if( isEOF() ) {
 			throw new SecurityException("Can not resolve the position of an eof-pointer!");
 		}
-		
-		IChunkInformation chunk = flake.getChunkAtPositionInFlake(position_in_flake);
-		
-		long position_in_storage = chunk.getStartAddress()
-				+ ( position_in_flake - chunk.getPositionInFlake() );
-		
-		if( position_in_storage < 0 ) {
-			throw new SecurityException(
-				"The position_in_storage managed to overflow!" 
-				+ " [chunk.getStartAddress(): " + chunk.getStartAddress()
-				+ " | pointer_position_in_flake: " + position_in_flake
-				+ " | chunk_position_in_flake: " + chunk.getPositionInFlake() + "]"
-			);
-		}
-		
-		return position_in_storage;	
+		IChunk chunk = flake.getChunkAtPositionInFlake(position_in_flake);
+		return chunk.getStartAddress() - chunk.getPositionInFlake() + position_in_flake;	
 	}
 	
 	
@@ -90,7 +74,7 @@ public final class DataPointer {
 	 * @return
 	 */
 	public long getRemainingBytesInChunk() {
-		IChunkInformation chunk = flake.getChunkAtPositionInFlake(position_in_flake);
+		IChunk chunk = flake.getChunkAtPositionInFlake(position_in_flake);
 		return chunk.getLength() - ( position_in_flake - chunk.getPositionInFlake() );
 	}
 	
@@ -193,17 +177,13 @@ public final class DataPointer {
 	 * @see java.lang.Object#toString()
 	 */
 	@Override public String toString() {
-		
 		StringBuilder string_builder = new StringBuilder(100);
-		
-		string_builder.append("pointer in flake \"");
+		string_builder.append("pointer to flake \"");
 		string_builder.append(flake.toString());
 		string_builder.append("\" at position: ");
 		string_builder.append(position_in_flake);
 		string_builder.trimToSize();
-		
 		return string_builder.toString();
-		
 	}
 	
 	
@@ -212,20 +192,14 @@ public final class DataPointer {
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override public boolean equals(Object object) {
-		
 		if( object instanceof DataPointer ) {
-			
 			DataPointer data_pointer = (DataPointer)object;
-			
 			if( isEOF() != data_pointer.isEOF() ) {
 				return false;
 			}
-			
 			return getPositionInStorage() == data_pointer.getPositionInStorage();		
 		}
-		
 		return false;
-		
 	}
 	
 }

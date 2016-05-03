@@ -1,4 +1,4 @@
-package snowflake.core.data;
+package snowflake.core;
 
 import java.util.zip.CRC32;
 

@@ -6,8 +6,7 @@ import java.time.Instant;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.api.GlobalString;
-import snowflake.api.configuration.IReadonlyStorageConfiguration;
-import snowflake.api.storage.StorageException;
+import snowflake.api.StorageException;
 
 
 /**
@@ -68,7 +67,7 @@ public final class StreamDescription {
 	 * @param
 	 * @return
 	 */
-	public void createDataFile(IReadonlyStorageConfiguration storage_configuration) {
+	public void createDataFile(IStorageConfiguration storage_configuration) {
 		if( data_file != null ) {
 			throw new SecurityException("The " + GlobalString.DataFile.toString() + " already exists!");
 		}

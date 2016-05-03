@@ -1,11 +1,11 @@
-package snowflake.api.storage;
+package snowflake.api;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.12.04_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
 public class StorageException extends RuntimeException {

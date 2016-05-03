@@ -15,9 +15,8 @@ import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.api.GlobalString;
-import snowflake.api.chunk.IChunkInformation;
-import snowflake.api.chunk.IChunkManager;
-import snowflake.core.data.Chunk;
+import snowflake.core.Chunk;
+import snowflake.core.IChunk;
 
 
 /**
@@ -27,7 +26,7 @@ import snowflake.core.data.Chunk;
  * @version 2016.03.14_0
  * @author Johannes B. Latzel
  */
-public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInformation> {
+public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 	
 	
 	/**
@@ -210,9 +209,9 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunkInf
 	/* (non-Javadoc)
 	 * @see j3l.util.stream.IStream#getStream(j3l.util.stream.StreamMode)
 	 */
-	@Override public Stream<IChunkInformation> getStream(StreamMode stream_mode) {
+	@Override public Stream<IChunk> getStream(StreamMode stream_mode) {
 		return StreamFactory.getStream(chunk_list, stream_mode)
-				.filter(StreamFilter::filterNull).<IChunkInformation>map(_i->_i);
+				.filter(StreamFilter::filterNull).<IChunk>map(_i->_i);
 	}
 	
 }

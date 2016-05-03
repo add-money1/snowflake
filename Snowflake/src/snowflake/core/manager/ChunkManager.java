@@ -18,18 +18,16 @@ import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.api.DataTable;
 import snowflake.api.GlobalString;
+import snowflake.api.IStorageInformation;
+import snowflake.api.StorageException;
 import snowflake.api.TableMember;
-import snowflake.api.chunk.IChunkInformation;
-import snowflake.api.chunk.IChunkManager;
-import snowflake.api.chunk.IChunkMemory;
-import snowflake.api.configuration.IReadOnlyChunkManagerConfiguration;
-import snowflake.api.storage.IStorageInformation;
-import snowflake.api.storage.StorageException;
-import snowflake.core.data.Chunk;
-import snowflake.core.data.ChunkData;
-import snowflake.core.data.ChunkUtility;
+import snowflake.core.Chunk;
+import snowflake.core.ChunkData;
+import snowflake.core.ChunkUtility;
+import snowflake.core.IChunk;
 import snowflake.core.flake.Flake;
 import snowflake.core.storage.IAllocateSpace;
+import snowflake.core.storage.IChunkManagerConfiguration;
 import snowflake.core.storage.IClearChunk;
 
 
@@ -37,7 +35,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.14_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
 public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<IOException> {
@@ -70,7 +68,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	/**
 	 * <p></p>
 	 */
-	private final IReadOnlyChunkManagerConfiguration chunk_manager_configuration;
+	private final IChunkManagerConfiguration chunk_manager_configuration;
 	
 	
 	/**
@@ -116,7 +114,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * @return
 	 */
 	public ChunkManager(IStorageInformation storage_information, IClearChunk clear_chunk, 
-			IReadOnlyChunkManagerConfiguration chunk_manager_configuration, IAllocateSpace allocate_space) {
+			IChunkManagerConfiguration chunk_manager_configuration, IAllocateSpace allocate_space) {
 		
 		this.chunk_manager_configuration = ArgumentChecker.checkForNull(
 			chunk_manager_configuration, GlobalString.ChunkManagerConfiguration.toString()
@@ -414,10 +412,10 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * @param
 	 * @return
 	 */
-	public Stream<IChunkInformation> streamAvailableChunks(StreamMode stream_mode) {
+	public Stream<IChunk> streamAvailableChunks(StreamMode stream_mode) {
 		synchronized( available_chunk_tree ) {
 			return Stream.concat(
-				available_chunk_tree.stream(stream_mode).filter(StreamFilter::filterNull).<IChunkInformation>map(_o->_o),
+				available_chunk_tree.stream(stream_mode).filter(StreamFilter::filterNull).<IChunk>map(_o->_o),
 				chunk_merging_manager.getStream(stream_mode)
 			);
 		}
@@ -554,12 +552,11 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.api.IChunkManager#mergeChunks(snowflake.core.Chunk[])
+	 * @see snowflake.api.IChunkManager#mergeChunks(java.util.Collection)
 	 */
-	@Override public Chunk mergeChunks(Chunk[] chunks) {
-		
-		ArgumentChecker.checkForNull(chunks, GlobalString.Chunks.toString());
-		
+	@Override public Chunk mergeChunks(Collection<Chunk> chunk_collection) {
+		ArgumentChecker.checkForNull(chunk_collection, GlobalString.Chunks.toString());
+		Chunk[] chunks = chunk_collection.toArray(new Chunk[0]);
 		if( chunks.length == 0 ) {
 			throw new IllegalArgumentException("The length of the chunk must not be equal to 0!");
 		}
@@ -610,14 +607,8 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		merged_chunk.save(null);
 		
 		return merged_chunk;
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IChunkManager#mergeChunks(java.util.Collection)
-	 */
-	@Override public Chunk mergeChunks(Collection<Chunk> chunk_collection) {
-		return mergeChunks(chunk_collection.toArray(new Chunk[0]));
+		
+		
 	}
 	
 	

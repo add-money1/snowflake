@@ -1,4 +1,4 @@
-package snowflake.api.chunk;
+package snowflake.core;
 
 import j3l.util.check.IValidate;
 
@@ -6,10 +6,10 @@ import j3l.util.check.IValidate;
  * <p>provides read-only informations of a Chunk</p>
  * 
  * @since JDK 1.8
- * @version 2016.03.06_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
-public interface IChunkInformation extends IValidate {
+public interface IChunk extends IValidate {
 	
 	
 	/**

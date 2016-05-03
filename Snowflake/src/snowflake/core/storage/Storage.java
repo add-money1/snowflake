@@ -3,7 +3,6 @@ package snowflake.core.storage;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -18,14 +17,14 @@ import j3l.util.close.IClose;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.api.GlobalString;
-import snowflake.api.chunk.IChunkInformation;
-import snowflake.api.flake.IFlake;
-import snowflake.api.storage.IManagerAdapter;
-import snowflake.api.storage.IStorageInformation;
-import snowflake.api.storage.StorageException;
-import snowflake.core.data.Chunk;
-import snowflake.core.data.ChunkData;
-import snowflake.core.data.ChunkUtility;
+import snowflake.api.IFlake;
+import snowflake.api.IStorageInformation;
+import snowflake.api.StorageException;
+import snowflake.core.Chunk;
+import snowflake.core.ChunkData;
+import snowflake.core.ChunkUtility;
+import snowflake.core.IChunk;
+import snowflake.core.manager.ChannelManager;
 import snowflake.core.manager.ChunkManager;
 import snowflake.core.manager.FlakeManager;
 
@@ -34,11 +33,11 @@ import snowflake.core.manager.FlakeManager;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.04.04_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
-public final class Storage implements IStorageInformation, IManagerAdapter, IAllocateSpace, 
-										IClearChunk, IClose<IOException>, IGetIOAccess {
+public final class Storage implements IStorageInformation, IAllocateSpace, 
+										IClearChunk, IClose<IOException> {
 	
 	
 		
@@ -52,6 +51,12 @@ public final class Storage implements IStorageInformation, IManagerAdapter, IAll
 	 * <p></p>
 	 */
 	private final FlakeManager flake_manager;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private final ChannelManager channel_manager;
 	
 	
 	/**
@@ -89,7 +94,8 @@ public final class Storage implements IStorageInformation, IManagerAdapter, IAll
 		this.storage_configuration = ArgumentChecker.checkForNull(
 			storage_configuration, GlobalString.StorageConfiguration.toString()
 		);
-		flake_manager 			= 	new FlakeManager(this);
+		channel_manager 		= 	new ChannelManager(storage_configuration);
+		flake_manager 			= 	new FlakeManager(channel_manager);
 		chunk_manager 			= 	new ChunkManager(this, this, storage_configuration, this);
 		data_file 				= 	new RandomAccessFile(storage_configuration.getDataFilePath(), "rw");
 		clear_array 			= 	new byte[ storage_configuration.getClearArraySize() ];
@@ -251,6 +257,61 @@ public final class Storage implements IStorageInformation, IManagerAdapter, IAll
 		
 	}
 	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public Stream<IFlake> getFlakes(StreamMode stream_mode) {
+		return flake_manager.streamFlakes(stream_mode);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public Stream<IChunk> getAvailableChunks(StreamMode stream_mode) {
+		return chunk_manager.streamAvailableChunks(stream_mode);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public IFlake createFlake() {
+		return flake_manager.createFlake(chunk_manager);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public IFlake getFlake(long indentification) {
+		return flake_manager.getFlake(indentification);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public boolean flakeExists(long identification) {
+		return flake_manager.flakeExists(identification);
+	}
+	
 				
 	/* (non-Javadoc)
 	 * @see j3l.util.interfaces.IClose#open()
@@ -298,32 +359,6 @@ public final class Storage implements IStorageInformation, IManagerAdapter, IAll
 	 */
 	@Override public ClosureState getClosureState() {
 		return closure_state;
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
-	 * @see snowflake.api.storage.IManagerAdapter#createFlake()
-	 */
-	@Override public IFlake createFlake() {
-		return flake_manager.createFlake(chunk_manager);
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
-	 * @see snowflake.api.storage.IManagerAdapter#getFlake(long)
-	 */
-	@Override public IFlake getFlake(long indentification) {
-		return flake_manager.getFlake(indentification);
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IFlakeManager#flakeExists(long)
-	 */
-	@Override public boolean flakeExists(long identification) {
-		return flake_manager.flakeExists(identification);
 	}
 	
 	
@@ -393,22 +428,6 @@ public final class Storage implements IStorageInformation, IManagerAdapter, IAll
 			}
 		}
 		return chunk_data;
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.storage.IManagerAdapter#getFlakes(j3l.util.interfaces.StreamMode)
-	 */
-	@Override public Stream<IFlake> getFlakes(StreamMode stream_mode) {
-		return flake_manager.streamFlakes(stream_mode);
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.storage.IManagerAdapter#getAvailableChunks(j3l.util.interfaces.StreamMode)
-	 */
-	@Override public Stream<IChunkInformation> getAvailableChunks(StreamMode stream_mode) {
-		return chunk_manager.streamAvailableChunks(stream_mode);
 	}
 	
 	
@@ -525,23 +544,6 @@ public final class Storage implements IStorageInformation, IManagerAdapter, IAll
 				throw new StorageException("Failed to retrieve the number of allocated bytes!", e);
 			}
 		}
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.core.storage.IGetIOAccess#getIOAccess()
-	 */
-	@SuppressWarnings("resource") @Override public IOAccess getIOAccess() {
-		RandomAccessFile random_access_file;
-		try {
-			random_access_file = new RandomAccessFile(storage_configuration.getDataFilePath(), "rw");
-		}
-		catch( FileNotFoundException e ) {
-			throw new StorageException("Can not create a new " + GlobalString.IOAccess.toString()
-					+ ", because the " + GlobalString.DataFile.toString() + " does not exist!", e);
-		}
-		IOAccess io_access = new IOAccess(random_access_file);
-		return io_access;
 	}
 	
 }

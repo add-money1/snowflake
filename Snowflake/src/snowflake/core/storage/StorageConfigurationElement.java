@@ -8,7 +8,7 @@ import snowflake.api.GlobalString;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.14_0
+ * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
 public enum StorageConfigurationElement {
@@ -26,7 +26,8 @@ public enum StorageConfigurationElement {
 	ClearArraySize("clear_array_size"),
 	MaximumAvailableChunks("maximum_available_chunks"),
 	ChunkRecyclingTreshhold("chunk_recycling_treshhold"), 
-	MaximumStorageSize("maximum_storage_size");
+	MaximumStorageSize("maximum_storage_size"),
+	MaximumNumberOfAvailableChannel("maximum_number_of_available_channel");
 	
 	
 	/**

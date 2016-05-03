@@ -8,17 +8,16 @@ import java.util.LinkedList;
 import j3l.configuration.ConfigurationManager;
 import j3l.util.check.ArgumentChecker;
 import snowflake.api.GlobalString;
-import snowflake.api.configuration.IReadonlyStorageConfiguration;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.14_0
+ * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
-public final class StorageConfiguration implements IReadonlyStorageConfiguration {
+public final class StorageConfiguration implements IStorageConfiguration {
 	
 	
 	/**
@@ -240,6 +239,27 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 					1,
 					Integer.MAX_VALUE, 
 					StorageConfigurationElement.MaximumAvailableChunks.getName()
+				)
+			)
+		);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *s
+	 * @param
+	 * @return
+	 */
+	public void setMaximumNumberOfAvailableChannel(int maximum_number_of_available_channel) {
+		configuration_manager.setElement(
+			StorageConfigurationElement.MaximumNumberOfAvailableChannel.getName(), 
+			Integer.toString(
+				ArgumentChecker.checkForBoundaries(
+					maximum_number_of_available_channel, 
+					1,
+					Integer.MAX_VALUE, 
+					StorageConfigurationElement.MaximumNumberOfAvailableChannel.getName()
 				)
 			)
 		);
@@ -496,6 +516,14 @@ public final class StorageConfiguration implements IReadonlyStorageConfiguration
 	 */
 	@Override public int getMaximumAvailableChunks() {
 		return getValue(StorageConfigurationElement.MaximumAvailableChunks.toString(), 1000);
+	}
+
+
+	/* (non-Javadoc)
+	 * @see snowflake.api.configuration.IReadOnlyChannelManagerConfiguration#getMaximumNumberOfAvailableChannel()
+	 */
+	@Override public int getMaximumNumberOfAvailableChannel() {
+		return getValue(StorageConfigurationElement.MaximumNumberOfAvailableChannel.toString(), 10);
 	}
 
 

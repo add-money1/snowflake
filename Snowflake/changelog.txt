@@ -1,4 +1,197 @@
 	
+	
+	2016.05.03
+	
+		snwoflake.api.chunk.IChunkInformation
+			-> moved interface to "snwoflake.core"
+			-> changed the name to "IChunk"
+	
+		snowflake.api.chunk.IChunkManager
+			-> removed "Chunk mergeChunks(Chunk[])"
+			-> moved the interface to "snowflake.core.manager"
+			
+		snowflake.core.manager.ChunkManager
+			-> removed implementation of "Chunk mergeChunks(Chunk[])"
+			
+		snowflake.core.flake.FlakeDataManager
+			-> removed "void mergeChunks()"
+			-> removed "boolean needsChunkMerging()"
+			
+		snwoflake.core.flake.Flake
+			-> removed implementation of "void mergeChunks()"
+			-> removed "boolean is_chunk_merging"
+			-> removed implementation of "boolean needsChunkMerging()"
+			-> removed implementation of "boolean isChunkMerging()"
+			-> removed "FlakeLockManager flake_lock_manager"s
+			-> modified "synchronized boolean delete()" so that it no longer uses a Lock
+			-> replaced "isStreamable()" in "FlakeInputStream getFlakeInputStream() throws IOException"
+				for "isVaild()"
+			-> replaced "isStreamable()" in "FlakeOutputStream getFlakeOutputStream() throws IOException"
+				for "isVaild()" and changed format of code
+			-> removed implementation of "boolean isLocked()"
+			-> removed implementation of "Lock lock(Object)"
+			
+		snowflake.api.flake.IFlake
+			-> removed "boolean isChunkMerging()"
+			-> removed "boolean isChunkMerging()"
+			-> removed "boolean needsChunkMerging()"
+			-> moved interface to "snwoflake.api"
+			-> removed "Lock lock(Object owner)"
+			-> removed "boolean isLocked()"
+			-> removed "boolean isStreamable()"
+			
+		snowflake.api.chunk.IChunkMemory
+			-> moved the interface to "snowflake.core.manager"
+			
+		snowflake.api.chunk
+			-> deleted empty package
+		
+		snowflake.api.configuration.IReadOnlyChannelManagerConfiguration
+			-> changed name to "IChannelManagerConfiguration"
+			-> moved interface to "snowflake.core.storage"
+		
+		snowflake.api.configuration.IReadOnlyChunkManagerConfiguration
+			-> changed name to "IChunkManagerConfiguration"
+			-> moved interface to "snowflake.core.storage"
+		
+		snowflake.api.configuration.IReadOnlyFlakeManagerConfiguration
+			-> changed name to "IFlakeManagerConfiguration"
+			-> moved interface to "snowflake.core.storage"
+		
+		snowflake.api.configuration.IReadOnlyStorageConfiguration
+			-> changed name to "IStorageConfiguration"
+			-> moved interface to "snowflake.core.storage"
+			
+		snowflake.api.configuration
+			-> deleted empty package
+			
+		snwoflake.api.flake.IFlakeManager
+			-> moved interface to "snwoflake.core.manager"
+			
+		snowflake.api.flake.DataPointer
+			-> removed overflow-check in "long getPositionInStorage()", because it can not overflow
+			-> minor change in the text of "String toString()"
+			-> minor format changes of the code
+			-> moved class to "snowflake.api"
+			
+		snowflake.api.flake.Lock
+			-> deleted class
+			
+		snowflake.core.flake.FlakeLockManager
+			-> deleted class
+			
+		snowflake.api.flake
+			-> deleted empty package
+			
+		snowflake.api.storage.IManagerAdapter
+			-> deleted interface, because it is not useful and the name is irritating
+			
+		snowflake.core.storage.Storage
+			-> no longer implements "IManagerAdapter"
+			-> "Stream<IFlake> getFlakes(StreamMode)" is now own method
+			-> "Stream<IChunk> getAvailableChunks(StreamMode)" is now own method
+			-> "IFlake createFlake()" is now own method
+			-> "IFlake getFlake(long)" is now own method
+			-> "boolean flakeExists(long identification)" is now own method
+			
+		snowflake.api.storage.IStorageInformation
+			-> moved interface to "snowflake.api"
+			
+		snowflake.api.storage.StorageException
+			-> moved class to "snowflake.api"
+			
+		snowflake.api.storage
+			-> deleted empty package		
+		
+		
+	2016.04.07
+		
+		snowflake.api.configuration.IReadonlyStorageConfiguration
+			-> changed the name to "IReadOnlyStorageConfiguration"
+			
+		snwoflake.core.manager.ChannelManager
+			-> created class
+			
+		snowflake.core.Channel
+			-> created class
+			
+		snowflake.data
+			-> moved all classes (Chunk, ChunkData, and ChunkUtility) to snowflake.core
+			-> removed package
+			
+		snowflake.api.stream
+			-> moved all classes (FlakeInputStream and FlakeOutputStream) to snowflake.api
+			-> removed package
+			
+		snowflake.api.GlobalString
+			-> added NumberOfChannel("number_of_channel"), Channel("channel"),
+				ChannelManagerConfiguration("channel_manager_configuration"), and
+				ChannelReturner("channel_returner")
+			-> removed IOAccess("io_access")
+			-> changed IOAccessGetter("io_access_getter") to ChannelManager("channel_manager")
+			
+		snowflake.api.configuration.IReadOnlyChannelManagerConfiguration
+			-> created interface
+			-> added "String getDataFilePath()"
+			
+		snowflake.api.configuration.IReadOnlyStorageConfiguration
+			-> now extends "snowflake.api.configuration.IReadOnlyChannelManagerConfiguration"
+			-> removed "String getDataFilePath()"
+			
+		snowflake.core.Storage.StorageConfiguration
+			-> now implements "int getMaximumNumberOfAvailableChannel()"
+			-> added "void setMaximumNumberOfAvailableChannel(int)"
+			
+		snowflake.core.storage.StorageConfigurationElement
+			-> added MaximumNumberOfAvailableChannel("maximum_number_of_available_channel")
+			
+		snowflake.core.manager.IManageChannel
+			-> created interface
+			
+		snowflake.core.storage.IGetIOAccess
+			-> removed interface
+			
+		snowflake.core.storage.Storage
+			-> no longer implements "snowflake.core.storage.IGetIOAccess"
+			-> added "final ChannelManager channel_manager"
+			
+		snowflake.core.manager.FlakeManager
+			-> changed "FlakeManager(IGetIOAccess)" to "FlakeManager(IManageChannel)"
+			-> changed "final IGetIOAccess io_access_getter" to "final ChannelManager channel_manager"
+			
+		snowflake.core.flake.FlakeStreamManager
+			-> changed "FlakeStreamManager(IGetIOAccess)" to "FlakeStreamManager(IGetChannel)"
+			-> changed "final IGetIOAccess io_access_getter" to "final IGetChannel channel_getter"
+			-> changed "FlakeOutputStream getFlakeOutputStream(Flake)" to
+				"FlakeOutputStream getFlakeOutputStream(Flake) throws FileNotFoundException"
+			-> changed "FlakeInputStream getFlakeInputStream(Flake)" to
+				"FlakeInputStream getFlakeInputStream(Flake) throws FileNotFoundException"
+				
+		snowflake.core.storage.IRead
+			-> no longer implements "java.io.Closeable"
+			-> implements snowflake.core.Returnable
+				
+		snowflake.core.storage.IWrite
+			-> no longer implements "java.io.Closeable"
+			-> implements snowflake.core.Returnable
+			
+		snowflake.api.FlakeInputStream
+			-> "void close() throws IOException" now returns the read to the ChannelManager
+				and remembers that it is closed
+			-> changed "FlakeInputStream(Flake, IRead, IRemoveStream)"
+				to "FlakeInputStream(Flake, IRead, IRemoveStream, IReturnChannel)"
+			-> added "final IReturnChannel channel_returner"
+			
+		snowflake.api.FlakeOutputStream
+			-> "void close() throws IOException" now returns the write to the ChannelManager
+			-> changed "FlakeOutputStream(Flake, IWrite, IRemoveStream)"
+				to "FlakeOutputStream(Flake, IWrite, IRemoveStream, IReturnChannel)"
+			-> added "final IReturnChannel channel_returner"
+			
+		snowflake.core.manager.IReturnChannel
+			-> created interface
+	
+		
 	2016.04.06
 	
 		snowflake.core.storage.IRead

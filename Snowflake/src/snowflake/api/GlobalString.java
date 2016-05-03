@@ -6,7 +6,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.04_0
+ * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
 public enum GlobalString {
@@ -49,8 +49,11 @@ public enum GlobalString {
 	ConfigurationFile("configuration_file"),
 	StreamDescription("stream_description"),
 	DataFile("data_file"), 
-	IOAccessGetter("io_access_getter"),
-	IOAccess("io_access");
+	ChannelManager("channel_manager"),
+	NumberOfChannel("number_of_channel"),
+	Channel("channel"),
+	ChannelManagerConfiguration("channel_manager_configuration"),
+	ChannelReturner("channel_returner");
 	
 	
 	private final String string;

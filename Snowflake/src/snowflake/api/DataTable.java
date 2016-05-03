@@ -10,8 +10,7 @@ import java.util.TreeSet;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
 import j3l.util.stream.StreamFilter;
-import snowflake.api.storage.StorageException;
-import snowflake.core.data.ChunkUtility;
+import snowflake.core.ChunkUtility;
 
 
 /**

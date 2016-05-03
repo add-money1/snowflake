@@ -1,16 +1,16 @@
-package snowflake.api.configuration;
+package snowflake.core.storage;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.14_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
-public interface IReadonlyStorageConfiguration extends IReadOnlyChunkManagerConfiguration, IReadOnlyFlakeManagerConfiguration {
+public interface IStorageConfiguration extends IChunkManagerConfiguration, 
+												IFlakeManagerConfiguration, IChannelManagerConfiguration {
 	
 	String getInitializationFilePath();
-	String getDataFilePath();
 	String getConfigurationFilePath();
 	int getClearArraySize();
 	long getMaximumStorageSize();

@@ -1,7 +1,7 @@
 package snowflake.core.storage;
 
-import snowflake.api.storage.StorageException;
-import snowflake.core.data.Chunk;
+import snowflake.api.StorageException;
+import snowflake.core.Chunk;
 
 
 /**

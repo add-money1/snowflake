@@ -1,4 +1,4 @@
-package snowflake.core.data;
+package snowflake.core;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.api.GlobalString;

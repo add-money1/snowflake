@@ -1,14 +1,14 @@
-package snowflake.api.configuration;
+package snowflake.core.storage;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.02.22_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
-public interface IReadOnlyChunkManagerConfiguration {
+public interface IChunkManagerConfiguration {
 	
 	long getPreferredAvailableStorageSize();
 	double getDataFileIncreaseRate();

@@ -1,13 +1,12 @@
-package snowflake.api.stream;
+package snowflake.api;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.api.GlobalString;
-import snowflake.api.flake.DataPointer;
 import snowflake.core.flake.Flake;
 import snowflake.core.flake.IRemoveStream;
+import snowflake.core.manager.IReturnChannel;
 import snowflake.core.storage.IRead;
 
 
@@ -15,7 +14,7 @@ import snowflake.core.storage.IRead;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.06_0
+ * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
 public final class FlakeInputStream extends InputStream {
@@ -65,14 +64,23 @@ public final class FlakeInputStream extends InputStream {
 	
 	/**
 	 * <p></p>
+	 */
+	private final IReturnChannel channel_returner;
+	
+	
+	/**
+	 * <p></p>
 	 *
 	 * @param
 	 * @return
 	 */
-	public FlakeInputStream(Flake flake, IRead read, IRemoveStream flake_stream_manager) {
+	public FlakeInputStream(Flake flake, IRead read, IRemoveStream flake_stream_manager, IReturnChannel channel_returner) {
 		this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
 		this.flake_stream_manager = ArgumentChecker.checkForNull(
 			flake_stream_manager, GlobalString.FlakeStreamManager.toString()
+		);
+		this.channel_returner = ArgumentChecker.checkForNull(
+			channel_returner, GlobalString.ChannelReturner.toString()
 		);
 		data_pointer = new DataPointer(flake, 0L);
 		is_closed = false;
@@ -149,21 +157,6 @@ public final class FlakeInputStream extends InputStream {
 	
 	/*
 	 * (non-Javadoc)
-	 * @see java.io.InputStream#close()
-	 */
-	@Override public void close() throws IOException {
-		try {
-			read.close();
-		}
-		catch( IOException e ) {
-			throw new IOException("Failed to close the " + GlobalString.Read.toString()+ "!", e);
-		}
-		flake_stream_manager.removeStream(this);
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
 	 * @see java.io.InputStream#mark(int)
 	 */
 	@Override public synchronized void mark(int read_limit) {
@@ -200,6 +193,20 @@ public final class FlakeInputStream extends InputStream {
 	 */
 	@Override public boolean markSupported() {
 		return true;
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see java.io.InputStream#close()
+	 */
+	@Override public void close() throws IOException {
+		if( is_closed ) {
+			return;
+		}
+		flake_stream_manager.removeStream(this);
+		channel_returner.returnChannel(read);
+		is_closed = true;
 	}
 	
 }

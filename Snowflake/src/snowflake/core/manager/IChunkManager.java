@@ -1,9 +1,9 @@
-package snowflake.api.chunk;
+package snowflake.core.manager;
 
 import java.util.Collection;
 
 import j3l.util.close.IStateClosure;
-import snowflake.core.data.Chunk;
+import snowflake.core.Chunk;
 import snowflake.core.flake.Flake;
 
 
@@ -11,7 +11,7 @@ import snowflake.core.flake.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.06_0
+ * @version 2016.05.03_0
  * @author Johannes B. Latzel
  */
 public interface IChunkManager extends IStateClosure  {
@@ -42,15 +42,6 @@ public interface IChunkManager extends IStateClosure  {
 	 * @return
 	 */
 	void recycleChunks(Collection<Chunk> chunk_collection);
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	Chunk mergeChunks(Chunk[] chunks);
 	
 	
 	/**
