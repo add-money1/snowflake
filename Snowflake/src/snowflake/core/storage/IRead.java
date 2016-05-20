@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.api.DataPointer;
-import snowflake.api.GlobalString;
+import snowflake.core.GlobalString;
 import snowflake.core.Returnable;
 
 

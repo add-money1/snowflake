@@ -5,8 +5,8 @@ import java.io.RandomAccessFile;
 import java.time.Instant;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.api.GlobalString;
 import snowflake.api.StorageException;
+import snowflake.core.GlobalString;
 
 
 /**

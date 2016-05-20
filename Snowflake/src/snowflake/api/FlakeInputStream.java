@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.core.GlobalString;
 import snowflake.core.flake.Flake;
-import snowflake.core.flake.IRemoveStream;
 import snowflake.core.manager.IReturnChannel;
 import snowflake.core.storage.IRead;
 
@@ -14,7 +14,7 @@ import snowflake.core.storage.IRead;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.07_0
+ * @version 2016.05.06_0
  * @author Johannes B. Latzel
  */
 public final class FlakeInputStream extends InputStream {
@@ -59,12 +59,6 @@ public final class FlakeInputStream extends InputStream {
 	/**
 	 * <p></p>
 	 */
-	private final IRemoveStream flake_stream_manager;
-	
-	
-	/**
-	 * <p></p>
-	 */
 	private final IReturnChannel channel_returner;
 	
 	
@@ -74,11 +68,8 @@ public final class FlakeInputStream extends InputStream {
 	 * @param
 	 * @return
 	 */
-	public FlakeInputStream(Flake flake, IRead read, IRemoveStream flake_stream_manager, IReturnChannel channel_returner) {
+	public FlakeInputStream(Flake flake, IRead read, IReturnChannel channel_returner) {
 		this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
-		this.flake_stream_manager = ArgumentChecker.checkForNull(
-			flake_stream_manager, GlobalString.FlakeStreamManager.toString()
-		);
 		this.channel_returner = ArgumentChecker.checkForNull(
 			channel_returner, GlobalString.ChannelReturner.toString()
 		);
@@ -160,11 +151,9 @@ public final class FlakeInputStream extends InputStream {
 	 * @see java.io.InputStream#mark(int)
 	 */
 	@Override public synchronized void mark(int read_limit) {
-		
 		if( read_limit < 0 || is_closed ) {
 			return;
 		}
-		
 		marked_position_in_flake = data_pointer.getPositionInFlake();
 		read_in_bytes_since_marking = 0;
 		read_in_bytes_since_marking_limit = read_limit;
@@ -176,11 +165,12 @@ public final class FlakeInputStream extends InputStream {
 	 * @see java.io.InputStream#reset()
 	 */
 	@Override public synchronized void reset() throws IOException {
-		
+		if( is_closed ) {
+			throw new IOException("The stream is not open!");
+		}
 		if( read_in_bytes_since_marking > read_in_bytes_since_marking_limit ) {
 			throw new IOException("The current mark has been invalidated due to the read_in_bytes_since_marking_limit.");
 		}
-		
 		data_pointer.setPosition(marked_position_in_flake);
 		mark(read_in_bytes_since_marking_limit);
 		
@@ -204,7 +194,6 @@ public final class FlakeInputStream extends InputStream {
 		if( is_closed ) {
 			return;
 		}
-		flake_stream_manager.removeStream(this);
 		channel_returner.returnChannel(read);
 		is_closed = true;
 	}

@@ -1,4 +1,4 @@
-package snowflake.api;
+package snowflake.core;
 
 import j3l.util.check.ArgumentChecker;
 
@@ -7,7 +7,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.05.04_0
  * @author Johannes B. Latzel
  */
 public final class TableMember<T extends IBinaryData> {
@@ -67,7 +67,9 @@ public final class TableMember<T extends IBinaryData> {
 	 */
 	@Override public boolean equals(Object object) {
 		if( object != null && object instanceof TableMember<?> ) {
-			return ((TableMember<?>)object).getBinaryData().equals(getBinaryData());			
+			IBinaryData extern_binary_data = ((TableMember<?>)object).getBinaryData();
+			return 	extern_binary_data == binary_data
+					|| ( extern_binary_data != null && extern_binary_data.equals(binary_data));	
 		}
 		else {
 			return false;

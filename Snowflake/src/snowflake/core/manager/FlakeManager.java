@@ -12,20 +12,19 @@ import j3l.util.close.IClose;
 import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
-import snowflake.api.GlobalString;
 import snowflake.api.IFlake;
 import snowflake.api.StorageException;
 import snowflake.core.Chunk;
+import snowflake.core.GlobalString;
 import snowflake.core.flake.Flake;
 import snowflake.core.flake.FlakeDataManager;
-import snowflake.core.flake.FlakeStreamManager;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.04.07_0
+ * @version 2015.05.06_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IClose<StorageException> {
@@ -40,7 +39,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	/**
 	 * <p></p>
 	 */
-	private final IManageChannel channel_manager;
+	private final IChannelManager channel_manager;
 	
 	
 	/**
@@ -73,7 +72,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	 * @param
 	 * @return
 	 */
-	public FlakeManager(IManageChannel channel_manager) {
+	public FlakeManager(IChannelManager channel_manager) {
 		this.channel_manager = ArgumentChecker.checkForNull(channel_manager, GlobalString.ChannelManager.toString());
 		flake_table = new Hashtable<>();
 		closure_state = ClosureState.None;
@@ -157,7 +156,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 			flake_table.put(new Long(identification), flake);
 			
 			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager), null);
-			flake.setFlakeStreamManager(new FlakeStreamManager(channel_manager));
+			flake.setChannelManager(channel_manager);
 			flake.open();
 			
 		}
@@ -223,7 +222,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 			flake = new Flake(identification);
 			
 			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager), initial_chunk_list);
-			flake.setFlakeStreamManager(new FlakeStreamManager(channel_manager));
+			flake.setChannelManager(channel_manager);
 			
 			flake_table.put(new Long(identification), flake);
 		}

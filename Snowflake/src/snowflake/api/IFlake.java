@@ -11,7 +11,7 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.03_0
+ * @version 2016.05.06_0
  * @author Johannes B. Latzel
  */
 public interface IFlake extends IStateClosure, IValidate {
@@ -42,15 +42,6 @@ public interface IFlake extends IStateClosure, IValidate {
 	 * @return
 	 */
 	void setLength(long new_length);
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	boolean isWriting();
 	
 	
 	/**

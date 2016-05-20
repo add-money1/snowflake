@@ -1,4 +1,4 @@
-package snowflake.api;
+package snowflake.core;
 
 import j3l.util.check.ArgumentChecker;
 
@@ -6,7 +6,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.07_0
+ * @version 2016.05.04_0
  * @author Johannes B. Latzel
  */
 public enum GlobalString {

@@ -3,17 +3,17 @@
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 
 import j3l.util.check.ArgumentChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import snowflake.api.FlakeInputStream;
 import snowflake.api.FlakeOutputStream;
-import snowflake.api.GlobalString;
 import snowflake.api.IFlake;
 import snowflake.core.Chunk;
+import snowflake.core.GlobalString;
 import snowflake.core.IChunk;
+import snowflake.core.manager.IChannelManager;
 
 
 /**
@@ -35,7 +35,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	/**
 	 * <p></p>
 	 */
-	private FlakeStreamManager flake_stream_manager;
+	private IChannelManager channel_manager;
 	
 	
 	/**
@@ -73,6 +73,8 @@ public final class Flake implements IClose<IOException>, IFlake {
 		closure_state = ClosureState.None;
 		is_damaged = false;
 		is_deleted = false;
+		flake_data_manager = null;
+		channel_manager = null;
 	}
 	
 	
@@ -82,12 +84,12 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @param
 	 * @return
 	 */
-	public void setFlakeStreamManager(FlakeStreamManager flake_stream_manager) {
+	public void setChannelManager(IChannelManager channel_manager) {
 		if( hasBeenOpened() ) {
 			throw new SecurityException("Can not change the flake_stream_manager after the flake has been opened!");
 		}
-		this.flake_stream_manager = ArgumentChecker.checkForNull(
-			flake_stream_manager, GlobalString.FlakeStreamManager.toString()
+		this.channel_manager = ArgumentChecker.checkForNull(
+				channel_manager, GlobalString.ChannelManager.toString()
 		);
 	}
 	
@@ -116,7 +118,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @return
 	 */
 	private boolean checkForConsistency() {
-		return (flake_data_manager != null) && (flake_stream_manager != null) && flake_data_manager.isConsistent();
+		return (flake_data_manager != null) && (channel_manager != null) && flake_data_manager.isConsistent();
 	}
 	
 	
@@ -138,33 +140,9 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @param
 	 * @return
 	 */
-	public void addChunks(Chunk[] chunks) {
-		ArgumentChecker.checkForValidation(this);
-		flake_data_manager.addChunks(chunks);
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
 	public void addChunks(Collection<Chunk> chunk_collection) {
 		ArgumentChecker.checkForValidation(this);
 		flake_data_manager.addChunks(chunk_collection);
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	public void addChunk(Chunk chunk) {
-		ArgumentChecker.checkForValidation(this);
-		flake_data_manager.addChunk(chunk);
 	}
 
 
@@ -291,7 +269,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 		if( !isValid() ) {
 			throw new SecurityException("The flake can not be streamed!");
 		}
-		return flake_stream_manager.getFlakeInputStream(this);
+		return new FlakeInputStream(this, channel_manager.getChannel(), channel_manager);
 	}
 	
 	
@@ -302,10 +280,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 		if( !isValid() ) {
 			throw new SecurityException("The flake can not be streamed!");
 		}
-		if( isWriting() ) {
-			throw new SecurityException("Can not create a FlakeOutputStream while another is still writing to this flake!");
-		}
-		return flake_stream_manager.getFlakeOutputStream(this);
+		return new FlakeOutputStream(this, channel_manager.getChannel(), channel_manager);
 	}
 	
 	
@@ -337,23 +312,10 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see j3l.util.interfaces.IClose#close()
 	 */
 	@Override public void close() {
-		
 		if( !isOpen() ) {
 			return;
 		}
-		
-		closure_state = ClosureState.InClosure;
-		
-		if( isValid() ) {
-			LinkedList<IOException> exception_list = flake_stream_manager.closeAllStreams();
-			for( IOException e : exception_list ) {
-				e.printStackTrace();
-			}
-			System.out.println("Flake.close() -> was mit den ganzen ioexceptions anfangen?");
-		}
-		
 		closure_state = ClosureState.Closed;
-		
 	}
 	
 	
@@ -408,14 +370,6 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 */
 	@Override public boolean isDeleted() {
 		return is_deleted;
-	}
-
-
-	/* (non-Javadoc)
-	 * @see snowflake.api.IFlake#isWriting()
-	 */
-	@Override public boolean isWriting() {
-		return isValid() && flake_stream_manager.isWriting();
 	}
 	
 }

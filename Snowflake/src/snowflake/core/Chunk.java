@@ -3,7 +3,6 @@ package snowflake.core;
 import java.io.IOException;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.api.GlobalString;
 import snowflake.core.flake.Flake;
 import snowflake.core.manager.IChunkMemory;
 
@@ -31,6 +30,7 @@ import snowflake.core.manager.IChunkMemory;
  * @author Johannes B. Latzel
  */
 public final class Chunk implements IChunk {
+	
 	
 	
 	/**

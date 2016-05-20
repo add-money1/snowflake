@@ -7,7 +7,6 @@ import java.io.RandomAccessFile;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.api.DataPointer;
-import snowflake.api.GlobalString;
 import snowflake.core.storage.IRead;
 import snowflake.core.storage.IWrite;
 
@@ -15,7 +14,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.07_0
+ * @version 2016.05.06_0
  * @author Johannes B. Latzel
  */
 public final class Channel implements IRead, IWrite, Closeable {
@@ -43,6 +42,9 @@ public final class Channel implements IRead, IWrite, Closeable {
 	 * @see snowflake.core.IWrite#write(snowflake.api.DataPointer, byte)
 	 */
 	@Override public void write(DataPointer data_pointer, byte b) throws IOException {
+		if( !data_file.getChannel().isOpen() ) {
+			throw new IOException("The chanel is not open!");
+		}
 		if( data_pointer.getRemainingBytes() < 1 ) {
 			throw new IndexOutOfBoundsException("The length must not succeed the number of available bytes in the flake!");
 		}
@@ -56,6 +58,9 @@ public final class Channel implements IRead, IWrite, Closeable {
 	 * @see snowflake.core.IWrite#write(snowflake.api.DataPointer, byte[], int, int)
 	 */
 	@Override public void write(DataPointer data_pointer, byte[] buffer, int offset, int length) throws IOException {
+		if( !data_file.getChannel().isOpen() ) {
+			throw new IOException("The chanel is not open!");
+		}
 		int remaining_bytes = length;
 		int advance_in_buffer;
 		int remaining_bytes_in_chunk;
@@ -86,6 +91,9 @@ public final class Channel implements IRead, IWrite, Closeable {
 	 * @see snowflake.core.IRead#read(snowflake.api.DataPointer)
 	 */
 	@Override public byte read(DataPointer data_pointer) throws IOException {
+		if( !data_file.getChannel().isOpen() ) {
+			throw new IOException("The chanel is not open!");
+		}
 		if( data_pointer.isEOF() ) {
 			throw new IOException("Can not read from a eof-stated stream!");
 		}
@@ -99,6 +107,9 @@ public final class Channel implements IRead, IWrite, Closeable {
 	 * @see snowflake.core.IRead#read(snowflake.api.DataPointer, byte[], int, int)
 	 */
 	@Override public int read(DataPointer data_pointer, byte[] buffer, int offset, int length) throws IOException {
+		if( !data_file.getChannel().isOpen() ) {
+			throw new IOException("The chanel is not open!");
+		}
 		int remaining_bytes;
 		if( data_pointer.getRemainingBytes() < Integer.MAX_VALUE ) {
 			// cast ok, because data_pointer.getRemainingBytes() < Integer.MAX_VALUE
@@ -146,7 +157,7 @@ public final class Channel implements IRead, IWrite, Closeable {
 	 */
 	@Override public void close() throws IOException {
 		data_file.close();
-		System.out.println("close");
+		System.out.println("Channel: close()");
 	}
 	
 }

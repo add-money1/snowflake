@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Random;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import j3l.util.IAdd;
@@ -14,8 +13,8 @@ import j3l.util.stream.IStream;
 import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
-import snowflake.api.GlobalString;
 import snowflake.core.Chunk;
+import snowflake.core.GlobalString;
 import snowflake.core.IChunk;
 
 
@@ -23,7 +22,7 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.14_0
+ * @version 2016.05.19_0
  * @author Johannes B. Latzel
  */
 public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
@@ -147,13 +146,14 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 	 * @return
 	 */
 	public Chunk getChunk(long minimum_length) {
-		Predicate<Chunk> filter = chunk -> chunk != null && chunk.getLength() >= minimum_length;
 		synchronized( chunk_list ) {
-			Chunk available_chunk = chunk_list.parallelStream().filter(filter).findAny().orElse(null);
-			if( available_chunk != null && !chunk_list.remove(available_chunk) ) {
-				return null;
+			if( !chunk_list.isEmpty() ) {
+				chunk_list.sort((l, r) -> Long.compare(l.getLength(), r.getLength()));
+				if( chunk_list.get(0).getLength() >= minimum_length ) {
+					return chunk_list.remove(0);
+				}
 			}
-			return available_chunk;
+			return null;
 		}
 	}
 	
@@ -199,9 +199,21 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 			if( !chunk_list.contains(chunk) ) {
 				return chunk_list.add(chunk);
 			}
-			else {
-				return false;
-			}
+			return false;
+		}
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see j3l.util.IBasicAdd#addAll(java.util.Collection)
+	 */
+	@Override public boolean addAll(Collection<? extends Chunk> chunk_collection) {
+		if( chunk_collection == null || chunk_collection.size() == 0 ) {
+			return false;
+		}
+		synchronized( chunk_list ) {
+			return chunk_list.addAll(chunk_collection);
 		}
 	}
 	

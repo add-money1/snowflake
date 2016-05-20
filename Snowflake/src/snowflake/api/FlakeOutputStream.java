@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.core.GlobalString;
 import snowflake.core.flake.Flake;
-import snowflake.core.flake.IRemoveStream;
 import snowflake.core.manager.IReturnChannel;
 import snowflake.core.storage.IWrite;
 
@@ -14,7 +14,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.07_0
+ * @version 2016.05.06_0
  * @author Johannes B. Latzel
  */
 public final class FlakeOutputStream extends OutputStream {
@@ -47,12 +47,6 @@ public final class FlakeOutputStream extends OutputStream {
 	/**
 	 * <p></p>
 	 */
-	private final IRemoveStream flake_stream_manager;
-	
-	
-	/**
-	 * <p></p>
-	 */
 	private final IReturnChannel channel_returner;
 	
 	
@@ -62,12 +56,9 @@ public final class FlakeOutputStream extends OutputStream {
 	 * @param
 	 * @return
 	 */
-	public FlakeOutputStream(Flake flake, IWrite write, IRemoveStream flake_stream_manager, IReturnChannel channel_returner) {
+	public FlakeOutputStream(Flake flake, IWrite write, IReturnChannel channel_returner) {
 		this.flake = ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString());
 		this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
-		this.flake_stream_manager = ArgumentChecker.checkForNull(
-			flake_stream_manager, GlobalString.FlakeStreamManager.toString()
-		);
 		this.channel_returner = ArgumentChecker.checkForNull(
 			channel_returner, GlobalString.ChannelReturner.toString()
 		);
@@ -131,12 +122,10 @@ public final class FlakeOutputStream extends OutputStream {
 		if( is_closed ) {
 			throw new IOException("The stream is not open!");
 		}
-		else {
-			if( data_pointer.getRemainingBytes() == 0 ) {
-				flake.setLength( flake.getLength() + 1 );
-			}
-			write.write(data_pointer, (byte)(b));
-		}		
+		if( data_pointer.getRemainingBytes() == 0 ) {
+			flake.setLength( flake.getLength() + 1 );
+		}
+		write.write(data_pointer, (byte)(b));	
 	}
 	
 	
@@ -148,13 +137,11 @@ public final class FlakeOutputStream extends OutputStream {
 		if( is_closed ) {
 			throw new IOException("The stream is not open!");
 		}
-		else {
-			long remaining_bytes = data_pointer.getRemainingBytes();
-			if( remaining_bytes < length ) {
-				flake.setLength( flake.getLength() + length - remaining_bytes );
-			}
-			write.write(data_pointer, buffer, offset, length);
+		long remaining_bytes = data_pointer.getRemainingBytes();
+		if( remaining_bytes < length ) {
+			flake.setLength( flake.getLength() + length - remaining_bytes );
 		}
+		write.write(data_pointer, buffer, offset, length);
 	}
 	
 	
@@ -172,7 +159,6 @@ public final class FlakeOutputStream extends OutputStream {
 		catch( IOException e ) {
 			throw new IOException("Failed to flush the stream!", e);
 		}
-		flake_stream_manager.removeStream(this);
 		channel_returner.returnChannel(write);
 		is_closed = true;
 	}

@@ -6,7 +6,6 @@ import j3l.util.ArrayTool;
 import j3l.util.TransformValue;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
-import snowflake.api.GlobalString;
 import snowflake.core.flake.Flake;
 import snowflake.core.manager.ChunkManager;
 import snowflake.core.manager.FlakeManager;

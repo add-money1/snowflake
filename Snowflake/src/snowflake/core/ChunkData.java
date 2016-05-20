@@ -1,8 +1,6 @@
 package snowflake.core;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.api.GlobalString;
-import snowflake.api.IBinaryData;
 
 /**
  * <p></p>

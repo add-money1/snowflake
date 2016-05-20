@@ -1,5 +1,136 @@
 	
 	
+	2016.05.19
+	
+		snowflake.core.manager.ChunkManager
+			-> "void addAvailableChunks(ArrayList<Chunk>)" and "void addAvailableChunk(Chunk)"
+				now check for nullness and validity
+			-> "void addAvailableChunk(Chunk)" now removes more chunks if necessary
+			
+		snowflake.core.manager.ChunkMergingManager
+			-> "Chunk getChunk(long minimum_length)" now works different
+	
+	
+	
+	2016.05.16
+	
+		snowflake.core.flake.FlakeDataManager
+			-> removed "boolean is_length_changed"
+			-> "long getLength()" now only returns the length
+			-> every method must calculate for itself the change of length of the flake
+				modified:
+					"void addChunks(Collection<Chunk>)"
+					"void recycle()"
+			-> removed "synchronized void countLength()"
+			-> removed unnecessary elses in "IChunk getChunkAtPosition(long)", "void arrangeChunks()", and,
+				"IChunk getChunkAtPositionBinarySearch(long)"
+				
+		snowflake.core.DataTable
+			-> removed unnecessary else in "long getAvailableIndex()"
+			-> additional check for "available_index_tree.add(Long)" in "void addAvailableIndex(long)"
+			
+		snowflake.core.manager.ChunkManager
+			-> removed "Chunk getAvailableChunk(long)"
+			-> removed nonsense in "void createAvailableChunk(long)"
+	
+	
+	2016.05.08
+		
+		snowflake.core.manager.ChunkMergingManager
+			-> implemented "boolean addAll(Collection<? extends Chunk>)"
+	
+	
+	
+	2016.05.07
+	
+		snowflake.core.manager.ChunkManager
+			-> "void addAvailableChunks(ArrayList<Chunk>)" now adds all chunks at ones to the tree
+				with "addAll(Collection<T>" in "j3l.util.BinaryTree" and also uses "addAll(Collection<Chunk>)"
+				in "snowflake.core.manager.ChunkMergingManager"
+			-> deleted unnecessary else in "void deleteChunk(Chunk)"
+		
+		snowflake.core.manager.ChunkMergingManager
+			-> removed unnecessary else in "boolean add(Chunk)"
+	
+	
+	2016.05.06
+	
+		snowflake.core.Channel
+			-> added check for openness of the data_file (its channel) in 
+			"int read(DataPointer, byte[], int, int) throws IOException"
+			"int read(DataPointer) throws IOException"
+			"void write(DataPointer, byte[], int, int) throws IOException"
+			"void write(DataPointer, byte) throws IOException"
+			-> modified debug-information in "synchronized void close() throws IOException"
+			
+		snowflake.core.flake.IRemoveStream
+			-> deleted interface
+			
+		snowflake.core.flake.FlakeStreamManager
+			-> deleted class
+			
+		snowflake.api.FlakeInputStream
+			-> removed "remove_stream"
+			
+		snowflake.api.FlakeOutputStream
+			-> removed "remove_stream"
+			
+		snowflake.core.manager.IManageChannel
+			-> changed name to "IChannelManager"
+			
+		snowflake.core.flake.Flake
+			-> changed "void setFlakeStreamManager(FlakeStreamManager)" to
+				"void setChannelManager(IChannelManager)"
+			-> removed "FlakeStreamManager flake_stream_manager"
+			-> modified "FlakeInputStream getFlakeInputStream() throws IOException",
+				"FlakeOutputStream getFlakeOutputStream() throws IOException", and
+				"void close()" due to the deletion of "snowflake.core.flake.FlakeStreamManager"
+			-> no longer implements "boolean isWriting()"
+			-> removed "void addChunks(Chunk[])" (not used)
+			-> removed "void addChunk(Chunk)" (not used)
+			
+		snowflake.api.IFlake
+			-> removed "boolean isWriting()"
+				
+		snowflake.core.flake.FlakeDataManager
+			-> removed "Object chunk_lock" and replaced its occurences with "ArrayList<Chunk> chunk_list"
+			-> removed "void addChunks(Chunk[])" (not used)
+			-> removed "void addChunk(Chunk)" (not used)
+			
+		snowflake.core.manager.FlakeManager
+			-> modified "IFlake createFlake(ChunkManager)" and
+				"IFlake declareFlake(long, ChunkManager, ArrayList<Chunk>)" due to the deletion of
+				"snowflake.core.flake.FlakeStreamManager"
+	
+		
+	2016.05.04
+	
+		snowflake.api.DataTable
+			-> minor changes in "void addEntry(TableMember<T>)" and "long getAvailableIndex()"
+			-> moved class to "snowflake.core"
+			
+		snowflake.api.IBinaryData
+			-> moved interface to "snowflake.core"
+			
+		snowflake.api.TableMember
+			-> modified "boolean equals(Object)" so that it is null-safe
+			-> moved class to "snowflake.core"
+			
+		snowflake.api.GlobalString
+			-> moved class to "snwoflake.core"
+			
+		snowflake.api.FlakeOutputStream
+			-> changed "IRemoveStream flake_stream_manager" to "IRemoveStream remove_stream"
+			-> minor changes in code-format (got rid of unnecessary "else")
+			
+		snowflake.api.FlakeInputStream
+			-> changed "IRemoveStream flake_stream_manager" to "IRemoveStream remove_stream"
+			-> minor changes in code-format
+			-> modified "synchronized void reset() throws IOException" so that it checks if the stream
+				is closed
+	
+		
+	
 	2016.05.03
 	
 		snwoflake.api.chunk.IChunkInformation

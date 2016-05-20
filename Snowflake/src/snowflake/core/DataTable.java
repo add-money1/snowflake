@@ -1,4 +1,4 @@
-package snowflake.api;
+package snowflake.core;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,15 +9,14 @@ import java.util.TreeSet;
 
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
-import j3l.util.stream.StreamFilter;
-import snowflake.core.ChunkUtility;
+import snowflake.api.StorageException;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.14_0
+ * @version 2016.05.16_0
  * @author Johannes B. Latzel
  */
 public final class DataTable<T extends IBinaryData> {
@@ -66,8 +65,8 @@ public final class DataTable<T extends IBinaryData> {
 		}
 		IBinaryData data = table_member.getBinaryData();
 		byte[] buffer = new byte[data.getDataLength()];
+		data.getBinaryData(buffer);
 		try {
-			data.getBinaryData(buffer);
 			synchronized( table_file ) {
 				table_file.seek( buffer.length * table_member.getTableIndex() );
 				table_file.write(buffer);
@@ -91,23 +90,21 @@ public final class DataTable<T extends IBinaryData> {
 			if( available_index_tree.size() != 0 ) {
 				return available_index_tree.pollFirst().longValue();
 			}
-			else {
-				long length;
-				synchronized( table_file ) {
-					try {
-						length = table_file.length();
-					}
-					catch( IOException e ) {
-						throw new StorageException("No more indices available!", e);
-					}
-					long current_index = length / ChunkUtility.BINARY_CHUNK_SIZE;
-					try {
-						table_file.setLength((current_index + 1) * ChunkUtility.BINARY_CHUNK_SIZE);
-					} catch (IOException e) {
-						throw new StorageException("No more indices available!", e);
-					}
-					return current_index;
+			long length;
+			synchronized( table_file ) {
+				try {
+					length = table_file.length();
 				}
+				catch( IOException e ) {
+					throw new StorageException("No more indices available!", e);
+				}
+				long current_index = length / ChunkUtility.BINARY_CHUNK_SIZE;
+				try {
+					table_file.setLength(length + ChunkUtility.BINARY_CHUNK_SIZE);
+				} catch (IOException e) {
+					throw new StorageException("No more indices available!", e);
+				}
+				return current_index;
 			}
 		}
 	}
@@ -125,7 +122,9 @@ public final class DataTable<T extends IBinaryData> {
 			if( available_index_tree.contains(boxed_index) ) {
 				throw new Error("An index must never exist more than once!");
 			}
-			available_index_tree.add(boxed_index);
+			if( !available_index_tree.add(boxed_index) ) {
+				throw new StorageException("An index got lost on its way!");
+			}
 		}
 	}
 
@@ -138,12 +137,15 @@ public final class DataTable<T extends IBinaryData> {
 	 */
 	public void addAvailableIndices(ArrayList<Long> available_index_list) {
 		synchronized( available_index_tree ) {
-			available_index_list.parallelStream().filter(StreamFilter::filterNull).forEach(index -> {
+			for( Long index : available_index_list ) {
+				if( index == null ) {
+					throw new NullPointerException("Can not add a null-index!");
+				}
 				if( available_index_tree.contains(index) ) {
 					throw new Error("An index must never exist more than once!");
 				}
 				available_index_tree.add(index);
-			});
+			}
 		}
 	}
 	

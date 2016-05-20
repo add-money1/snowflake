@@ -1,6 +1,7 @@
 package snowflake.api;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.core.GlobalString;
 import snowflake.core.IChunk;
 import snowflake.core.flake.Flake;
 

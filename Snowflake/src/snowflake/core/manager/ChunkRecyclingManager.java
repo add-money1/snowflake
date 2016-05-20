@@ -5,9 +5,9 @@ import java.util.Collection;
 import java.util.List;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.api.GlobalString;
 import snowflake.api.StorageException;
 import snowflake.core.Chunk;
+import snowflake.core.GlobalString;
 import snowflake.core.storage.IClearChunk;
 
 

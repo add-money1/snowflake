@@ -9,7 +9,7 @@ import snowflake.core.Channel;
  * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
-public interface IManageChannel extends IReturnChannel {
+public interface IChannelManager extends IReturnChannel {
 	
 	
 	/**

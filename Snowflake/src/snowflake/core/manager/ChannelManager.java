@@ -7,9 +7,9 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.api.GlobalString;
 import snowflake.api.StorageException;
 import snowflake.core.Channel;
+import snowflake.core.GlobalString;
 import snowflake.core.Returnable;
 import snowflake.core.storage.IChannelManagerConfiguration;
 
@@ -20,7 +20,7 @@ import snowflake.core.storage.IChannelManagerConfiguration;
  * @version 2016.04.07_0
  * @author Johannes B. Latzel
  */
-public final class ChannelManager implements Closeable, IManageChannel {
+public final class ChannelManager implements Closeable, IChannelManager {
 	
 	
 	/**
