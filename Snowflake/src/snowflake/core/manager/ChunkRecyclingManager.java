@@ -102,7 +102,7 @@ public final class ChunkRecyclingManager {
 	/**
 	 * <p>recycles one of the chunks in {@link #chunk_recycling_tree} and puts it into {@link #available_chunk_list}</p>
 	 */
-	public void recycle() {
+	private void recycle() {
 		long number_of_remaining_bytes = chunk_recycling_threshhold;
 		Chunk current_chunk;
 		do {

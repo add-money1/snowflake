@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import j3l.exception.ValueOverflowException;
 import j3l.util.BinaryTree;
 import j3l.util.ComparisonType;
+import j3l.util.LoopedTaskThread;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
@@ -97,7 +98,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	/**
 	 * <p></p>
 	 */
-	private final Thread chunk_merging_thread;
+	private final LoopedTaskThread chunk_manager_thread;
 	
 	
 	/**
@@ -122,27 +123,27 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 			chunk_table_file, GlobalString.ChunkTableFile.toString()
 		));
 		
-		chunk_recycling_manager = new ChunkRecyclingManager(clear_chunk, chunk_manager_configuration.getChunkRecyclingTreshhold());
 		chunk_merging_manager = new ChunkMergingManager(this);
+		chunk_recycling_manager = new ChunkRecyclingManager(
+			clear_chunk, chunk_manager_configuration.getChunkRecyclingTreshhold()
+		);
 		
 		available_chunk_tree = new BinaryTree<>(chunk -> new Long(chunk.getLength()));
 		closure_state = ClosureState.None;
 		
-		chunk_merging_thread = new Thread(() -> {
-			while( isOpen() ) {
-				chunk_merging_manager.mergeChunks();
-				data_table.trim();
-				try {
-					Thread.sleep(20_000);
-				}
-				catch( InterruptedException e ) {
-					e.printStackTrace();
-				}
-			}
-		});
-		chunk_merging_thread.setName("Snowflake ChunkMergingThread");
-		chunk_merging_thread.setPriority( Thread.NORM_PRIORITY / 2 );
-		
+		chunk_manager_thread = new LoopedTaskThread(this::manage, "Snowflake ChunkManagerThread", 61_000);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	private void manage() {
+		chunk_merging_manager.addAll(chunk_recycling_manager.removeAll());
+		data_table.trim();
 	}
 	
 	
@@ -409,7 +410,8 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 
 		closure_state = ClosureState.InOpening;
 		chunk_recycling_manager.start();
-		chunk_merging_thread.start();
+		chunk_merging_manager.start();
+		chunk_manager_thread.start();
 		closure_state = ClosureState.Open;
 		
 	}
@@ -426,7 +428,8 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 
 		closure_state = ClosureState.InClosure;
 		chunk_recycling_manager.stop();
-		chunk_merging_thread.interrupt();
+		chunk_merging_manager.stop();
+		chunk_manager_thread.interrupt();
 		closure_state = ClosureState.Closed;
 		
 	}

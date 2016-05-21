@@ -6,11 +6,13 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 import j3l.util.IAdd;
+import j3l.util.LoopedTaskThread;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.stream.IStream;
 import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
+import snowflake.api.StorageException;
 import snowflake.core.Chunk;
 import snowflake.core.GlobalString;
 import snowflake.core.IChunk;
@@ -20,7 +22,7 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.20_0
+ * @version 2016.05.21_0
  * @author Johannes B. Latzel
  */
 public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
@@ -40,6 +42,18 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 	
 	/**
 	 * <p></p>
+	 */
+	private final LoopedTaskThread chunk_merging_thread;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private boolean is_stopped;
+	
+	
+	/**
+	 * <p></p>
 	 *
 	 * @param
 	 * @return
@@ -47,20 +61,41 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 	public ChunkMergingManager(IChunkManager chunk_manager) {
 		this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
 		chunk_list = new ArrayList<>();
+		chunk_merging_thread = new LoopedTaskThread(() -> {
+			merge();
+		}, "Snowflake ChunkMergingThread", 31_000);
+		chunk_merging_thread.setPriority(Thread.MIN_PRIORITY);
+		is_stopped = false;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public synchronized void start() {
+		chunk_merging_thread.start();
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void stop() {
+		is_stopped = true;
+		chunk_merging_thread.interrupt();
 	}
 	
 	
 	/**
 	 * <p>collects all chunks available and merges as much chunks as possible</p>
 	 */
-	public void mergeChunks() {
-		
-		// debug
-		int nomc = 0;
-		int nc = 0;
-		System.out.println("started merging");
-		
-		
+	private void merge() {
 		Chunk[] chunk_array;
 		synchronized( chunk_list ) {
 			long chunk_list_size = chunk_list.size();
@@ -77,6 +112,12 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 		int next_index = 1;
 		int difference;
 		do {
+			if( is_stopped ) {
+				for(int a=current_index;a<chunk_array.length;a++) {
+					processed_chunk_list.add(chunk_array[a]);
+				}
+				break;
+			}
 			while( next_index < chunk_array.length && chunk_array[next_index - 1].isNeighbourOf(chunk_array[next_index]) ) {
 				next_index++;
 			}
@@ -86,10 +127,14 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 				for(int a=current_index;a<next_index;a++) {
 					neighbour_list.add(chunk_array[a]);
 				}
-				processed_chunk_list.add(chunk_manager.mergeChunks(neighbour_list));
+				try {
+					processed_chunk_list.add(chunk_manager.mergeChunks(neighbour_list));
+				}
+				catch( StorageException e ) {
+					e.printStackTrace();
+					break;
+				}
 				neighbour_list.clear();
-				nomc += difference;
-				nc++;
 			}
 			else {
 				processed_chunk_list.add(chunk_array[current_index]);
@@ -97,8 +142,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 			current_index = next_index;
 			next_index++;
 		}
-		while( next_index < chunk_array.length );
-		System.out.println("merged " + nomc + " to " + nc + " of " + chunk_array.length + " with " + processed_chunk_list.size());
+		while( current_index < chunk_array.length );
 		addAll(processed_chunk_list);
 	}
 	

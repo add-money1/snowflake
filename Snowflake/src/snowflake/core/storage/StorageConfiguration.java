@@ -14,7 +14,7 @@ import snowflake.core.GlobalString;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.07_0
+ * @version 2016.05.21_0
  * @author Johannes B. Latzel
  */
 public final class StorageConfiguration implements IStorageConfiguration {
@@ -531,7 +531,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	 * @see snowflake.api.configuration.IReadOnlyChunkManagerConfiguration#getChunkRecyclingTreshhold()
 	 */
 	@Override public long getChunkRecyclingTreshhold() {
-		return getValue(StorageConfigurationElement.ChunkRecyclingTreshhold.toString(), 8192);
+		return getValue(StorageConfigurationElement.ChunkRecyclingTreshhold.toString(), 1_000_000);
 	}
 
 
