@@ -1,7 +1,7 @@
 package snowflake.core.manager;
 
 import snowflake.core.Chunk;
-import snowflake.core.flake.Flake;
+import snowflake.core.Flake;
 
 
 /**

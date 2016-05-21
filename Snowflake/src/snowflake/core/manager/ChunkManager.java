@@ -2,7 +2,6 @@ package snowflake.core.manager;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -22,10 +21,10 @@ import snowflake.core.Chunk;
 import snowflake.core.ChunkData;
 import snowflake.core.ChunkUtility;
 import snowflake.core.DataTable;
+import snowflake.core.Flake;
 import snowflake.core.GlobalString;
 import snowflake.core.IChunk;
 import snowflake.core.TableMember;
-import snowflake.core.flake.Flake;
 import snowflake.core.storage.IAllocateSpace;
 import snowflake.core.storage.IChunkManagerConfiguration;
 import snowflake.core.storage.IClearChunk;
@@ -35,7 +34,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.07_0
+ * @version 2016.05.21_0
  * @author Johannes B. Latzel
  */
 public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<IOException> {
@@ -98,12 +97,6 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	/**
 	 * <p></p>
 	 */
-	private final Thread chunk_recyling_thread;
-	
-	
-	/**
-	 * <p></p>
-	 */
 	private final Thread chunk_merging_thread;
 	
 	
@@ -135,39 +128,12 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		available_chunk_tree = new BinaryTree<>(chunk -> new Long(chunk.getLength()));
 		closure_state = ClosureState.None;
 		
-		
-		chunk_recyling_thread = new Thread(() -> {
-			long last_chunk_exchange = Instant.now().getEpochSecond();
-			while( isOpen() ) {
-				chunk_recycling_manager.recycleChunk();
-				if( Instant.now().getEpochSecond() - last_chunk_exchange > 5 ) {
-					if( !chunk_recycling_manager.isEmpty() ) {
-						chunk_merging_manager.addAll(chunk_recycling_manager.removeAll());
-					}
-					last_chunk_exchange = Instant.now().getEpochSecond();
-				}
-				try {
-					if( chunk_recycling_manager.isEmpty() ) {
-						Thread.sleep(10_000);
-					}
-					else {
-						Thread.sleep(2);
-					}
-				}
-				catch( InterruptedException e ) {
-					e.printStackTrace();
-				}
-			}
-		});
-		chunk_recyling_thread.setName("Snowflake ChunkRecyclingThread");
-		chunk_recyling_thread.setPriority(Thread.NORM_PRIORITY);
-		
 		chunk_merging_thread = new Thread(() -> {
 			while( isOpen() ) {
-				chunk_merging_manager.mergeChunks(1000);
+				chunk_merging_manager.mergeChunks();
 				data_table.trim();
 				try {
-					Thread.sleep(60_000);
+					Thread.sleep(20_000);
 				}
 				catch( InterruptedException e ) {
 					e.printStackTrace();
@@ -442,7 +408,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		}
 
 		closure_state = ClosureState.InOpening;
-		chunk_recyling_thread.start();
+		chunk_recycling_manager.start();
 		chunk_merging_thread.start();
 		closure_state = ClosureState.Open;
 		
@@ -459,7 +425,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		}
 
 		closure_state = ClosureState.InClosure;
-		chunk_recyling_thread.interrupt();
+		chunk_recycling_manager.stop();
 		chunk_merging_thread.interrupt();
 		closure_state = ClosureState.Closed;
 		

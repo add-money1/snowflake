@@ -3,7 +3,6 @@ package snowflake.core;
 import java.io.IOException;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.core.flake.Flake;
 import snowflake.core.manager.IChunkMemory;
 
 

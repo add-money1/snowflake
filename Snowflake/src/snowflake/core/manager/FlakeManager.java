@@ -15,16 +15,15 @@ import j3l.util.stream.StreamMode;
 import snowflake.api.IFlake;
 import snowflake.api.StorageException;
 import snowflake.core.Chunk;
+import snowflake.core.Flake;
 import snowflake.core.GlobalString;
-import snowflake.core.flake.Flake;
-import snowflake.core.flake.FlakeDataManager;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.05.06_0
+ * @version 2015.05.20_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IClose<StorageException> {
@@ -155,8 +154,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 			flake = new Flake(identification);
 			flake_table.put(new Long(identification), flake);
 			
-			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager), null);
-			flake.setChannelManager(channel_manager);
+			flake.initialize(channel_manager, chunk_manager, null);
 			flake.open();
 			
 		}
@@ -181,9 +179,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 		if( identification == FlakeManager.ROOT_IDENTIFICATION ) {
 			return true;
 		}
-		else {
-			return flake_table.get(new Long(identification)) != null;
-		}
+		return flake_table.get(new Long(identification)) != null;
 	}
 	
 	
@@ -220,10 +216,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 		
 		synchronized( flake_creation_lock ) {
 			flake = new Flake(identification);
-			
-			flake.setFlakeDataManager(new FlakeDataManager(flake, chunk_manager), initial_chunk_list);
-			flake.setChannelManager(channel_manager);
-			
+			flake.initialize(channel_manager, chunk_manager, initial_chunk_list);			
 			flake_table.put(new Long(identification), flake);
 		}
 		

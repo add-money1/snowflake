@@ -1,13 +1,11 @@
 package snowflake.core.manager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Random;
 import java.util.stream.Stream;
 
 import j3l.util.IAdd;
-import j3l.util.RandomFactory;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.stream.IStream;
 import j3l.util.stream.StreamFactory;
@@ -22,7 +20,7 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.19_0
+ * @version 2016.05.20_0
  * @author Johannes B. Latzel
  */
 public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
@@ -53,89 +51,55 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 	
 	
 	/**
-	 * <p></p>
-	 *
-	 * @param nopc_treshold treshold of "number of processed chunks"
+	 * <p>collects all chunks available and merges as much chunks as possible</p>
 	 */
-	public void mergeChunks(long nopc_treshold) {
+	public void mergeChunks() {
 		
-		ArrayList<Chunk> available_chunks;
-		long actual_nopc_treshold;
+		// debug
+		int nomc = 0;
+		int nc = 0;
+		System.out.println("started merging");
 		
+		
+		Chunk[] chunk_array;
 		synchronized( chunk_list ) {
 			long chunk_list_size = chunk_list.size();
-			if( chunk_list_size  > 1 ) {
-				if( nopc_treshold > chunk_list_size ) {
-					actual_nopc_treshold = chunk_list_size;
-					available_chunks = new ArrayList<>(chunk_list);
-					chunk_list.clear();
-				}
-				else {
-					actual_nopc_treshold = nopc_treshold;
-					available_chunks = new ArrayList<>();
-					for(int a=0;a<actual_nopc_treshold;a++) {
-						available_chunks.add(chunk_list.get(chunk_list.size() - 1));
-					}
-				}
-			}
-			else {
+			if( chunk_list_size < 2 ) {
 				return;
 			}
+			chunk_array = chunk_list.toArray(new Chunk[0]);
+			chunk_list.clear();
 		}
-		
-		available_chunks.sort((l,r) -> Long.compare(l.getStartAddress(), r.getStartAddress()));
-		
-		int min_index;
-		int max_index;
-		int index_difference;
-		Random random = RandomFactory.createRandom();
-		LinkedList<Chunk> processed_chunk_list = new LinkedList<>();
-		LinkedList<Chunk> neighbour_list = new LinkedList<>();
-		
-		for(int a=0;a<actual_nopc_treshold && available_chunks.size()>1;a++) {
-			
-			if( !neighbour_list.isEmpty() ) {
-				neighbour_list.clear();
+		Arrays.sort(chunk_array, (l,r) -> Long.compare(l.getStartAddress(), r.getStartAddress()));
+		ArrayList<Chunk> processed_chunk_list = new ArrayList<>();
+		ArrayList<Chunk> neighbour_list = new ArrayList<>();
+		int current_index = 0; 
+		int next_index = 1;
+		int difference;
+		do {
+			while( next_index < chunk_array.length && chunk_array[next_index - 1].isNeighbourOf(chunk_array[next_index]) ) {
+				next_index++;
 			}
-			
-			min_index = max_index = 1 + random.nextInt(available_chunks.size() - 1);
-			
-			while( min_index > 0 ) {
-				if( available_chunks.get(min_index).isNeighbourOf(available_chunks.get(min_index - 1)) ) {
-					min_index--;
+			difference = next_index - current_index;
+			if( difference > 1 ) {
+				neighbour_list.ensureCapacity(difference);
+				for(int a=current_index;a<next_index;a++) {
+					neighbour_list.add(chunk_array[a]);
 				}
-				else {
-					break;
-				}
-			}
-			
-			while( max_index < available_chunks.size() - 1 ) {
-				if( available_chunks.get(max_index).isNeighbourOf(available_chunks.get(max_index + 1)) ) {
-					max_index++;
-				}
-				else {
-					break;
-				}
-			}
-			
-			index_difference = max_index - min_index;
-						
-			if( index_difference > 0 ) {
-				for(int b=0;b<=index_difference;b++) {
-					neighbour_list.add(available_chunks.remove(min_index));
-				}
-			}
-			
-			if( !neighbour_list.isEmpty() ) {
 				processed_chunk_list.add(chunk_manager.mergeChunks(neighbour_list));
+				neighbour_list.clear();
+				nomc += difference;
+				nc++;
 			}
-			
-			
+			else {
+				processed_chunk_list.add(chunk_array[current_index]);
+			}
+			current_index = next_index;
+			next_index++;
 		}
-		
-		addAll(available_chunks);
+		while( next_index < chunk_array.length );
+		System.out.println("merged " + nomc + " to " + nc + " of " + chunk_array.length + " with " + processed_chunk_list.size());
 		addAll(processed_chunk_list);
-		
 	}
 	
 	

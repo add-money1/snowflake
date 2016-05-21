@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.core.Flake;
 import snowflake.core.GlobalString;
-import snowflake.core.flake.Flake;
 import snowflake.core.manager.IReturnChannel;
 import snowflake.core.storage.IRead;
 

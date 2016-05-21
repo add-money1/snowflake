@@ -1,4 +1,53 @@
 	
+	2016.05.21
+	
+		snowflake.core.manager.ChunkManager
+			-> moved "Thread chunk_recycling_thread" to "snowflake.core.manager.ChunkRecyclingManager"
+			-> modified "void open() throws IOException" and "void close() throws IOException"
+				due to the changes in "snowflake.core.manager.ChunkRecyclingManager"
+			
+		snowflake.core.manager.ChunkRecyclingManager
+			-> added "LoopedTaskThread chunk_recycling_thread"
+			-> added "boolean is_stopped"
+			-> added "void start()"
+			-> added "void stop()"
+			-> removed unnecessary else in "boolean add(Chunk)"
+			-> renamed "void recycleChunk()" to "void recycle()"
+			-> renamed "ArrayList<Chunk> recycled_chunk_list" to "ArrayList<Chunk> available_chunk_list"
+			-> renamed "long cleaning_treshhold" to "long chunk_recycling_threshhold"
+			
+		snowflake.core.storage.StorageConfiguration
+			-> changed default value in "long getChunkRecyclingTreshhold()" from "8192" to 
+				"1_000_000"
+	
+	
+	2016.05.20
+	
+		snowflake.core.flake.FlakeDataManager
+			-> merged class into "snowflake.core.flake.Flake"
+			
+		snowflake.core.flake.Flake
+			-> since "snowflake.core.flake.FlakeDataManager" has been merged into this class, it
+				has undergone many changes, like:
+					almost all methods have been modified
+					several members have been added
+			-> moved the class to "snowflake.core"
+			-> merged "void setChannelManager(IChannelManager)" and
+				"void setFlakeDataManager(IChunkManager, ArrayList<Chunk>)" to
+				"void initialize(IChannelManager, IChunkManager, ArrayList<Chunk>)"
+			
+		snowflake.core.flake
+			-> deleted empty package
+			
+		snowflake.core.manager.FlakeManager
+			-> modified "IFlake declareFlake(long, ChunkManager, ArrayList<Chunk>)" and
+				"IFlake createFlake(ChunkManager)" due to the changes in
+				"snowflake.core.flake"
+			-> removed unnecessary else in "boolean flakeExists(long)"
+			
+		snowflake.core.manager.ChunkMergingManager
+			-> changed "void mergeChunks(long)" to "void mergeChunks()": the method now tries
+				to merge all chunks instead of merging at max nopc_treshold chunks	
 	
 	2016.05.19
 	

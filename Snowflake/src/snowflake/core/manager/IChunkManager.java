@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import j3l.util.close.IStateClosure;
 import snowflake.core.Chunk;
-import snowflake.core.flake.Flake;
+import snowflake.core.Flake;
 
 
 /**

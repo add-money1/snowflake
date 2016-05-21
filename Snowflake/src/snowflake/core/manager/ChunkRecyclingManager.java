@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import j3l.util.LoopedTaskThread;
 import j3l.util.check.ArgumentChecker;
-import snowflake.api.StorageException;
 import snowflake.core.Chunk;
 import snowflake.core.GlobalString;
 import snowflake.core.storage.IClearChunk;
@@ -15,7 +15,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.05.21_0
  * @author Johannes B. Latzel
  */
 public final class ChunkRecyclingManager {
@@ -30,7 +30,7 @@ public final class ChunkRecyclingManager {
 	/**
 	 * <p></p>
 	 */
-	private final ArrayList<Chunk> recycled_chunk_list;
+	private final ArrayList<Chunk> available_chunk_list;
 	
 	
 	/**
@@ -42,7 +42,19 @@ public final class ChunkRecyclingManager {
 	/**
 	 * <p></p>
 	 */
-	private final long cleaning_treshhold;
+	private final long chunk_recycling_threshhold;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private final LoopedTaskThread chunk_recycling_thread;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private boolean is_stopped;
 	
 	
 	/**
@@ -51,57 +63,67 @@ public final class ChunkRecyclingManager {
 	 * @param
 	 * @return
 	 */
-	public ChunkRecyclingManager(IClearChunk clear_chunk, long cleaning_treshhold) {
+	public ChunkRecyclingManager(IClearChunk clear_chunk, long chunk_recycling_threshhold) {
 		this.clear_chunk = ArgumentChecker.checkForNull(clear_chunk, GlobalString.ClearChunk.toString());
-		this.cleaning_treshhold = ArgumentChecker.checkForBoundaries(
-			cleaning_treshhold, 1, Long.MAX_VALUE, GlobalString.CleaningTreshhold.toString()
+		this.chunk_recycling_threshhold = ArgumentChecker.checkForBoundaries(
+			chunk_recycling_threshhold, 1, Long.MAX_VALUE, GlobalString.CleaningTreshhold.toString()
 		);
 		chunk_recycling_list = new ArrayList<>(1000);
-		recycled_chunk_list = new ArrayList<>(1000);
+		available_chunk_list = new ArrayList<>(1000);
+		chunk_recycling_thread = new LoopedTaskThread(this::recycle, "Snowflake ChunkRecyclingThread", 1000);
+		chunk_recycling_thread.setPriority(Thread.MIN_PRIORITY);
+		is_stopped = false;
 	}
 	
 	
 	/**
-	 * <p>recycles one of the chunks in {@link #chunk_recycling_tree} and puts it into {@link #recycled_chunk_list}</p>
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
 	 */
-	public void recycleChunk() {
-		
-		Chunk chunk = null;
-		
-		synchronized( chunk_recycling_list ) {
-			if( !chunk_recycling_list.isEmpty() ) {
-				chunk = chunk_recycling_list.remove(chunk_recycling_list.size() - 1);
-			}
-		}
-		
-		if( chunk == null ) {
-			return;
-		}
-		
-		long remaining_bytes = chunk.getLength();
-		long advance;
-		while( remaining_bytes > 0 ) {
-			advance = cleaning_treshhold < remaining_bytes ? cleaning_treshhold : remaining_bytes;
-			try {
-				clear_chunk.clearChunk(chunk, chunk.getLength() - remaining_bytes, advance);
-			}
-			catch( StorageException e ) {
-				e.printStackTrace();
-				synchronized( chunk_recycling_list ) {
-					chunk_recycling_list.add(chunk);
-				}
+	public synchronized void start() {
+		chunk_recycling_thread.start();
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void stop() {
+		is_stopped = true;
+		chunk_recycling_thread.interrupt();
+	}
+	
+	
+	/**
+	 * <p>recycles one of the chunks in {@link #chunk_recycling_tree} and puts it into {@link #available_chunk_list}</p>
+	 */
+	public void recycle() {
+		long number_of_remaining_bytes = chunk_recycling_threshhold;
+		Chunk current_chunk;
+		do {
+			if( is_stopped ) {
 				return;
 			}
-			remaining_bytes -= advance;
+			synchronized( chunk_recycling_list ) {
+				if( chunk_recycling_list.isEmpty() ) {
+					return;
+				}
+				current_chunk = chunk_recycling_list.remove(chunk_recycling_list.size() - 1);
+			}
+			clear_chunk.clearChunk(current_chunk);
+			number_of_remaining_bytes -= current_chunk.getLength();
+			current_chunk.setNeedsToBeCleared(false);
+			current_chunk.save(null);
+			synchronized( available_chunk_list ) {
+				available_chunk_list.add(current_chunk);
+			}
 		}
-		
-		chunk.setNeedsToBeCleared(false);
-		chunk.save(null);
-		
-		synchronized( recycled_chunk_list ) {
-			recycled_chunk_list.add(chunk);
-		}
-		
+		while( number_of_remaining_bytes > 0 );
 	}
 	
 	
@@ -113,8 +135,8 @@ public final class ChunkRecyclingManager {
 	 */
 	public boolean isEmpty() {
 		synchronized( chunk_recycling_list ) {
-			synchronized( recycled_chunk_list ) {
-				return chunk_recycling_list.isEmpty() && recycled_chunk_list.isEmpty();
+			synchronized( available_chunk_list ) {
+				return chunk_recycling_list.isEmpty() && available_chunk_list.isEmpty();
 			}
 		}
 	}
@@ -135,10 +157,8 @@ public final class ChunkRecyclingManager {
 			if( !chunk_recycling_list.contains(chunk) ) {
 				return chunk_recycling_list.add(chunk);
 			}
-			else {
-				throw new SecurityException("No chunk must ever be managed twice at the same time!");
-			}
 		}
+		throw new SecurityException("No chunk must ever be managed twice at the same time!");
 	}
 	
 	
@@ -172,9 +192,9 @@ public final class ChunkRecyclingManager {
 	 */
 	public List<Chunk> removeAll() {
 		ArrayList<Chunk> list;
-		synchronized( recycled_chunk_list ) {
-			list = new ArrayList<>(recycled_chunk_list);
-			recycled_chunk_list.clear();
+		synchronized( available_chunk_list ) {
+			list = new ArrayList<>(available_chunk_list);
+			available_chunk_list.clear();
 		}
 		return list;
 	}	
