@@ -1,4 +1,429 @@
 	
+	2016.06.07
+		
+		snowflake.filesystem.AttributeCache
+			-> changed "ArrayList<AttributeWrapper> attribute_wrapper_list" to
+				"ArrayList<Attribute> attribute_list"
+			-> removed "List<AttributeHeader> getAllAttributeHeader()"
+			-> changed (almost) all methods due to the changes from "2016.06.06" and "2016.06.07"
+			-> the class is now thread safe
+			-> outsourced most of the low-level functionality into
+				"snowflake.filesystem.AttributeUtility"
+		
+		snowflake.filesystem.AttributeWrapper
+			-> deleted class
+			
+		snowflake.filesystem.AttributeUtility
+			-> removed "static AttributeHeader loadAttributeHeader(String, IFlake)"
+			-> added "static List<Attribute> loadAllAttributes(IFlake)",
+				"static List<Attribute> loadNecessaryAttributes(IFlake, List<Attribute>)",
+				"static void overrideAttribute(IFlake, Attribute)", and
+				"static void setAttribute(IFlake, Attribute)"
+				
+		snowflake.core.ChunkUtiltiy
+			-> now uses "j3l.util.TransformValue2" instead of "j3l.util.TransformValue"
+			-> removed unnecessary else in "static ChunkData getChunkData(byte[])"
+	
+	
+	2016.06.06
+	
+		snowflake.filesystem.AttributeHeader
+			-> removed "int start_address", "int type_offset", int "value_offset", "int length",
+				and "int attribute_header_index"
+			-> changed "AttributeHeader(int, int, int, int, long, int)" to 
+				"AttributeHeader(short, short , int, long)"
+			-> added "short name_length", "short type_name_length", "int value_length"
+			-> removed "int getStartAddress()", "int getTypeOffset()", "int getValueOffset()",
+				"int getLength()", and "int getAttributeHeaderIndex()"
+			-> added "static int UNSIGNED_SHORT_OFFSET"
+			-> added "int getNameLength()", "int getTypeNameLength()", and "int getValueLength()"
+			
+		snowflake.GlobalString
+			-> added ValueLength("value_length")
+		
+		snowflake.filesystem.AttributeUtility
+			-> removed "static int getDataOffset(FlakeInputStream)"
+			-> removed "static List<AttributeHeader>
+				overrideAttribute(IFlake, AttributeHeader, Attribute)"
+			-> removed "static int ATTRIBUTE_HEADER_CHECKSUM_POSITION",
+				"static int ATTRIBUTE_HEADER_LENGTH_POSITION = 12",
+				"static int ATTRIBUTE_HEADER_VALUE_OFFSET_POSITION",
+				"static int ATTRIBUTE_HEADER_TYPE_OFFSET_POSITION",
+				"static int ATTRIBUTE_HEADER_START_OFFSET_POSITION",
+				"static int ATTRIBUTE_HEADER_LIST_OFFSET"
+			-> changed value of
+				"static int ATTRIBUTE_HEADER_LENGTH" and
+				"static int ATTRIBUTE_HEADER_LAST_CHANGED_TIME_STAMP_POSITION"
+			-> added "static int ATTRIBUTE_HEADER_NAME_LENGTH_POSITION",
+				"static int ATTRIBUTE_HEADER_TYPE_NAME_LENGTH_POSITION",
+				"static int ATTRIBUTE_HEADER_VALUE_LENGTH_POSITION"
+				
+		snowflake.filesystem.AttributeWrapper
+			-> removed "AttributeHeader attribute_header"
+			-> added "last_changed_time_stamp"
+			-> changed "AttributeWrapper(Attribute, AttributeHeader)" to
+				"AttributeWrapper(Attribute, long)"
+			-> removed "AttributeHeader getAttributeHeader()"
+			-> added "long getLastChangedTimeStamp()"
+			-> removed "void setAttributeHeader(AttributeHeader)"
+			-> "void setAttribute(Attribute)" sets the "long last_changed_time_stamp" every
+				time it is called
+	
+	
+	2016.06.05
+	
+		snowflake.api.FlakeInputStream
+			-> modified "int read() throws IOException" and
+				"int read(byte[], int, int) throws IOException" so that it returns -1 if
+				eof is reached; "int read() throws IOException" now returns a byte of the range
+				of [0;255]
+			-> removed unnecessary else in "long skip(long)"
+		
+		snowflake.filesystem.AttributeUtility
+			-> added "int getDataOffset(FlakeInputStream)"
+			
+		snowflake.filesystem.AttributeCache
+			-> "List<AttributeHeader> getAllAttributeHeader()" now uses
+				"int snowflake.filesystem.AttributeUtility.getDataOffset(FlakeInputStream)" and
+				a "snowflake.api.FlakeInputStream" instead of a "java.io.BufferedInputStream"
+		
+	
+	
+	2016.06.04
+	
+		snowflake.filesystem.File
+			-> changed "File(IFlake)" to "File(IFlake, IFlake)"
+			-> added "IFlake getDataFlake()"
+			-> implemented "void reactToDeletion()"
+		
+		snowflake.filesystem.AttributeCache
+			-> implemented "void setAttribute(Attribute attribute)"
+			
+		snowflake.filesystem.AttributeUtility
+			-> added "void overrideAttribute(IFlake, AttributeHeader, Attribute)"
+			-> changed "AttributeHeader getAttributeHeader(byte[])" to
+				"AttributeHeader getAttributeHeader(byte[], int)"
+		
+		snowflake.core.IBinaryData
+			-> added "default byte[] getBinaryData()"
+			
+		snwoflake.GlobalString
+			-> added AttributeHeaderIndex("attribute_header_index")
+			
+		snowflake.filesystem.AttributeHeader
+			-> added "int attribute_header_index"
+			-> added "int getAttributeHeaderIndex()"
+			-> changed "AttributeHeader(int, int, int, int, long)" to
+				"AttributeHeader(int, int, int, int, long, int)"
+			
+	
+	2016.06.03
+	
+		snowflake.filesystem.Node
+			-> replaced all occurrences of "meta_data_flake" with "attribute_flake"
+			-> "boolean isValid()" checks "attribute_chache" for validation
+	
+		snowflake.filesystem.Directory
+			-> replaced all occurrences of "meta_data_flake" with "attribute_flake"
+	
+		snowflake.filesystem.File
+			-> replaced all occurrences of "meta_data_flake" with "attribute_flake"
+			-> added "IFlake data_flake"
+	
+		snowflake.filesystem.AttributeCache
+			-> replaced all occurrences of "meta_data_flake" with "attribute_flake"
+			-> now implements "j3l.util.check.IValidate"
+			-> implements "boolean isValid()"
+		
+		snowflake.GlobalString
+			-> added:
+				AttributeFlake("attribute_flake")
+				DataFlake("data_flake")
+			-> removed MetaDataFlake("meta_data_flake")
+	
+	
+	2016.06.02
+	
+		snowflake.api.IAttributeValue
+			-> added interface
+			
+		snowflake.filesystem.attribute.TimeStampAttribute
+			-> now implements "snowflake.api.IAttributeValue" instead of "snowflake.core.IBinaryData"
+			-> implemented "Long getValue()"
+			-> added "TimeStampAttribute(Long)"
+		
+		snowflake.filesystem.Attribute
+			-> changed "IBinaryData attribute_value" to "IAttributeValue<?> attribute_value"
+			-> changed "IBinaryData getAttributeValue()" to "IAttributeValue<?> getAttributeValue()"
+			-> changed "Attribute(String, IBinaryData)" to "Attribute(String, IAttributeValue<?>)"
+		
+		snowflake.filesystem.AttributeUtility
+			-> modified "Attribute getAttribute(FlakeInputStream, AttributeHeader)" due to changes in
+				"snowflake.filesystem.Attribute"
+			
+		snowflake.core.GlobalString
+			-> added ConstructorFunction("constructor_function")
+			-> moved class to package "snowflake"
+			
+		snowflake.filesystem.CommonAttribute
+			-> removed enum
+			
+		snowflake.filesystem.CommonAttribute
+			-> added class
+		
+		snowflake.filesystem.attribute.NameAttribute
+			-> added class
+	
+	
+	2016.06.01
+	
+		snowflake.filesystem.AttributeCache
+			-> implemented "void loadAttribute(String)"
+			-> added "void delete()"
+			-> added "boolean is_deleted"
+			-> added "void checkDeletion()": all methods call this method before they execute
+		
+		snowflake.filesystem.Node
+			-> applied changes of "snowflake.filesystem.Attribute" from "2016.05.31" in:
+				"Collection<Attribute<?>> getAttributes()" to "Collection<Attribute> getAttributes()"
+				"Attribute<?> getAttribute(String name)" to "Attribute getAttribute(String)"
+				"<T extends IBinaryData> void setAttribute(Attribute<T>)" to "void setAttribute(Attribute)"
+			-> implemented "void setParentDirectory(Directory)"
+			-> changed "abstract void delete()" to "void delete()"
+			-> added "void reactToDeletion()"
+			-> added "boolean is_deleted"
+			-> implemented "boolean isValid()"
+			-> made "Directory getParentDirectory()" final
+			-> made "void setParentDirectory(Directory)" final
+			-> added constructor "Node(IFlake)"
+			
+		snowflake.filesystem.Directory
+			-> added "void removeChildNode(Node)"
+			-> removed "void delete()"
+			-> implemented "void reactToDeletion()"
+			-> added "void clear()"
+			-> removed implementation of "boolean isValid()"
+			
+		snowflake.filesystem.attribute
+			-> added package
+			
+		snowflake.filesystem.attribute.TimeStampAttribute
+			-> added class
+			
+		snowflake.api.CommonAttribute
+			-> added enum
+	
+	
+	2016.05.31
+	
+		snowflake.filesystem.AttributeWrapper
+			-> changed "AttributeWrapper(Attribute<T>, long)" to
+				"AttributeWrapper(Attribute, AttributeHeader)"
+			-> added "AttributeHeader attribute_header"
+			-> changed boundaries of "header_buffer" in
+				"List<AttributeHeader> getAllAttributeHeader()"
+			-> added "void setAttributeHeader(AttributeHeader)"
+			-> added "setAttribute(Attribute)"
+			-> changed class "AttributeWrapper<T extends IBinaryData>" to "AttributeWrapper"
+			-> changed "Attribute<T> getAttribute()" to "Attribute getAttribute()"
+			-> changed "Attribute<T> attribute" to "Attribute attribute"
+			-> removed "long last_changed_time_stamp"
+			-> removed "long getLastChangedTimeStamp()"
+			
+		snowflake.filesystem.AttributeUtility
+			-> changed "AttributeWrapper<IBinaryData> getAttribute(FlakeInputStream,
+				AttributeHeader)" to "Attribute getAttribute(FlakeInputStream, AttributeHeader)"
+			-> changed "AttributeWrapper getAttribute(FlakeInputStream, AttributeHeader)"
+				due to the changes in "snowflake.filesystem.AttributeWrapper"
+			
+		snowflake.filesystem.Attribute
+			-> changed class "Attribute<T extends IBinaryData>" to "Attribute"
+			-> changed "T attribute_value" to "IBinaryData attribute_value"
+			-> changed "Attribute(String, T)" to "Attribute(String, IBinaryData)"
+			-> changed "T getAttributeValue()" to "IBinaryData getAttributeValue()"
+		
+		snowflake.filesystem.AttributeCache
+			-> changed "ArrayList<AttributeWrapper<? extends IBinaryData>> attribute_wrapper_list"
+				to "ArrayList<AttributeWrapper> attribute_wrapper_list"
+			-> changed "Collection<AttributeWrapper<? extends IBinaryData>> getAttributes()"
+				to "Collection<Attribute> getAttributes()"
+			-> changed "void loadAllAttributes()" due to changes in
+				"snowflake.filesystem.AttributeWrapper"
+			-> implemented "void loadNecessaryAttributes()"
+			-> changed "Attribute<?> getAttribute(String)" to "Attribute getAttribute(String)"
+			-> implemented "Attribute getAttribute(String)"
+			-> added "void loadAttribute(String)"
+			-> changed "setAttribute(Attribute<?>)" to "setAttribute(Attribute)"
+	
+	2016.05.30
+	
+		snowflake.filesystem.AttributeHeader
+			-> changed "AttributeHeader(int, int, int, long)" to 
+				"AttributeHeader(int, int, int, int, long)"
+			-> added "int length"
+			
+		snowflake.filesystem.AttributeUtility
+			-> changed "static AttributeHeader getAttributeHeader(byte[])" and
+				"static AttributeWrapper<IBinaryData> getAttribute(FlakeInputStream, 
+				AttributeHeader)" according to the changes in
+				"snowflake.filesystem.AttributeHeader"
+			-> added "static int ATTRIBUTE_HEADER_LENGTH_POSITION = 12;"
+		
+		snowflake.filesystem.Attribute
+			-> changed "ArrayList<Attribute<IBinaryData>> attribute_list" to 
+				"ArrayList<AttributeWrapper<? extends IBinaryData>> attribute_wrapper_list"
+			-> changed "Collection<AttributeWrapper<?>> getAttributes()" to
+				"Collection<AttributeWrapper<? extends IBinaryData>> getAttributes()"
+			-> modified "void loadAllAttributes()"
+				
+		
+	2016.05.29
+	
+		snowflake.filesystem.AttributeUtility
+			-> added class
+		
+		snowflake.filesystem.Node
+			-> changed "<T> void setAttribute(Attribute<T> attribute)" to
+				"<T extends IBinaryData> void setAttribute(Attribute<T>)"
+			-> added "Directory getParentDirectory()"
+			-> added "void setParentDirectory(Directory)"
+			-> added "Directory parent_directory"
+			-> changed "Node(IFlake)" to "Node(IFlake, Directory)"
+			
+		snowflake.filesystem.AttributeCache
+			-> implemented "Set<AttributeHeader> getAllAttributeHeader()"
+			-> added "void loadAttributes()"
+			-> changed "ArrayList<Attribute<?>> attribute_list" to
+				"ArrayList<Attribute<IBinaryData>> attribute_list"
+			-> changed "Set<AttributeHeader> getAllAttributeHeader()" to
+				"List<AttributeHeader> getAllAttributeHeader()"
+			
+		snowflake.filesystem.AttributeHeader
+			-> changed "int getStart_address()" to "int getStartAddress()"
+			-> changed "int getType_offset()" to "int getTypeOffset()"
+			-> changed "int getValue_offset()" to "int getValueOffset()"
+			-> changed "long getLast_changed_time_stamp()" to "long getLastChangedTimeStamp()"
+			
+		snowflake.core.GlobalString
+			-> added:
+				FlakeInputStream("flake_input_stream")
+				AttributeHeader("attribute_header")
+	
+	
+	2016.05.28
+	
+		snowflake.filesystem.AttributeCache
+			-> changed "Collection<Attribute> getAttributes()" to
+				"Collection<Attribute<?>> getAttributes()" and modified it
+			-> added "void loadAllAttributes()"
+			-> added "void loadNecessaryAttributes()"
+			-> added "Set<AttributeHeader> getAllAttributeHeader()"
+			-> changed "ArrayList<Attribute<?>> attribute_list" to
+				"ArrayList<AttributeWrapper<T>> attribute_list"
+		
+		snowflake.filesystem.AttributeHeader
+			-> added class
+			
+		snowflake.filesystem.Node
+			-> added "abstract void delete()"
+			-> changed "Collection<Attribute> getAttributes()" to
+				"Collection<Attribute<?>> getAttributes()"
+			-> changed "Attribute getAttribute(String)" to "Attribute<?> getAttribute(String)"
+			-> changed "void setAttribute(Attribute)" to "<T> void setAttribute(Attribute<T>)"
+	
+		snowflake.core.GlobalString
+			-> added:
+				TypeOffset("type_offset")
+				ValueOffset("value_offset")
+				LastChangedTimeStamp("last_changed_time_stamp")
+				Attribute("attribute")
+				BufferLength("buffer_length")
+				
+		snowflake.filesystem.AttributeWrapper
+			-> added class
+			
+		snowflake.filesystem.Attribute
+			-> changed class from "Attribute<T>" to "Attribute<T extends IBinaryData>"
+			-> changed "public AttributeValue<T> getAttributeValue()" to
+				"public T getAttributeValue()"
+			-> changed "Attribute(String name, AttributeValue<T> attribute_value)" to
+				"Attribute(String name, T attribute_value)"
+			-> changed "AttributeValue<T> attribute_value" to "T attribute_value"
+			
+		snowflake.filesystem.IAttributeValue
+			-> deleted interface
+	
+	
+	2016.05.26
+	
+		snowflake.filesystem.Directory
+			-> created class
+			
+		snowflake.filesystem.Node
+			-> added "Directory parent_directory"
+			-> implements "j3l.util.check.IValidate"
+			-> added "abstract void delete()"
+			
+		snowflake.core.GlobalString
+			-> added:
+				Directory("directory"),
+				ParentDirectory("parent_directory")
+				Node("node")
+				AttributeValue("attribute_value")
+				
+		snowflake.filesystem.File
+			-> added class
+			
+		snowflake.filesystem.Attribute
+			-> implements "j3l.util.Nameable"
+			-> added "IAttributeValue<T> attribute_value"
+			-> added "AttributeValue<T> getAttributeValue()"
+			-> added implementation of "String getName()"
+			-> added "Attribute(String, IAttributeValue<T>)"
+			
+		snowflake.filesystem.IAttributeValue
+			-> created interface
+	
+	
+	2016.05.24
+	
+		snowflake.core.Flake
+			-> implementation of "void expandAt(long, long)" and "void cutAt(long, long)"
+			
+		snowflake.core.GlobalString
+			-> added MetaDataFlake("meta_data_flake")
+	
+	
+	2016.05.23
+	
+		snowflake.api.IFlake
+			-> added:
+				"void expandAt(long, long)"
+				"void expandAtStart(long)"
+				"void cutFromEnd(long)"
+				"void cutFromStart(long)"
+		
+		snowflake.core.Flake
+			-> removed "void increaseLength(long)" and "void decreaseLength(long)"
+			-> removed "void addChunks(Collection<Chunk>)"
+			-> implemented:
+				"void cutFromStart(long)"
+				"void cutFromEnd(long)" -> substitutes "void decreaseLength(long)"
+				"void expandAtEnd(long)" -> substitutes "void increaseLength(long)"
+				"void expandAtStart(long)"
+			-> added "List<Chunk> removeAllChunksFrom(long)"
+				
+		snowflake.core.manager.IChunkManager
+			-> removed "void appendChunk(Flake, long)"
+			-> added "Collection<Chunk> allocateSpace(long number_of_bytes)"
+			
+		snowflake.core.manager.ChunkManager
+			-> removed implementation of "void appendChunk(Flake, long)"
+			-> added implementation of "Collection<Chunk> allocateSpace(long number_of_bytes)"
+			-> removed "List<Chunk> getAvailableChunks(long)" -> substituted by
+				"List<Chunk> getAvailableChunks(long number_of_bytes)"
+		
+	
 	2016.05.21
 	
 		snowflake.core.manager.ChunkManager
