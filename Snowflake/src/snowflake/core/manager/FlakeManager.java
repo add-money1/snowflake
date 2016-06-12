@@ -12,11 +12,11 @@ import j3l.util.close.IClose;
 import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
+import snowflake.GlobalString;
 import snowflake.api.IFlake;
 import snowflake.api.StorageException;
 import snowflake.core.Chunk;
 import snowflake.core.Flake;
-import snowflake.core.GlobalString;
 
 
 /**

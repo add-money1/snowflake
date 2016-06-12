@@ -3,9 +3,10 @@ package snowflake.core;
 import java.util.zip.CRC32;
 
 import j3l.util.ArrayTool;
-import j3l.util.TransformValue;
+import j3l.util.TransformValue2;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
+import snowflake.GlobalString;
 import snowflake.core.manager.ChunkManager;
 import snowflake.core.manager.FlakeManager;
 
@@ -14,7 +15,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.06.07_0
  * @author Johannes B. Latzel
  */
 public final class ChunkUtility {
@@ -92,19 +93,19 @@ public final class ChunkUtility {
 		byte flag_vector = chunk_data.getFlagVector();
 
 		
-		TransformValue.toByteArray(chunk_data.getStartAddress(), long_buffer);
+		TransformValue2.toByteArray(chunk_data.getStartAddress(), long_buffer);
 		checksum.update(long_buffer);
 		ArrayTool.transferValues(buffer, long_buffer, ChunkUtility.START_ADDRESS_POSITION);
 		
-		TransformValue.toByteArray(chunk_data.getChunkLength(), long_buffer);
+		TransformValue2.toByteArray(chunk_data.getChunkLength(), long_buffer);
 		checksum.update(long_buffer);
 		ArrayTool.transferValues(buffer, long_buffer, ChunkUtility.LENGTH_POSITION);
 		
-		TransformValue.toByteArray(chunk_data.getFlakeIdentification(), long_buffer);
+		TransformValue2.toByteArray(chunk_data.getFlakeIdentification(), long_buffer);
 		checksum.update(long_buffer);
 		ArrayTool.transferValues(buffer, long_buffer, ChunkUtility.FLAKE_IDENTIFICATION_POSITION);
 		
-		TransformValue.toByteArray(chunk_data.getIndexInFlake(), int_buffer);
+		TransformValue2.toByteArray(chunk_data.getIndexInFlake(), int_buffer);
 		checksum.update(int_buffer);
 		ArrayTool.transferValues(buffer, int_buffer, ChunkUtility.INDEX_IN_FLAKE_POSITION);
 		
@@ -112,7 +113,7 @@ public final class ChunkUtility {
 		buffer[ChunkUtility.FLAG_VECTOR_POSITION] = flag_vector;
 		
 		// cast is necessary, because the actual checksum returned is 32 bit integer
-		TransformValue.toByteArray((int)checksum.getValue(), int_buffer);
+		TransformValue2.toByteArray((int)checksum.getValue(), int_buffer);
 		ArrayTool.transferValues(buffer, int_buffer, ChunkUtility.CHECKSUM_POSITION);
 		
 	}
@@ -153,33 +154,31 @@ public final class ChunkUtility {
 
 		ArrayTool.transferValues(long_buffer, buffer, 0, ChunkUtility.START_ADDRESS_POSITION, long_buffer.length);
 		checksum.update(long_buffer);
-		start_address = TransformValue.toLong(long_buffer);	
+		start_address = TransformValue2.toLong(long_buffer);	
 		
 		ArrayTool.transferValues(long_buffer, buffer, 0, ChunkUtility.LENGTH_POSITION, long_buffer.length);
 		checksum.update(long_buffer);
-		length = TransformValue.toLong(long_buffer);	
+		length = TransformValue2.toLong(long_buffer);	
 		
 		ArrayTool.transferValues(long_buffer, buffer, 0, ChunkUtility.FLAKE_IDENTIFICATION_POSITION, long_buffer.length);
 		checksum.update(long_buffer);
-		flake_identification = TransformValue.toLong(long_buffer);	
+		flake_identification = TransformValue2.toLong(long_buffer);	
 		
 		ArrayTool.transferValues(int_buffer, buffer, 0, ChunkUtility.INDEX_IN_FLAKE_POSITION, int_buffer.length);
 		checksum.update(int_buffer);
-		index_in_flake = TransformValue.toInteger(int_buffer);		
+		index_in_flake = TransformValue2.toInteger(int_buffer);		
 		
 		flag_vector = buffer[ChunkUtility.FLAG_VECTOR_POSITION];
 		checksum.update(flag_vector);
 		
 		ArrayTool.transferValues(int_buffer, buffer, 0, ChunkUtility.CHECKSUM_POSITION, int_buffer.length);
-		read_in_checksum = TransformValue.toInteger(int_buffer);	
+		read_in_checksum = TransformValue2.toInteger(int_buffer);	
 		
 		// cast is necessary, because the actual checksum returned is 32 bit integer
 		if( (int)checksum.getValue() == read_in_checksum ) {
 			return new ChunkData(start_address, length, flake_identification, index_in_flake, flag_vector);
 		}
-		else {
-			throw new SecurityException("The read-in checksum does not match the calculated checksum!");
-		}
+		throw new SecurityException("The read-in checksum does not match the calculated checksum!");
 		
 	}
 	

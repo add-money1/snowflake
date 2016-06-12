@@ -3,8 +3,8 @@ package snowflake.core.storage;
 import java.io.IOException;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.GlobalString;
 import snowflake.api.DataPointer;
-import snowflake.core.GlobalString;
 import snowflake.core.Returnable;
 
 /**

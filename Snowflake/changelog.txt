@@ -1,4 +1,125 @@
 	
+	2016.06.12
+	
+		snowflake.api.CommonAttribute
+			-> fixed wrong name in "static CommonAttribute<String> Name"
+			-> implemented "String toString()"
+		
+		snowflake.filesystem.Node
+			-> implemented "public String toString()"
+		
+		snowflake.filesystem.File
+			-> modified "boolean isValid()" 
+		
+		snowflake.filesystem.RootDirectory
+			-> implemented "public String toString()"
+		
+		snowflake.filesystem.FileSystem
+			-> changed "Node findNode(String)" to "Node getNode(String)"
+			
+		
+	2016.06.11
+	
+		snowflake.filesystem.Directory
+			-> 	changed "Set<Node> child_node_set" to "ArrayList<Node> child_node_set"
+			-> "void clear()" uses "java.util.ArrayList.forEach(T)" instead of for-each-loop
+			-> implements "snowflake.api.IDirectory" and its methods
+			-> changed "Directory(IFlake)" to "Directory(IFlake, IDirectory)"
+			
+		snwoflake.SnowFlake
+			-> created class
+		
+		snowflake.filesystem.FileSystem
+			-> created class
+		
+		snwoflake.GlobalString
+			-> added:
+				Storage("storage")
+				Path("path")
+		
+		snowflake.filesystem.attribute.TimeStampAttribute
+			-> added "TimeStampAttribute(Instant)"
+		
+		snowflake.api.CommonAttribute
+			-> changed "static CommonAttribute<Long> Last_Acces_Time_Stamp" to
+				"static CommonAttribute<Instant> Last_Acces_Time_Stamp"
+			-> changed "static CommonAttribute<Long> Last_Modification_Time_Stamp" to
+				"static CommonAttribute<Instant> Last_Acces_Time_Stamp"
+			-> changed "static CommonAttribute<Long> Creation_Time_Stamp" to
+				"static CommonAttribute<Instant> Last_Acces_Time_Stamp"
+		
+		snowflake.api.FileSystemException
+			-> created class
+		
+		snwoflake.filesystem.RootDirectory
+			-> added class
+		
+		snowflake.api.IDirectory
+			-> added interface
+		
+		snowflake.filesystem.Node
+			-> changed "Directory getParentDirectory()" to "IDirectory getParentDirectory()"
+			-> changed "Directory parent_directory" to "IDirectory parent_directory"
+			-> changed "Node(IFlake, Directory)" to "Node(IFlake, IDirectory)"
+			-> changed "void setParentDirectory(Directory)" to "void setParentDirectory(IDirectory)"
+			-> void "setParentDirectory(IDirectory)" does not accept null
+			-> removed "Node(IFlake)"
+		
+		snowflake.filesystem.File
+			-> changed "File(IFlake, IFlake)" to "File(IFlake, IFlake, IDirectory)"
+			-> removed "IFlake getDataFlake()"
+			-> added "FlakeInputStream getFlakeInputStream() throws IOException"
+			-> added "FlakeOutputStream getFlakeOutputStream() throws IOException"
+			
+		
+	2016.06.10
+	
+		snowflake.filesystem.attribute.NameAttribute
+			-> "NameAttribute(byte[])" now uses "java.lang.String(byte[])" instead of 
+				"j3l.util.TransformValue"
+			->  "void getBinaryData(byte[])" uses "java.lang.String.getBytes()" 
+			-> implemented "byte[] getBinaryData()"
+		
+		snowflake.filesystem.attribute.TimeStampAttribute
+			-> uses "j3l.util.TransformValue2" instead of "j3l.util.TransformValue"
+			
+		snowflake.filesystem.AttributeCache
+			-> made "ArrayList<Attribute> attribute_list" final
+			-> changed "void loadNecessaryAttributes()", "void loadAttributes()",
+				"AttributeCache(IFlake)" and "void loadAllAttributes()" due to changes in
+				"attribute_list"
+			-> fix in "Collection<Attribute> getAttributes()": did not return the attributes, but 
+				"new ArrayList<>(attribute_list.size())"
+		
+		snowflake.core.Flake
+			-> fixed bug in "void expandAtEnd(long)": set position of wrong chunk
+			-> fixed bug in "void expandAt(long, long)": saved chunks which were (yet) not part of
+				the flake
+			
+		snowflake.filesystem.AttributeUtility
+			-> modified all methods:
+				removed all occurrences of "java.io.BufferedReader" and "java.io.BufferedWriter"
+				removed all instances of "char[] char_buffer"
+				uses "java.lang.String(byte[])" and "java.lang.String.getBytes()"
+				fixed Exception-messages
+			
+			
+	2016.06.08
+	
+		snowflake.filesystem.AttributeUtility
+			-> removed "static int ATTRIBUTE_HEADER_LAST_CHANGED_TIME_STAMP_POSITION",
+				"static int ATTRIBUTE_HEADER_NAME_LENGTH_POSITION",
+				"static int ATTRIBUTE_HEADER_TYPE_NAME_LENGTH_POSITION",
+				"static int ATTRIBUTE_HEADER_VALUE_LENGTH_POSITION"
+			-> removed "static AttributeHeader getAttributeHeader(byte[], int)",
+				"static Attrbute getAttribute(FlakeInputStream, AttributeHeader)",
+				"static AttributeHeader loadAttributeHeader(String, FlakeInputStream)", and
+				"static void overrideAttribute(IFlake, Attribute)"
+		
+		snowflake.filesystem.AttributeCache
+			-> "void setAttribute(Attribute)" now adds the attribute to the "attribute_list"
+	
+	
 	2016.06.07
 		
 		snowflake.filesystem.AttributeCache

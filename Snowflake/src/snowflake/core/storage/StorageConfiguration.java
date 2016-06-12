@@ -7,7 +7,7 @@ import java.util.LinkedList;
 
 import j3l.configuration.ConfigurationManager;
 import j3l.util.check.ArgumentChecker;
-import snowflake.core.GlobalString;
+import snowflake.GlobalString;
 
 
 /**

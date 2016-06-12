@@ -11,7 +11,7 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.06_0
+ * @version 2016.05.23_0
  * @author Johannes B. Latzel
  */
 public interface IFlake extends IStateClosure, IValidate {
@@ -120,5 +120,59 @@ public interface IFlake extends IStateClosure, IValidate {
 	 * <p></p>
 	 */
 	boolean isDeleted();
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	void cutFromStart(long number_of_bytes);
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	void cutFromEnd(long number_of_bytes);
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	void cutAt(long position_in_flake, long number_of_bytes);
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	void expandAtStart(long number_of_bytes);
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	void expandAtEnd(long number_of_bytes);
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	void expandAt(long position_in_flake, long number_of_bytes);
 	
 }

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.GlobalString;
 import snowflake.api.DataPointer;
 import snowflake.core.storage.IRead;
 import snowflake.core.storage.IWrite;

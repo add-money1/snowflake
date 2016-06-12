@@ -1,4 +1,4 @@
-package snowflake.core;
+package snowflake;
 
 import j3l.util.check.ArgumentChecker;
 
@@ -6,7 +6,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.04_0
+ * @version 2016.06.11_0
  * @author Johannes B. Latzel
  */
 public enum GlobalString {
@@ -53,7 +53,25 @@ public enum GlobalString {
 	NumberOfChannel("number_of_channel"),
 	Channel("channel"),
 	ChannelManagerConfiguration("channel_manager_configuration"),
-	ChannelReturner("channel_returner");
+	ChannelReturner("channel_returner"),
+	Directory("directory"),
+	ParentDirectory("parent_directory"),
+	Node("node"),
+	AttributeValue("attribute_value"),
+	TypeOffset("type_offset"),
+	ValueOffset("value_offset"),
+	LastChangedTimeStamp("last_changed_time_stamp"),
+	Attribute("attribute"),
+	BufferLength("buffer_length"),
+	FlakeInputStream("flake_input_stream"),
+	AttributeHeader("attribute_header"),
+	ConstructorFunction("constructor_function"),
+	AttributeFlake("attribute_flake"),
+	DataFlake("data_flake"),
+	AttributeHeaderIndex("attribute_header_index"),
+	ValueLength("value_length"),
+	Storage("storage"),
+	Path("path");
 	
 	
 	private final String string;

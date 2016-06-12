@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Stream;
 
 import j3l.exception.ValueOverflowException;
@@ -16,6 +15,7 @@ import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
+import snowflake.GlobalString;
 import snowflake.api.IStorageInformation;
 import snowflake.api.StorageException;
 import snowflake.core.Chunk;
@@ -23,7 +23,6 @@ import snowflake.core.ChunkData;
 import snowflake.core.ChunkUtility;
 import snowflake.core.DataTable;
 import snowflake.core.Flake;
-import snowflake.core.GlobalString;
 import snowflake.core.IChunk;
 import snowflake.core.TableMember;
 import snowflake.core.storage.IAllocateSpace;
@@ -35,7 +34,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.21_0
+ * @version 2016.05.23_0
  * @author Johannes B. Latzel
  */
 public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<IOException> {
@@ -152,83 +151,6 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 *
 	 * @param
 	 * @return
-	 * @throws IOException 
-	 */
-	private List<Chunk> getAvailableChunks(long number_of_bytes) {
-		
-		if( !isOpen() ) {
-			throw new SecurityException("The instance is not open!");
-		}
-				
-		ArgumentChecker.checkForBoundaries(number_of_bytes, 1, Long.MAX_VALUE, GlobalString.NumberOfBytes.toString());
-		
-		ArrayList<Chunk> chunk_list = new ArrayList<>(100);
-		Chunk current_chunk;
-		long remaining_bytes = number_of_bytes;
-		long current_available_chunk_list_size;
-		
-		synchronized( available_chunk_tree ) {
-			
-			do {
-				
-				current_available_chunk_list_size = available_chunk_tree.getSize();
-				if( current_available_chunk_list_size > 0 ) {
-					current_chunk = available_chunk_tree.remove(
-						ComparisonType.SmallerThanOrEqualTo, new Long(remaining_bytes)
-					);
-					if( current_chunk != null ) {
-						remaining_bytes -= current_chunk.getLength();
-						chunk_list.add(current_chunk);
-					}
-					else {
-						break;
-					}
-				}
-				else {
-					break;
-				}
-				
-			}
-			while( remaining_bytes > 0 );
-			
-		}
-		
-		if( remaining_bytes > 0 ) {
-			do {
-				synchronized( available_chunk_tree ) {
-					current_chunk = available_chunk_tree.remove(
-						ComparisonType.GreaterThanOrEqualTo, new Long(remaining_bytes)
-					);
-				}
-				if( current_chunk != null ) {
-					if( current_chunk.getLength() <= remaining_bytes ) {
-						remaining_bytes -= current_chunk.getLength();
-						chunk_list.add(current_chunk);
-					}
-					else {
-						// trimToSizeUnsafe() is okay, because the chunk has already been available
-						chunk_list.add(trimToSizeUnsafe(current_chunk, remaining_bytes));
-						remaining_bytes = 0;
-					}
-					current_chunk = null;
-				}
-				else {
-					createAvailableChunk(remaining_bytes);
-				}
-			}
-			while( remaining_bytes > 0 );
-		}
-		
-		return chunk_list;
-		
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
 	 */
 	private void addAvailableChunk(Chunk chunk) {
 		if( !isOpen() && !isInOpening() ) {
@@ -253,6 +175,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 			}
 		}
 	}
+	
 	
 	/**
 	 * <p></p>
@@ -458,15 +381,6 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.api.IChunkManager#appendChunk(snowflake.core.flake.Flake, long, snowflake.api.ChunkAppendingMode)
-	 */
-	@Override public void appendChunk(Flake flake, long number_of_bytes) {
-		ArgumentChecker.checkForValidation(flake, GlobalString.Flake.toString())
-		.addChunks(getAvailableChunks(number_of_bytes));
-	}
-	
-	
-	/* (non-Javadoc)
 	 * @see snowflake.api.IChunkManager#recycleChunk(snowflake.core.Chunk)
 	 */
 	@Override public void recycleChunk(Chunk chunk) {
@@ -587,6 +501,68 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		Chunk[] split_chunks = splitChunk(chunk, size);
 		recycleChunk(split_chunks[1]);
 		return split_chunks[0];
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.core.manager.IChunkManager#allocateSpace(long)
+	 */
+	@Override public Collection<Chunk> allocateSpace(long number_of_bytes) {
+		if( !isOpen() ) {
+			throw new SecurityException("The instance is not open!");
+		}
+		ArgumentChecker.checkForBoundaries(number_of_bytes, 1, Long.MAX_VALUE, GlobalString.NumberOfBytes.toString());
+		ArrayList<Chunk> chunk_list = new ArrayList<>(100);
+		Chunk current_chunk;
+		long remaining_bytes = number_of_bytes;
+		long current_available_chunk_list_size;
+		synchronized( available_chunk_tree ) {
+			do {
+				current_available_chunk_list_size = available_chunk_tree.getSize();
+				if( current_available_chunk_list_size > 0 ) {
+					current_chunk = available_chunk_tree.remove(
+						ComparisonType.SmallerThanOrEqualTo, new Long(remaining_bytes)
+					);
+					if( current_chunk != null ) {
+						remaining_bytes -= current_chunk.getLength();
+						chunk_list.add(current_chunk);
+					}
+					else {
+						break;
+					}
+				}
+				else {
+					break;
+				}
+			}
+			while( remaining_bytes > 0 );
+		}
+		if( remaining_bytes > 0 ) {
+			do {
+				synchronized( available_chunk_tree ) {
+					current_chunk = available_chunk_tree.remove(
+						ComparisonType.GreaterThanOrEqualTo, new Long(remaining_bytes)
+					);
+				}
+				if( current_chunk != null ) {
+					if( current_chunk.getLength() <= remaining_bytes ) {
+						remaining_bytes -= current_chunk.getLength();
+						chunk_list.add(current_chunk);
+					}
+					else {
+						// trimToSizeUnsafe() is okay, because the chunk has already been available
+						chunk_list.add(trimToSizeUnsafe(current_chunk, remaining_bytes));
+						remaining_bytes = 0;
+					}
+					current_chunk = null;
+				}
+				else {
+					createAvailableChunk(remaining_bytes);
+				}
+			}
+			while( remaining_bytes > 0 );
+		}
+		return chunk_list;
 	}
 	
 }

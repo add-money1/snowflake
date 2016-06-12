@@ -6,8 +6,8 @@ import java.util.List;
 
 import j3l.util.LoopedTaskThread;
 import j3l.util.check.ArgumentChecker;
+import snowflake.GlobalString;
 import snowflake.core.Chunk;
-import snowflake.core.GlobalString;
 import snowflake.core.storage.IClearChunk;
 
 

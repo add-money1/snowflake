@@ -1,7 +1,7 @@
 package snowflake.core.storage;
 
 import j3l.util.check.ArgumentChecker;
-import snowflake.core.GlobalString;
+import snowflake.GlobalString;
 
 
 /**

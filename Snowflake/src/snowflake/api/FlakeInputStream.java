@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import j3l.util.check.ArgumentChecker;
+import snowflake.GlobalString;
 import snowflake.core.Flake;
-import snowflake.core.GlobalString;
 import snowflake.core.manager.IReturnChannel;
 import snowflake.core.storage.IRead;
 
@@ -14,7 +14,7 @@ import snowflake.core.storage.IRead;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.06_0
+ * @version 2016.06.05_0
  * @author Johannes B. Latzel
  */
 public final class FlakeInputStream extends InputStream {
@@ -97,7 +97,10 @@ public final class FlakeInputStream extends InputStream {
 		if( is_closed ) {
 			throw new IOException("The stream is not open!");
 		}
-		return read.read(data_pointer);
+		if( data_pointer.isEOF() ) {
+			return -1;
+		}
+		return (read.read(data_pointer) + 128);
 	}
 	
 	
@@ -108,6 +111,9 @@ public final class FlakeInputStream extends InputStream {
 	@Override public int read(byte[] buffer, int offset, int length) throws IOException {
 		if( is_closed ) {
 			throw new IOException("The stream is not open!");
+		}
+		if( data_pointer.isEOF() ) {
+			return -1;
 		}
 		return read.read(data_pointer, buffer, offset, length);
 	}
@@ -126,10 +132,8 @@ public final class FlakeInputStream extends InputStream {
 			data_pointer.seekEOF();
 			return remaining_bytes;
 		}
-		else {
-			data_pointer.changePosition(number_of_bytes);
-			return number_of_bytes;
-		}
+		data_pointer.changePosition(number_of_bytes);
+		return number_of_bytes;
 	}
 	
 	
