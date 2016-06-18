@@ -1,5 +1,6 @@
 package snowflake.core;
 
+import j3l.util.IBinaryData;
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
 

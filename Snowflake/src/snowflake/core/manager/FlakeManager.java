@@ -23,7 +23,7 @@ import snowflake.core.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2015.05.20_0
+ * @version 2016.06.18_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IClose<StorageException> {
@@ -33,6 +33,18 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	 * <p></p>
 	 */
 	public final static long ROOT_IDENTIFICATION = 0;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	public final static long FILE_TABLE_IDENTIFICATION = 1;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	public final static long DIRECTORY_TABLE_IDENTIFICATION = 2;
 	
 	
 	/**
@@ -92,94 +104,45 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	}
 	
 	
-	/* (non-Javadoc)
-	 * @see j3l.util.interfaces.IStateClosure#getClosureState()
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
 	 */
-	@Override public ClosureState getClosureState() {
-		return closure_state;
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see j3l.util.interfaces.IClose#open()
-	 */
-	@Override public void open() {
-		
-		if( hasBeenOpened() ) {
-			return;
-		}
-		
-		closure_state = ClosureState.InOpening;
-		flake_table.values().forEach(Flake::open);
-		closure_state = ClosureState.Open;
-		
-	}
-
-
-	/* (non-Javadoc)
-	 * @see j3l.util.interfaces.IClose#close()
-	 */
-	@Override public void close() {
-		
-		if( !isOpen() ) {
-			return;
-		}
-		
-		closure_state = ClosureState.InClosure;
-		flake_table.values().parallelStream().filter(flake -> flake.isValid()).forEach(flake -> flake.close());
-		closure_state = ClosureState.Closed;
-		
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IFlakeManager#createFlake(IChunkManager)
-	 */
-	@Override public IFlake createFlake(ChunkManager chunk_manager) {
-		
-		if( !isOpen() ) {
-			throw new SecurityException("The FlakeManager is not open!");
-		}
-		
-		long identification;
-		Flake flake;
-		
-		synchronized( flake_creation_lock ) {
-			
-			do {
-				identification = random.nextLong();
+	public IFlake getFileTableFlake(ChunkManager chunk_manager) {
+		long file_table_flake_identification = FlakeManager.FILE_TABLE_IDENTIFICATION;
+		if( !flakeExists(file_table_flake_identification) ) {
+			synchronized( flake_creation_lock ) {
+				Flake flake = new Flake(file_table_flake_identification);
+				flake.initialize(channel_manager, chunk_manager, null);
+				flake.open();
+				flake_table.put(new Long(file_table_flake_identification), flake);
+				return flake;
 			}
-			while( flakeExists(identification) || identification == FlakeManager.ROOT_IDENTIFICATION );
-			
-			flake = new Flake(identification);
-			flake_table.put(new Long(identification), flake);
-			
-			flake.initialize(channel_manager, chunk_manager, null);
-			flake.open();
-			
 		}
-		
-		return flake;
-		
+		return getFlake(file_table_flake_identification);
 	}
 	
 	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IFlakeManager#getFlake(long)
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
 	 */
-	@Override public IFlake getFlake(long identification) {
-		return flake_table.get(new Long(identification));
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.api.IFlakeManager#flakeExists(long)
-	 */
-	@Override public boolean flakeExists(long identification) {
-		if( identification == FlakeManager.ROOT_IDENTIFICATION ) {
-			return true;
+	public IFlake getDirectoryTableFlake(ChunkManager chunk_manager) {
+		long directory_table_flake_identification = FlakeManager.DIRECTORY_TABLE_IDENTIFICATION;
+		if( !flakeExists(directory_table_flake_identification) ) {
+			synchronized( flake_creation_lock ) {
+				Flake flake = new Flake(directory_table_flake_identification);
+				flake.initialize(channel_manager, chunk_manager, null);
+				flake.open();
+				flake_table.put(new Long(directory_table_flake_identification), flake);
+				return flake;
+			}
 		}
-		return flake_table.get(new Long(identification)) != null;
+		return getFlake(directory_table_flake_identification);
 	}
 	
 	
@@ -201,27 +164,101 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	 * @return
 	 */
 	public IFlake declareFlake(long identification, ChunkManager chunk_manager, ArrayList<Chunk> initial_chunk_list) {
-		
 		if( identification == FlakeManager.ROOT_IDENTIFICATION ) {
 			throw new IllegalArgumentException("The identification must not be equal to the ROOT_IDENTIFICATION "
 					+  "\"" + FlakeManager.ROOT_IDENTIFICATION + "\"!");
 		}
-		
 		if( flakeExists(identification) ) {
 			return getFlake(identification);
 		}
-		
-		
-		Flake flake;
-		
 		synchronized( flake_creation_lock ) {
-			flake = new Flake(identification);
+			Flake flake = new Flake(identification);
 			flake.initialize(channel_manager, chunk_manager, initial_chunk_list);			
 			flake_table.put(new Long(identification), flake);
+			return flake;
 		}
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see j3l.util.interfaces.IStateClosure#getClosureState()
+	 */
+	@Override public ClosureState getClosureState() {
+		return closure_state;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see j3l.util.interfaces.IClose#open()
+	 */
+	@Override public void open() {
+		if( hasBeenOpened() ) {
+			return;
+		}
+		closure_state = ClosureState.InOpening;
+		flake_table.values().forEach(Flake::open);
+		closure_state = ClosureState.Open;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see j3l.util.interfaces.IClose#close()
+	 */
+	@Override public void close() {
+		if( !isOpen() ) {
+			return;
+		}
+		closure_state = ClosureState.InClosure;
+		flake_table.values().parallelStream().filter(flake -> flake.isValid()).forEach(flake -> flake.close());
+		closure_state = ClosureState.Closed;
 		
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.api.IFlakeManager#createFlake(IChunkManager)
+	 */
+	@Override public IFlake createFlake(ChunkManager chunk_manager) {
+		if( !isOpen() ) {
+			throw new SecurityException("The FlakeManager is not open!");
+		}
+		long identification;
+		Flake flake;
+		synchronized( flake_creation_lock ) {
+			do {
+				identification = random.nextLong();
+			}
+			while(
+				flakeExists(identification)
+				|| identification == FlakeManager.ROOT_IDENTIFICATION
+				|| identification == FlakeManager.FILE_TABLE_IDENTIFICATION
+				|| identification == FlakeManager.DIRECTORY_TABLE_IDENTIFICATION
+			);
+			flake = new Flake(identification);
+			flake_table.put(new Long(identification), flake);
+			flake.initialize(channel_manager, chunk_manager, null);
+			flake.open();
+		}
 		return flake;
-		
-	}	
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.api.IFlakeManager#getFlake(long)
+	 */
+	@Override public IFlake getFlake(long identification) {
+		return flake_table.get(new Long(identification));
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.api.IFlakeManager#flakeExists(long)
+	 */
+	@Override public boolean flakeExists(long identification) {
+		if( identification == FlakeManager.ROOT_IDENTIFICATION ) {
+			return true;
+		}
+		return flake_table.get(new Long(identification)) != null;
+	}
 	
 }

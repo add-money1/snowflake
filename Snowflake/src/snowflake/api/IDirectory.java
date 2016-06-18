@@ -9,7 +9,7 @@ import snowflake.filesystem.Node;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.11_0
+ * @version 2016.06.17_0
  * @author Johannes B. Latzel
  */
 public interface IDirectory {
@@ -49,5 +49,14 @@ public interface IDirectory {
 	 * @return
 	 */
 	Collection<Node> getChildNodes();
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public long getIdentification();
 	
 }

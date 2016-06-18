@@ -6,7 +6,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.11_0
+ * @version 2016.06.17_0
  * @author Johannes B. Latzel
  */
 public enum GlobalString {
@@ -71,7 +71,10 @@ public enum GlobalString {
 	AttributeHeaderIndex("attribute_header_index"),
 	ValueLength("value_length"),
 	Storage("storage"),
-	Path("path");
+	Path("path"),
+	TableFlake("table_flake"),
+	File("file"),
+	DataEntrySize("data_entry_size");
 	
 	
 	private final String string;

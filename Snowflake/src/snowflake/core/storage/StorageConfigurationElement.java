@@ -8,7 +8,7 @@ import snowflake.GlobalString;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.07_0
+ * @version 2016.06.12_0
  * @author Johannes B. Latzel
  */
 public enum StorageConfigurationElement {
@@ -17,12 +17,9 @@ public enum StorageConfigurationElement {
 	PreferredAvailableStorageSize("preferred_available_storage_size"),
 	DataFileIncreaseRate("data_file_increase_rate"),
 	ChunkTableFilePath("chunk_table_file_path"),
-	ChunkManagerIndexConfigurationFilePath("chunk_manager_index_configuration_file_path"),
 	DefragmentationTransferBufferSize("defragmentation_transfer_buffer_size"),
 	DefragmentationChunkSizeTreshhold("defragmentation_chunk_size_treshhold"),
-	InitializationFilePath("initialization_file_path"),
 	DataFilePath("data_file_path"),
-	ConfigurationFilePath("configuration_file_path"),
 	ClearArraySize("clear_array_size"),
 	MaximumAvailableChunks("maximum_available_chunks"),
 	ChunkRecyclingTreshhold("chunk_recycling_treshhold"), 

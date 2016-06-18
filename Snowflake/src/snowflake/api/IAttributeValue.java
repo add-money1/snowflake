@@ -1,6 +1,6 @@
 package snowflake.api;
 
-import snowflake.core.IBinaryData;
+import j3l.util.IBinaryData;
 
 /**
  * <p></p>

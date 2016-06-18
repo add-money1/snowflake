@@ -1,7 +1,11 @@
 package snowflake.filesystem;
 
+import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
@@ -9,6 +13,7 @@ import snowflake.api.CommonAttribute;
 import snowflake.api.FileSystemException;
 import snowflake.api.IAttributeValue;
 import snowflake.api.IDirectory;
+import snowflake.api.IFlake;
 import snowflake.core.storage.Storage;
 import snowflake.filesystem.attribute.NameAttribute;
 
@@ -16,7 +21,7 @@ import snowflake.filesystem.attribute.NameAttribute;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.12_0
+ * @version 2016.06.18_0
  * @author Johannes B. Latzel
  */
 public class FileSystem {
@@ -42,12 +47,43 @@ public class FileSystem {
 	
 	/**
 	 * <p></p>
+	 */
+	private final FileTable file_table;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private final DirectoryTable directory_table;
+		
+	
+	/**
+	 * <p></p>
 	 * 
 	 * @param
+	 * @throws IOException 
 	 */
 	public FileSystem(Storage storage) {
 		this.storage = ArgumentChecker.checkForNull(storage, GlobalString.Storage.toString());
 		root_directory = new RootDirectory();
+		try {
+			file_table = new FileTable(storage.getFileTableFlake());
+		}
+		catch( IOException e ) {
+			throw new FileSystemException("Can create the file_table!", e);
+		}
+		try {
+			directory_table = new DirectoryTable(storage.getDirectoryTableFlake());
+		}
+		catch( IOException e ) {
+			throw new FileSystemException("Can create the directory_table!", e);
+		}
+		try {
+			load();
+		}
+		catch( IOException e ) {
+			throw new FileSystemException("Can not load the entries of file_table and directory_table!", e);
+		}
 	}
 	
 	
@@ -56,8 +92,73 @@ public class FileSystem {
 	 *
 	 * @param
 	 * @return
+	 * @throws IOException 
 	 */
-	public File createFile(String name) {
+	private void load() throws IOException {
+		ArrayList<DirectoryData> directory_data_list = directory_table.getAllEntries();
+		ArrayList<FileData> file_data_list = file_table.getAllEntries();
+		Map<Long, IDirectory> map = new HashMap<>();
+		map.put(new Long(0), root_directory);
+		Long current_parent_indentification;
+		IDirectory current_directory;
+		DirectoryData current_directory_data;
+		// this may cause an infinite loop (if some directories' parents do not exist)..
+		// and it may be slow since at every iteration a new Long is created..
+		while( !directory_data_list.isEmpty() ) {
+			for(int a=directory_data_list.size()-1;a>=0;a--) {
+				current_directory_data = directory_data_list.get(a);
+				current_parent_indentification = new Long(current_directory_data.getParentDirectoryIdentification());
+				if( !map.containsKey(current_parent_indentification) ) {
+					continue;
+				}
+				current_directory = new Directory(
+					storage.getFlake(current_directory_data.getAttributeFlakeIdentification()),
+					map.get(current_parent_indentification),
+					current_directory_data.getIndex()
+				);
+				directory_data_list.remove(a);
+				map.put(new Long(current_directory.getIdentification()), current_directory);
+			}
+		}
+		IFlake current_data_flake;
+		boolean needs_to_be_saved = false;
+		File current_file;
+		for( FileData file_data : file_data_list ) {
+			current_parent_indentification = new Long(file_data.getParentDirectoryIdentification());
+			if( !map.containsKey(current_parent_indentification) ) {
+				throw new FileSystemException(
+					"The parent directory of " + file_data.toString()
+					+ "does not exist!"
+				);
+			}
+			current_directory = map.get(current_parent_indentification);
+			current_data_flake = storage.getFlake(file_data.getDataFlakeIdentification());
+			if( current_data_flake == null ) {
+				current_data_flake = storage.createFlake();
+				needs_to_be_saved = true;
+			}
+			current_file = new File(
+				storage.getFlake(file_data.getAttributeFlakeIdentification()),
+				current_data_flake,
+				current_directory,
+				file_data.getIndex()
+			);
+			if( needs_to_be_saved ) {
+				file_table.saveEntry(current_file);
+				needs_to_be_saved = false;
+			}
+		}
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 * @throws IOException 
+	 */
+	public File createFile(String name) throws IOException {
 		return createFile(name, null);
 	}
 	
@@ -67,10 +168,14 @@ public class FileSystem {
 	 *
 	 * @param
 	 * @return
+	 * @throws IOException 
 	 */
-	public File createFile(String name, IDirectory parent_directory) {
+	public File createFile(String name, IDirectory parent_directory) throws IOException {
 		File file = new File(
-			storage.createFlake(), storage.createFlake(), parent_directory != null ? parent_directory : root_directory
+			storage.createFlake(),
+			storage.createFlake(),
+			parent_directory != null ? parent_directory : root_directory,
+			file_table.getAvailableIndex()
 		);
 		Instant now = Instant.now();
 		file.setAttribute(CommonAttribute.Creation_Time_Stamp.createAttribute(now));
@@ -81,6 +186,7 @@ public class FileSystem {
 				ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString())
 			)
 		);
+		file_table.saveEntry(file);
 		return file;
 	}
 	
@@ -90,8 +196,9 @@ public class FileSystem {
 	 *
 	 * @param
 	 * @return
+	 * @throws IOException 
 	 */
-	public IDirectory createDirectory(String name) {
+	public IDirectory createDirectory(String name) throws IOException {
 		return createDirectory(name, null);
 	}
 	
@@ -101,10 +208,13 @@ public class FileSystem {
 	 *
 	 * @param
 	 * @return
+	 * @throws IOException 
 	 */
-	public IDirectory createDirectory(String name, IDirectory parent_directory) {
+	public IDirectory createDirectory(String name, IDirectory parent_directory) throws IOException {
 		Directory directory = new Directory(
-			storage.createFlake(), parent_directory != null ? parent_directory : root_directory
+			storage.createFlake(),
+			parent_directory != null ? parent_directory : root_directory,
+			directory_table.getAvailableIndex()
 		);
 		Instant now = Instant.now();
 		directory.setAttribute(CommonAttribute.Creation_Time_Stamp.createAttribute(now));
@@ -115,6 +225,7 @@ public class FileSystem {
 				ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString())
 			)
 		);
+		directory_table.saveEntry(directory);
 		return directory;
 	}
 	

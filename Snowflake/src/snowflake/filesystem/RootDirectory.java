@@ -7,12 +7,13 @@ import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
 import snowflake.api.IDirectory;
 import snowflake.api.StorageException;
+import snowflake.core.manager.FlakeManager;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.12_0
+ * @version 2016.06.17_0
  * @author Johannes B. Latzel
  */
 public class RootDirectory implements IDirectory {
@@ -98,6 +99,14 @@ public class RootDirectory implements IDirectory {
 	 */
 	@Override public String toString() {
 		return FileSystem.NODE_SEPERATOR;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.api.IDirectory#getIdentification()
+	 */
+	@Override public long getIdentification() {
+		return FlakeManager.ROOT_IDENTIFICATION;
 	}
 	
 }

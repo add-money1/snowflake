@@ -33,7 +33,7 @@ import snowflake.core.manager.FlakeManager;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.05.03_0
+ * @version 2016.06.17_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IStorageInformation, IAllocateSpace, 
@@ -249,6 +249,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 			current_flake_chunk_list = flake_list.get(identification);
 			for(int a=current_flake_chunk_list.size()-1;a>=0;a--) {
 				if( current_flake_chunk_list.get(a) == null ) {
+					// should this happen? like, ever??
 					current_flake_chunk_list.remove(a);
 				}
 			}
@@ -310,6 +311,25 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 */
 	public boolean flakeExists(long identification) {
 		return flake_manager.flakeExists(identification);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public IFlake getFileTableFlake() {
+		return flake_manager.getFileTableFlake(chunk_manager);
+	}
+
+
+	/**
+	 * @return
+	 */
+	public IFlake getDirectoryTableFlake() {
+		return flake_manager.getDirectoryTableFlake(chunk_manager);
 	}
 	
 				

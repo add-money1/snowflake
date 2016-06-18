@@ -14,7 +14,7 @@ import snowflake.GlobalString;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.21_0
+ * @version 2016.06.12_0
  * @author Johannes B. Latzel
  */
 public final class StorageConfiguration implements IStorageConfiguration {
@@ -170,7 +170,6 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		
 		LinkedList<String> file_path_list = new LinkedList<>();
 		file_path_list.add(getChunkTableFilePath());
-		file_path_list.add(getConfigurationFilePath());
 		file_path_list.add(getDataFilePath());
 		
 		for( String file_path : file_path_list ) {
@@ -394,46 +393,12 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	 * @param
 	 * @return
 	 */
-	public void setInitializationFilePath(String initialization_file_path) {
-		configuration_manager.setElement(
-			StorageConfigurationElement.InitializationFilePath.getName(), 
-			ArgumentChecker.checkForEmptyString(
-				initialization_file_path, 
-				StorageConfigurationElement.InitializationFilePath.getName()
-			)
-		);
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *s
-	 * @param
-	 * @return
-	 */
 	public void setDataFilePath(String data_file_path) {
 		configuration_manager.setElement(
 			StorageConfigurationElement.DataFilePath.getName(), 
 			ArgumentChecker.checkForEmptyString(
 				data_file_path, 
 				StorageConfigurationElement.DataFilePath.getName()
-			)
-		);
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *s
-	 * @param
-	 * @return
-	 */
-	public void setConfigurationFilePath(String configuration_file_path) {
-		configuration_manager.setElement(
-			StorageConfigurationElement.ConfigurationFilePath.getName(), 
-			ArgumentChecker.checkForEmptyString(
-				configuration_file_path, 
-				StorageConfigurationElement.ConfigurationFilePath.getName()
 			)
 		);
 	}
@@ -480,26 +445,10 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.api.configuration.IReadonlyStorageConfiguration#getInitializationFilePath()
-	 */
-	@Override public String getInitializationFilePath() {
-		return getValue(StorageConfigurationElement.InitializationFilePath.toString(), "");
-	}
-	
-	
-	/* (non-Javadoc)
 	 * @see snowflake.api.configuration.IReadonlyStorageConfiguration#getDataFilePath()
 	 */
 	@Override public String getDataFilePath() {
 		return getValue(StorageConfigurationElement.DataFilePath.toString(), "");
-	}
-	
-
-	/* (non-Javadoc)
-	 * @see snowflake.api.configuration.IReadonlyStorageConfiguration#getConfigurationFilePath()
-	 */
-	@Override public String getConfigurationFilePath() {
-		return getValue(StorageConfigurationElement.ConfigurationFilePath.toString(), "");
 	}
 	
 	

@@ -15,7 +15,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.10_0
+ * @version 2016.06.16_0
  * @author Johannes B. Latzel
  */
 public final class AttributeCache implements IValidate {
@@ -242,6 +242,14 @@ public final class AttributeCache implements IValidate {
 		if( is_deleted ) {
 			throw new StorageException("The AttributeCache has been deleted!");
 		}
+	}
+	
+	
+	/**
+	 * @return
+	 */
+	public long getAttributeFlakeIdentification() {
+		return attribute_flake.getIdentification();
 	}
 
 	

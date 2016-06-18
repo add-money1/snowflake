@@ -7,6 +7,7 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.TreeSet;
 
+import j3l.util.IBinaryData;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
 import snowflake.GlobalString;

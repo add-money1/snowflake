@@ -3,6 +3,7 @@ package snowflake.filesystem;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import j3l.util.Indexable;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.IValidate;
 import snowflake.GlobalString;
@@ -14,10 +15,10 @@ import snowflake.api.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.12_0
+ * @version 2016.06.16_0
  * @author Johannes B. Latzel
  */
-public abstract class Node implements IValidate {
+public abstract class Node implements IValidate, Indexable {
 
 	
 	/**
@@ -40,14 +41,21 @@ public abstract class Node implements IValidate {
 	
 	/**
 	 * <p></p>
+	 */
+	private final long index;
+	
+	
+	/**
+	 * <p></p>
 	 *
 	 * @param
 	 * @return
 	 */
-	protected Node(IFlake attribute_flake, IDirectory parent_directory) {
+	protected Node(IFlake attribute_flake, IDirectory parent_directory, long index) {
 		attribute_cache = new AttributeCache(attribute_flake);
 		setParentDirectory(parent_directory);
 		is_deleted = false;
+		this.index = ArgumentChecker.checkForBoundaries(index, 0, Long.MAX_VALUE, GlobalString.Index.toString());
 	}
 	
 	
@@ -133,7 +141,27 @@ public abstract class Node implements IValidate {
 	 * @param
 	 * @return
 	 */
+	public final long getAttributeFlakeIdentification() {
+		return attribute_cache.getAttributeFlakeIdentification();
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
 	protected abstract void reactToDeletion();
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see j3l.util.Indexable#getIndex()
+	 */
+	@Override public final long getIndex() {
+		return index;
+	}
 	
 	
 	/*
@@ -149,7 +177,7 @@ public abstract class Node implements IValidate {
 	 * (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
-	@Override public String toString() {
+	@Override public final String toString() {
 		ArrayList<Node> node_path_list = new ArrayList<>(10);
 		IDirectory parent = getParentDirectory();
 		while( parent instanceof Directory ) {

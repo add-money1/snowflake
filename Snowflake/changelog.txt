@@ -1,4 +1,189 @@
 	
+	2016.06.18
+	
+		snowflake.filesystem.NodeData
+			-> created class
+			
+		snowflake.filesystem.FileData
+			-> extends NodeData
+			-> changed "FileData(byte[])" to "FileData(byte[], long)"
+			-> added "boolean is_empty", "static int FLAG_VECTOR_POSITION", and "boolean isEmpty()"
+			-> modified "String toString()" and "boolean equals(Object)" due to the changes above
+			
+		snowflake.filesystem.DirectoryData
+			-> extends NodeData
+			-> changed "DirectoryData(byte[])" to "DirectoryData(byte[], long)"
+		
+		snowflake.filesystem.DirectoryTable
+			-> modified "ArrayList<DirectoryData> getAllEntries() throws IOException" due to
+				changes in "snowflake.filesystem.DirectoryData"
+			-> "ArrayList<DirectoryData> getAllEntries() throws IOException" registers empty
+				entries as available indices
+		
+		snowflake.filesystem.FileTable
+			-> modified "ArrayList<FileData> getAllEntries() throws IOException" due to
+				changes in "snowflake.filesystem.FileData"
+			-> "ArrayList<FileData> getAllEntries() throws IOException" registers empty entries as
+				available indices
+			-> "void saveEntry(File) throws IOException" saves the emptiness-state of the file
+				
+		snowflake.filesystem.FileSystem
+			-> implemented "void load() throws IOException"
+			-> "IDirectory createDirectory(String, IDirectory) throws IOException" saves directory
+				in directory_table
+			-> "File createFile(String, IDirectory) throws IOException" saves file
+				in file_table			
+		
+		snowflake.core.manager.FlakeManager
+			-> "IFlake getFileTableFlake(ChunkManager)" opens the flake if created
+			-> "IFlake getDirectoryTableFlake(ChunkManager)" opens the flake if created
+			-> "IFlake createFlake(ChunkManager)" ignores generated identifications with values of
+				"long DIRECTORY_TABLE_IDENTIFICATION" and "long FILE_TABLE_IDENTIFICATION"
+				additional to "long ROOT_IDENTIFICATION"
+				
+		
+		snowflake.filesystem.FileSystemTable
+			-> added "void addAvailableIndex(long)"
+		
+		snowflake.filesystem.File
+			-> added "boolean isEmpty()"
+		
+			
+	2016.06.17
+		
+		snowflake.filesystem.FileData
+			-> added "static int PARENT_DIRECTORY_IDENTIFICATION_POSITION"
+			-> changed "static byte[] getBinaryData(byte[], long, long)" to
+				"static byte[] getBinaryData(byte[], long, long, long)"
+			-> modified "void getBinaryData(byte[])", "String toString()", and
+				"boolean equals(Object)" due to the changes above
+			-> added "long parent_directory_identification"
+			-> modified "FileData(byte[])" due to the changes above
+			-> added "long getParentDirectoryIdentification()"
+			-> changed value of "static int FILE_DATA_LENGTH"
+			
+		snowflake.filesystem.FileTable
+			-> modified "void saveEntry(File file) throws IOException" due to changes in
+				"snowflake.filesystem.FileData"
+			-> modified "FileTable(IFlake) throws IOException"
+			-> members moved to "snowflake.filesyste.FileSystemDataTable":
+				"ArrayList<LongRange> available_index_list"
+				"FlakeInputStream flake_input_stream"
+				"FlakeOutputStream flake_output_stream"
+				"byte[] clear_array"
+				"void trim() throws IOException"
+				"long getAvailableIndex() throws IOException"
+						
+		snowflake.filesystem.IDirectory
+			-> added "long getIdentification()"
+		
+		snowflake.filesystem.RootDirectory
+			-> implemented "long getIdentification()"
+		
+		snowflake.core.FlakeManager
+			-> changed "static long AVAILABLE_CHUNKS_FLAKE_IDENTIFICATION" to
+				"static long ROOT_IDENTIFICATION"
+			-> added "IFlake getFileTableFlake(ChunkManager)"
+			-> changes in code-format
+			-> added "static long FILE_TABLE_IDENTIFICATION"
+			-> added "static long DIRECTORY_TABLE_IDENTIFICATION"
+			-> added "IFlake getDirectoryTableFlake(ChunkManager)"
+		
+		snowflake.filesystem.Directory
+			-> implemented "long getIdentification()"
+			
+		snowflake.core.Storage
+			-> added "IFlake getFileTableFlake()"
+			-> added "IFlake getDirectoryTableFlake()"
+		
+		snowflake.filesystem.FileSystem
+			-> changed "File createFile(String, IDirectory)" to
+				"File createFile(String, IDirectory) throws IOException"
+			-> changed "File createFile(String name)" to
+				"File createFile(String name) throws IOException"
+			-> changed "DataTable<DirectoryData> directory_data_table" to
+				"DirectoryTable directory_table"
+			-> changed "File createDirectory(String, IDirectory)" to
+				"File createDirectory(String, IDirectory) throws IOException"
+			-> changed "File createDirectory(String name)" to
+				"File createDirectory(String name) throws IOException"
+		
+		snowflake.filesystem.DirectoryData
+			-> completely restructured class
+		
+		snowflake.filesystem.DirectoryTable
+			-> created class
+		
+		snowflake.GlobalString
+			-> added:
+				DataEntrySize("data_entry_size")
+		
+		snowflake.filesystem.FileSystemDataTable
+			-> created class
+			-> changed " Collection<DirectoryData> getAllEntries() throws IOException" to
+				"ArrayList<DirectoryData> getAllEntries() throws IOException"
+	
+	
+	2016.06.16
+		
+		snowflake.core.IBinaryData
+			-> moved class to project "j3l"
+			
+		snwoflake.filesystem.FileData
+			-> removed "FileData(long, long)"
+			-> added "static byte[] getBinaryData(byte[], long, long)"
+			-> added "static byte[] createBuffer()"
+		
+		snowflake.filesystem.Node
+			-> added "long getAttributeFlakeIdentification()"	
+		
+		snowflake.filesystem.AttributeCache
+			-> added "long getAttributeFlakeIdentification()"
+		
+		snowflake.filesystem.Filesystem
+			-> changed "DataTable<FileData> file_data_table" to "FileTable file_table"	
+		
+			
+	2016.06.15
+	
+		snowflake.filesystem.FileTable
+			-> added class
+			
+		snowflake.filesystem.Node
+			-> implements "j3l.util.Indexable" and "long getIndex()"
+			-> changed "Node(IFlake, IDirectory)" to "Node(IFlake, IDirectory, long)"
+			
+		snowflake.filesystem.File
+			-> changed "File(IFlake, IFlake, IDirectory)" to
+				"File(IFlake, IFlake, IDirectory, long)"
+			
+		snowflake.filesystem.File
+			-> changed "File(IFlake, IDirectory)" to "File(IFlake, IDirectory, long)"
+		
+		snowflake.GlobalString
+			-> added:
+				TableFlake("table_flake")
+				File("file")
+	
+	2016.06.14
+	
+		snowflake.core.manager.FlakeManager
+			-> changed "static long ROOT_IDENTIFICATION" to
+			"static long AVAILABLE_CHUNKS_FLAKE_IDENTIFICATION"
+			-> modified "IFlake createFlake(ChunkManager)", "boolean flakeExists(long)", and
+				"IFlake declareFlake(long, ChunkManager, ArrayList<Chunk>)" due to above changes
+			
+		snowflake.filesystem.FileSystem
+			-> added "static long FILE_TABLE_FLAKE_IDENTIFICATION"
+			-> added "static long DIRECTORY_TABLE_FLAKE_IDENTIFICATION"
+			
+		snowflake.filesystem.FileData
+			-> created class
+			
+		snowflake.filesystem.DirectoryData
+			-> created class
+	
+		
 	2016.06.12
 	
 		snowflake.api.CommonAttribute
@@ -16,6 +201,22 @@
 		
 		snowflake.filesystem.FileSystem
 			-> changed "Node findNode(String)" to "Node getNode(String)"
+			
+		snowflake.core.storage.StorageConfigurationElement
+			-> removed
+				ConfigurationFilePath("configuration_file_path")
+				ChunkManagerIndexConfigurationFilePath("chunk_manager_index_configuration_file_path")
+				InitializationFilePath("initialization_file_path")
+		
+		snowflake.core.storage.StorageConfiguration
+			-> removed "String getConfigurationFilePath()", "String getInitializationFilePath()"
+				and "void setConfigurationFilePath(String)",
+				"void setInitializationFilePath(String)"
+			-> modified "boolean createFiles() throws IOException" due to above changes
+			
+		snowflake.core.storage.IStorageConfiguration
+			-> removed "String getConfigurationFilePath()"
+			-> removed "String getInitializationFilePath()"
 			
 		
 	2016.06.11

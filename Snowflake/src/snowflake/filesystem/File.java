@@ -14,7 +14,7 @@ import snowflake.api.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.11_0
+ * @version 2016.06.18_0
  * @author Johannes B. Latzel
  */
 public final class File extends Node {
@@ -31,8 +31,8 @@ public final class File extends Node {
 	 * 
 	 * @param
 	 */
-	public File(IFlake attribute_flake, IFlake data_flake, IDirectory parent_directory) {
-		super(attribute_flake, parent_directory);
+	public File(IFlake attribute_flake, IFlake data_flake, IDirectory parent_directory, long index) {
+		super(attribute_flake, parent_directory, index);
 		this.data_flake = ArgumentChecker.checkForValidation(data_flake, GlobalString.DataFlake.toString());
 	}
 	
@@ -56,6 +56,22 @@ public final class File extends Node {
 	 */
 	public FlakeOutputStream getFlakeOutputStream() throws IOException  {
 		return data_flake.getFlakeOutputStream();
+	}
+	
+	
+	/**
+	 * @return
+	 */
+	public long getDataFlakeIdentification() {
+		return data_flake.getIdentification();
+	}
+	
+	
+	/**
+	 * @return
+	 */
+	public boolean isEmpty() {
+		return data_flake.getLength() == 0;
 	}
 	
 	

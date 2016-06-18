@@ -14,7 +14,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.11_0
+ * @version 2016.06.17_0
  * @author Johannes B. Latzel
  */
 public final class Directory extends Node implements IDirectory {
@@ -29,8 +29,8 @@ public final class Directory extends Node implements IDirectory {
 	/**
 	 * @param attribute_flake
 	 */
-	public Directory(IFlake attribute_flake, IDirectory parent_directory) {
-		super(attribute_flake, parent_directory);
+	public Directory(IFlake attribute_flake, IDirectory parent_directory, long index) {
+		super(attribute_flake, parent_directory, index);
 		child_node_list = new ArrayList<>();
 	}
 	
@@ -101,6 +101,14 @@ public final class Directory extends Node implements IDirectory {
 		synchronized( child_node_list ) {
 			return new ArrayList<>(child_node_list);
 		}
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.api.IDirectory#getIdentification()
+	 */
+	@Override public long getIdentification() {
+		return getAttributeFlakeIdentification();
 	}
 
 }
