@@ -5,6 +5,7 @@ import java.util.Collection;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.api.FileSystemException;
 import snowflake.api.IDirectory;
 import snowflake.api.StorageException;
 import snowflake.core.manager.FlakeManager;
@@ -13,7 +14,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.17_0
+ * @version 2016.06.19_0
  * @author Johannes B. Latzel
  */
 public class RootDirectory implements IDirectory {
@@ -26,10 +27,28 @@ public class RootDirectory implements IDirectory {
 	
 	
 	/**
+	 * <p></p>
+	 */
+	private final FileSystem file_system;
+	
+	
+	/**
 	 * @param attribute_flake
 	 */
-	public RootDirectory() {
+	public RootDirectory(FileSystem file_system) {
+		this.file_system = ArgumentChecker.checkForNull(file_system, GlobalString.FileSystem.toString());
 		child_node_list = new ArrayList<>();
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public FileSystem getFileSystem() {
+		return file_system;
 	}
 	
 	
@@ -107,6 +126,14 @@ public class RootDirectory implements IDirectory {
 	 */
 	@Override public long getIdentification() {
 		return FlakeManager.ROOT_IDENTIFICATION;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.api.IDirectory#getParentDirectory()
+	 */
+	@Override public IDirectory getParentDirectory() {
+		throw new FileSystemException("The root-directory has not got a parent-directory!");
 	}
 	
 }

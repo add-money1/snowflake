@@ -8,14 +8,17 @@ import j3l.util.check.ArgumentChecker;
 import j3l.util.check.IValidate;
 import snowflake.GlobalString;
 import snowflake.api.CommonAttribute;
+import snowflake.api.FileSystemException;
+import snowflake.api.IAttributeValue;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
+import snowflake.filesystem.attribute.NameAttribute;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.16_0
+ * @version 2016.06.19_0
  * @author Johannes B. Latzel
  */
 public abstract class Node implements IValidate, Indexable {
@@ -143,6 +146,48 @@ public abstract class Node implements IValidate, Indexable {
 	 */
 	public final long getAttributeFlakeIdentification() {
 		return attribute_cache.getAttributeFlakeIdentification();
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final String getName() {
+		IAttributeValue<?> attribute_value = getAttribute(CommonAttribute.Name.toString()).getAttributeValue();
+		if( attribute_value instanceof NameAttribute ) {
+			return ((NameAttribute)attribute_value).getValue();
+		}
+		throw new FileSystemException("The node has not got a name!");
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public RootDirectory getRootDirectory() {
+		IDirectory current_directory = parent_directory;
+		while( !(current_directory instanceof RootDirectory) ) {
+			current_directory = current_directory.getParentDirectory();
+		}
+		// cast is okay, because the above loop guarantees that the current_directory is the root-directory
+		return (RootDirectory)current_directory;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public FileSystem getFileSystem() {
+		return getRootDirectory().getFileSystem();
 	}
 	
 	

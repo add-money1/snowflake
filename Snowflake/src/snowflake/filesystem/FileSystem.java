@@ -11,17 +11,15 @@ import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
 import snowflake.api.CommonAttribute;
 import snowflake.api.FileSystemException;
-import snowflake.api.IAttributeValue;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
 import snowflake.core.storage.Storage;
-import snowflake.filesystem.attribute.NameAttribute;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.18_0
+ * @version 2016.06.19_0
  * @author Johannes B. Latzel
  */
 public class FileSystem {
@@ -65,7 +63,7 @@ public class FileSystem {
 	 */
 	public FileSystem(Storage storage) {
 		this.storage = ArgumentChecker.checkForNull(storage, GlobalString.Storage.toString());
-		root_directory = new RootDirectory();
+		root_directory = new RootDirectory(this);
 		try {
 			file_table = new FileTable(storage.getFileTableFlake());
 		}
@@ -248,16 +246,13 @@ public class FileSystem {
 		}
 		IDirectory current_directory = root_directory;
 		Collection<Node> child_node_collection;
-		IAttributeValue<?> current_attribute_value;
 		boolean found_path_element;
 		for(int a=1,n=path_elements.length-1;a<n;a++) {
 			child_node_collection = current_directory.getChildNodes();
 			found_path_element = false;
 			for( Node node : child_node_collection ) {
 				if( node instanceof IDirectory ) {
-					current_attribute_value = node.getAttribute(CommonAttribute.Name.toString()).getAttributeValue();
-					if( current_attribute_value instanceof NameAttribute 
-						&& ((NameAttribute)current_attribute_value).getValue().equals(path_elements[a]) ) {
+					if( node.getName().equals(path_elements[a]) ) {
 						current_directory = (IDirectory)node;
 						found_path_element = true;
 						break;
@@ -271,10 +266,7 @@ public class FileSystem {
 		}
 		child_node_collection = current_directory.getChildNodes();
 		for( Node node : child_node_collection ) {
-			current_attribute_value = node.getAttribute(CommonAttribute.Name.toString()).getAttributeValue();
-			if( current_attribute_value instanceof NameAttribute 
-				&& ((NameAttribute)current_attribute_value).getValue().equals(
-						path_elements[path_elements.length - 1]) ) {
+			if( node.getName().equals(path_elements[path_elements.length - 1]) ) {
 				return node;
 			}
 		}

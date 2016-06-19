@@ -1,5 +1,7 @@
 package snowflake.filesystem.attribute;
 
+import java.util.Arrays;
+
 import j3l.util.ArrayTool;
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
@@ -9,7 +11,7 @@ import snowflake.api.IAttributeValue;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.10_0
+ * @version 2016.06.19_0
  * @author Johannes B. Latzel
  */
 public final class NameAttribute implements IAttributeValue<String> {
@@ -23,11 +25,18 @@ public final class NameAttribute implements IAttributeValue<String> {
 	
 	/**
 	 * <p></p>
+	 */
+	private byte[] encoded_name;
+	
+	
+	/**
+	 * <p></p>
 	 * 
 	 * @param
 	 */
 	public NameAttribute(String name) {
 		this.name = ArgumentChecker.checkForNull(name, GlobalString.Name.toString());
+		encoded_name = null;
 	}
 	
 	
@@ -38,6 +47,21 @@ public final class NameAttribute implements IAttributeValue<String> {
 	 */
 	public NameAttribute(byte[] buffer) {
 		this.name = new String(buffer);
+		encoded_name = Arrays.copyOf(buffer, buffer.length);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	private byte[] getEncodedName() {
+		if( encoded_name == null ) {
+			encoded_name = name.getBytes();
+		}
+		return encoded_name;
 	}
 	
 	
@@ -45,7 +69,7 @@ public final class NameAttribute implements IAttributeValue<String> {
 	 * @see snowflake.core.IBinaryData#getBinaryData()
 	 */
 	@Override public byte[] getBinaryData() {
-		return name.getBytes();
+		return Arrays.copyOf(getEncodedName(), encoded_name.length);
 	}
 	
 	
@@ -53,7 +77,7 @@ public final class NameAttribute implements IAttributeValue<String> {
 	 * @see snowflake.core.IBinaryData#getBinaryData(byte[])
 	 */
 	@Override public void getBinaryData(byte[] buffer) {
-		ArrayTool.transferValues(buffer, name.getBytes());
+		ArrayTool.transferValues(buffer, getEncodedName());
 	}
 	
 	
@@ -61,7 +85,7 @@ public final class NameAttribute implements IAttributeValue<String> {
 	 * @see snowflake.core.IBinaryData#getDataLength()
 	 */
 	@Override public int getDataLength() {
-		return name.length() * 2;
+		return getEncodedName().length;
 	}
 	
 	

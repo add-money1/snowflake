@@ -1,4 +1,38 @@
 	
+	2016.06.19
+	
+		snowflake.filesystem.Node
+			-> added "String getName()"
+			-> added "RootDirectory getRootDirectory()"
+			-> added "FileSystem getFileSystem()"
+			
+		snowflake.filesystem.FileSystem
+			-> "Node getNode(String)" uses "vsnowflake.filesystem.Node.getName()"
+			-> modified "FileSystem(Storage)" due to changes in
+				"snowflake.filesystem.RootDirectory"
+		
+		snowflake.filesystem.attribute.NameAttribute
+			-> fixed "int getDataLength()": returned the wrong value
+			-> added "byte[] encoded_name"
+			-> added "byte[] getEncodedName()"
+			-> modified "int getDataLength()", "void getBinaryData(byte[])",
+				"NameAttribute(String)", "NameAttribute(byte[])", and "byte[] getBinaryData()"
+				due to the changes above
+		
+		snowflake.filesystem.RootDirectory
+			-> changed "RootDirectory()" to "RootDirectory(FileSystem)"
+			-> added "FileSystem file_system"
+			-> added "FileSystem getFileSystem()"
+			-> implemented "IDirectory getParentDirectory()"
+		
+		snowflake.GlobalString
+			-> added:
+				FileSystem("file_system")
+			
+		snowflake.api.IDirectory
+			-> added "IDirectory getParentDirectory()"
+			
+		
 	2016.06.18
 	
 		snowflake.filesystem.NodeData
