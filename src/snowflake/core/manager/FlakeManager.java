@@ -13,6 +13,7 @@ import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.IFlake;
 import snowflake.api.StorageException;
 import snowflake.core.Chunk;
@@ -23,7 +24,7 @@ import snowflake.core.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.18_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IClose<StorageException> {
@@ -84,7 +85,14 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	 * @return
 	 */
 	public FlakeManager(IChannelManager channel_manager) {
-		this.channel_manager = ArgumentChecker.checkForNull(channel_manager, GlobalString.ChannelManager.toString());
+		if( StaticMode.TESTING_MODE ) {
+			this.channel_manager = ArgumentChecker.checkForNull(
+				channel_manager, GlobalString.ChannelManager.toString()
+			);
+		}
+		else {
+			this.channel_manager = channel_manager;
+		}
 		flake_table = new Hashtable<>();
 		closure_state = ClosureState.None;
 		flake_creation_lock = new Object();
@@ -99,8 +107,8 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	 * @return
 	 */
 	public Stream<IFlake> streamFlakes(StreamMode stream_mode) {
-		return StreamFactory.getStream(new ArrayList<>(flake_table.values()), stream_mode).filter(StreamFilter::filterNull)
-				.filter(flake -> !flake.isDeleted()).<IFlake>map(_O_->_O_);
+		return StreamFactory.getStream(new ArrayList<>(flake_table.values()), stream_mode)
+				.filter(StreamFilter::filterNull).filter(flake -> !flake.isDeleted()).<IFlake>map(_O_->_O_);
 	}
 	
 	

@@ -7,6 +7,7 @@ import java.util.List;
 import j3l.util.LoopedTaskThread;
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.core.Chunk;
 import snowflake.core.storage.IClearChunk;
 
@@ -15,7 +16,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.21_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public final class ChunkRecyclingManager {
@@ -64,10 +65,16 @@ public final class ChunkRecyclingManager {
 	 * @return
 	 */
 	public ChunkRecyclingManager(IClearChunk clear_chunk, long chunk_recycling_threshhold) {
-		this.clear_chunk = ArgumentChecker.checkForNull(clear_chunk, GlobalString.ClearChunk.toString());
-		this.chunk_recycling_threshhold = ArgumentChecker.checkForBoundaries(
-			chunk_recycling_threshhold, 1, Long.MAX_VALUE, GlobalString.CleaningTreshhold.toString()
-		);
+		if( StaticMode.TESTING_MODE ) {
+			this.clear_chunk = ArgumentChecker.checkForNull(clear_chunk, GlobalString.ClearChunk.toString());
+			this.chunk_recycling_threshhold = ArgumentChecker.checkForBoundaries(
+				chunk_recycling_threshhold, 1, Long.MAX_VALUE, GlobalString.CleaningTreshhold.toString()
+			);
+		}
+		else {
+			this.clear_chunk = clear_chunk;
+			this.chunk_recycling_threshhold = chunk_recycling_threshhold;
+		}
 		chunk_recycling_list = new ArrayList<>(1000);
 		available_chunk_list = new ArrayList<>(1000);
 		chunk_recycling_thread = new LoopedTaskThread(this::recycle, "Snowflake ChunkRecyclingThread", 1000);
@@ -149,7 +156,9 @@ public final class ChunkRecyclingManager {
 	 * @return true if the chunk has been added, false otherwise
 	 */
 	public boolean add(Chunk chunk) {
-		ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
+		}
 		chunk.setNeedsToBeCleared(true);
 		chunk.resetPositionInFlake();
 		chunk.save(null);
@@ -169,9 +178,14 @@ public final class ChunkRecyclingManager {
 	 * @return
 	 */
 	public boolean addAll(Collection<Chunk> chunk_collection) {
-		if( ArgumentChecker.checkForNull(chunk_collection, GlobalString.ChunkCollection.toString()).size() > 0 ) {
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForNull(chunk_collection, GlobalString.ChunkCollection.toString());
+		}
+		if( chunk_collection.size() > 0 ) {
 			for( Chunk chunk : chunk_collection ) {
-				ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
+				if( StaticMode.TESTING_MODE ) {
+					ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
+				}
 				chunk.setNeedsToBeCleared(true);
 				chunk.resetPositionInFlake();
 				chunk.save(null);

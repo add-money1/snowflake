@@ -2,6 +2,7 @@ package snowflake.api;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.core.Flake;
 import snowflake.core.IChunk;
 
@@ -10,7 +11,7 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.03_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public final class DataPointer {	
@@ -35,10 +36,13 @@ public final class DataPointer {
 	 * @return
 	 */
 	public DataPointer(Flake flake, long position_in_flake) {
-		this.flake = ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString());
-		setPosition(
-			ArgumentChecker.checkForBoundaries(position_in_flake, 0, Long.MAX_VALUE, GlobalString.PositionInFlake.toString())
-		);
+		if( StaticMode.TESTING_MODE ) {
+			this.flake = ArgumentChecker.checkForValidation(flake, GlobalString.Flake.toString());
+		}
+		else {
+			this.flake = flake;
+		}
+		setPosition(position_in_flake);
 	}
 	
 	

@@ -11,6 +11,7 @@ import j3l.util.IBinaryData;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.StorageException;
 
 
@@ -18,7 +19,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.16_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public final class DataTable<T extends IBinaryData> {
@@ -43,7 +44,9 @@ public final class DataTable<T extends IBinaryData> {
 	 * @return
 	 */
 	public DataTable(File table_file) {
-		ArgumentChecker.checkForExistence(table_file, GlobalString.TableFile.toString());
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForExistence(table_file, GlobalString.TableFile.toString());
+		}
 		try {
 			this.table_file = new RandomAccessFile(table_file, "rw");
 		}

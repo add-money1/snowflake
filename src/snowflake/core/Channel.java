@@ -7,6 +7,7 @@ import java.io.RandomAccessFile;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.DataPointer;
 import snowflake.core.storage.IRead;
 import snowflake.core.storage.IWrite;
@@ -15,7 +16,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.06_0
+ * @version 2016.07.01_0
  * @author Johannes B. Latzel
  */
 public final class Channel implements IRead, IWrite, Closeable {
@@ -35,7 +36,12 @@ public final class Channel implements IRead, IWrite, Closeable {
 	 * @throws FileNotFoundException 
 	 */
 	public Channel(RandomAccessFile data_file) {
-		this.data_file = ArgumentChecker.checkForNull(data_file, GlobalString.DataFile.toString());
+		if( StaticMode.TESTING_MODE ) {
+			this.data_file = ArgumentChecker.checkForNull(data_file, GlobalString.DataFile.toString());
+		}
+		else {
+			this.data_file = data_file;
+		}
 	}
 	
 	

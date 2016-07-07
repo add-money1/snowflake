@@ -6,7 +6,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.19_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public enum GlobalString {
@@ -18,7 +18,7 @@ public enum GlobalString {
 	Write("write"),
 	FlakeStreamManager("flake_stream_manager"),
 	ChunkMemory("chunk_memory"),
-	StartAdress("start_address"),
+	StartAddress("start_address"),
 	Length("length"),
 	ChunkTableIndex("chunk_table_index"),
 	IndexInFlake("index_in_flake"),
@@ -75,7 +75,15 @@ public enum GlobalString {
 	TableFlake("table_flake"),
 	File("file"),
 	DataEntrySize("data_entry_size"),
-	FileSystem("file_system");
+	FileSystem("file_system"),
+	BlockSize("block_size"),
+	Identification("identification"),
+	DeduplicationBlock("deduplication_block"),
+	DataBlock("data_block"),
+	DeduplicationTable("deduplication_table"),
+	DeduplicationTableFlake("deduplication_table_flake"),
+	LeftChunk("left_chunk"),
+	RightChunk("right_chunk");
 	
 	
 	private final String string;

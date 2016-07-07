@@ -484,11 +484,11 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @see snowflake.api.storage.IStorageInformation#getAverageFlakeSize()
 	 */
 	@Override public double getAverageFlakeSize() {
-		long number_of_flakes = getNumberOfFlakes();
+		double number_of_flakes = getNumberOfFlakes();
 		if( number_of_flakes == 0 ) {
 			return 0d;
 		}
-		return (double)number_of_flakes / getUsedSpace();	
+		return getUsedSpace() / number_of_flakes ;	
 	}
 	
 	

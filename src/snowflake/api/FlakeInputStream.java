@@ -5,6 +5,7 @@ import java.io.InputStream;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.core.Flake;
 import snowflake.core.manager.IReturnChannel;
 import snowflake.core.storage.IRead;
@@ -14,7 +15,7 @@ import snowflake.core.storage.IRead;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.05_0
+ * @version 2016.07.01_0
  * @author Johannes B. Latzel
  */
 public final class FlakeInputStream extends InputStream {
@@ -69,10 +70,16 @@ public final class FlakeInputStream extends InputStream {
 	 * @return
 	 */
 	public FlakeInputStream(Flake flake, IRead read, IReturnChannel channel_returner) {
-		this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
-		this.channel_returner = ArgumentChecker.checkForNull(
-			channel_returner, GlobalString.ChannelReturner.toString()
-		);
+		if( StaticMode.TESTING_MODE ) {
+			this.read = ArgumentChecker.checkForNull(read, GlobalString.Read.toString());
+			this.channel_returner = ArgumentChecker.checkForNull(
+				channel_returner, GlobalString.ChannelReturner.toString()
+			);
+		}
+		else {
+			this.read = read;
+			this.channel_returner = channel_returner;
+		}
 		data_pointer = new DataPointer(flake, 0L);
 		is_closed = false;
 		mark(0);

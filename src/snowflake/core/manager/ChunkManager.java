@@ -16,6 +16,7 @@ import j3l.util.close.IClose;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.IStorageInformation;
 import snowflake.api.StorageException;
 import snowflake.core.Chunk;
@@ -24,6 +25,7 @@ import snowflake.core.ChunkUtility;
 import snowflake.core.DataTable;
 import snowflake.core.Flake;
 import snowflake.core.IChunk;
+import snowflake.core.SplitChunk;
 import snowflake.core.TableMember;
 import snowflake.core.storage.IAllocateSpace;
 import snowflake.core.storage.IChunkManagerConfiguration;
@@ -34,7 +36,7 @@ import snowflake.core.storage.IClearChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.23_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<IOException> {
@@ -308,9 +310,9 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 		if( chunk.isPartOfFlake() ) {
 			throw new SecurityException("Do not ever trim a chunk unsafe when the chunk is part of a flake!");
 		}
-		Chunk[] split_chunks = splitChunk(chunk, size);
-		addAvailableChunk(split_chunks[1]);
-		return split_chunks[0];
+		SplitChunk split_chunk = splitChunk(chunk, size);
+		addAvailableChunk(split_chunk.getRightChunk());
+		return split_chunk.getLeftChunk();
 	}
 	
 	
@@ -362,9 +364,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * @see snowflake.api.IChunkMemory#deleteChunk(snowflake.core.Chunk)
 	 */
 	@Override public void deleteChunk(Chunk chunk) {
-		if( chunk == null || !chunk.isValid() ) {
-			return;
-		}
+		ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
 		data_table.addEntry(new TableMember<>(ChunkManager.NULL_CHUNK_DATA, chunk.getChunkTableIndex()));
 		data_table.addAvailableIndex(chunk.getChunkTableIndex());
 	}
@@ -466,31 +466,30 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	/* (non-Javadoc)
 	 * @see snowflake.api.IChunkManager#splitChunk(snowflake.core.Chunk, long)
 	 */
-	@Override public Chunk[] splitChunk(Chunk chunk, long position) {
-		
-		if( ArgumentChecker.checkForNull(chunk, GlobalString.Chunk.toString()).getLength() == 1 ) {
+	@Override public SplitChunk splitChunk(Chunk chunk, long position) {
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForNull(chunk, GlobalString.Chunk.toString());
+		}
+		if( chunk.getLength() == 1 ) {
 			throw new IllegalArgumentException("A chunk of length 1 can not be splitted.");
 		}
-		
 		ArgumentChecker.checkForBoundaries(position, 1, chunk.getLength() - 1, GlobalString.Position.toString());
-		
-		Chunk[] split_chunk = new Chunk[2];
-		split_chunk[0] = new Chunk(this, chunk.getStartAddress(), position, data_table.getAvailableIndex());
-		split_chunk[1] = new Chunk(this, chunk.getStartAddress() + position, 
-				chunk.getLength() - position, data_table.getAvailableIndex());
-		
+		SplitChunk split_chunk = new SplitChunk(
+			new Chunk(
+				this, chunk.getStartAddress(), position, data_table.getAvailableIndex()
+			),
+			new Chunk(
+				this, chunk.getStartAddress() + position, chunk.getLength() - position, data_table.getAvailableIndex()
+			)
+		);
 		if( chunk.getPositionInFlake() >= 0 ) {
-			split_chunk[0].setPositionInFlake( chunk.getPositionInFlake() );
-			split_chunk[1].setPositionInFlake( chunk.getPositionInFlake() + split_chunk[0].getLength() );
+			split_chunk.getLeftChunk().setPositionInFlake(chunk.getPositionInFlake());
+			split_chunk.getRightChunk().setPositionInFlake(chunk.getPositionInFlake() + position);
 		}
-		
-		
 		chunk.delete();
-		split_chunk[0].save(null);
-		split_chunk[1].save(null);
-		
+		split_chunk.getLeftChunk().save(null);
+		split_chunk.getRightChunk().save(null);
 		return split_chunk;
-		
 	}
 	
 	
@@ -498,9 +497,9 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * @see snowflake.api.IChunkManager#trimToSize(snowflake.core.Chunk, long)
 	 */
 	@Override public Chunk trimToSize(Chunk chunk, long size) {
-		Chunk[] split_chunks = splitChunk(chunk, size);
-		recycleChunk(split_chunks[1]);
-		return split_chunks[0];
+		SplitChunk split_chunk = splitChunk(chunk, size);
+		recycleChunk(split_chunk.getRightChunk());
+		return split_chunk.getLeftChunk();
 	}
 	
 	

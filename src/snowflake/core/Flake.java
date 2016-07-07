@@ -9,6 +9,7 @@ import j3l.util.check.ArgumentChecker;
 import j3l.util.close.ClosureState;
 import j3l.util.close.IClose;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.FlakeInputStream;
 import snowflake.api.FlakeOutputStream;
 import snowflake.api.IFlake;
@@ -21,7 +22,7 @@ import snowflake.core.manager.IChunkManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.10_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public final class Flake implements IClose<IOException>, IFlake {
@@ -128,10 +129,16 @@ public final class Flake implements IClose<IOException>, IFlake {
 		if( hasBeenOpened() ) {
 			throw new SecurityException("Can not change the flake_stream_manager after the flake has been opened!");
 		}
-		this.channel_manager = ArgumentChecker.checkForNull(
-				channel_manager, GlobalString.ChannelManager.toString()
-		);
-		this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
+		if( StaticMode.TESTING_MODE ) {
+			this.channel_manager = ArgumentChecker.checkForNull(
+					channel_manager, GlobalString.ChannelManager.toString()
+			);
+			this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
+		}
+		else {
+			this.channel_manager = channel_manager;
+			this.chunk_manager = chunk_manager;
+		}
 		if( initial_chunk_list != null && !initial_chunk_list.isEmpty() ) {
 			synchronized( chunk_list ) {
 				chunk_list.addAll(initial_chunk_list);
@@ -217,45 +224,11 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @return
 	 */
 	public int getIndexOfChunk(Chunk chunk) {
-		ArgumentChecker.checkForValidation(this);
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForValidation(this);
+		}
 		synchronized( chunk_list ) {
 			return chunk_list.indexOf(chunk);
-		}
-	}
-	
-
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	public void insertChunk(Chunk chunk, int index) {
-		if( hasBeenOpened() ) {
-			throw new SecurityException("The flake has already been opened!");
-		}
-		ArgumentChecker.checkForNull(chunk, GlobalString.Chunk.toString());
-		ArgumentChecker.checkForBoundaries(index, 0, Integer.MAX_VALUE, GlobalString.Index.toString());
-		synchronized( chunk_list ) {
-			if( chunk_list.contains(chunk) ) {
-				throw new SecurityException("The flake already contains this chunk: " + chunk.toString() + "!");
-			}
-			if( index == chunk_list.size() ) {
-				chunk_list.add(chunk);
-			}
-			else {
-				if( index > chunk_list.size() ) {
-					chunk_list.ensureCapacity(index + 1);
-					do {
-						chunk_list.add(null);
-					}
-					while( index >= chunk_list.size() );
-				}
-				Chunk replaced_chunk = chunk_list.set(index, chunk);
-				if( replaced_chunk != null ) {
-					throw new SecurityException("The replaced_chunk is not equal to null! " + replaced_chunk.toString());
-				}
-			}
 		}
 	}
 	
@@ -423,9 +396,12 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 */
 	@Override public IChunk getChunkAtIndex(int index) {
 		synchronized( chunk_list ) {
-			return chunk_list.get(
-				ArgumentChecker.checkForBoundaries(index, 0, chunk_list.size() - 1, GlobalString.Index.toString())
-			);
+			if( StaticMode.TESTING_MODE ) {
+				return chunk_list.get(
+					ArgumentChecker.checkForBoundaries(index, 0, chunk_list.size() - 1, GlobalString.Index.toString())
+				);
+			}
+			return chunk_list.get(index);
 		}
 	}
 	
@@ -434,8 +410,12 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getChunkAtPositionInFlake(long)
 	 */
 	@Override public IChunk getChunkAtPositionInFlake(long position_in_flake) {
-		ArgumentChecker.checkForValidation(this);
-		ArgumentChecker.checkForBoundaries(position_in_flake, 0, getLength() - 1, GlobalString.PositionInFlake.toString());
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForValidation(this);
+			ArgumentChecker.checkForBoundaries(
+				position_in_flake, 0, getLength() - 1, GlobalString.PositionInFlake.toString()
+			);
+		}
 		int chunk_list_size;
 		synchronized( chunk_list ) {
 			chunk_list_size = chunk_list.size();
@@ -489,9 +469,6 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getFlakeInputStream()
 	 */
 	@Override public FlakeInputStream getFlakeInputStream() throws IOException {
-		if( !isValid() ) {
-			throw new SecurityException("The flake can not be streamed!");
-		}
 		return new FlakeInputStream(this, channel_manager.getChannel(), channel_manager);
 	}
 	
@@ -500,9 +477,6 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#getFlakeOutputStream()
 	 */
 	@Override public FlakeOutputStream getFlakeOutputStream() throws IOException {
-		if( !isValid() ) {
-			throw new SecurityException("The flake can not be streamed!");
-		}
 		return new FlakeOutputStream(this, channel_manager.getChannel(), channel_manager);
 	}
 	
@@ -512,7 +486,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 */
 	@Override public void open() {
 		if( hasBeenOpened() ) {
-			return;
+			throw new StorageException("The flake has already been opened!");
 		}
 		closure_state = ClosureState.InOpening;
 		long chunk_list_size;

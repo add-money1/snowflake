@@ -7,6 +7,7 @@ import j3l.util.TransformValue2;
 import j3l.util.check.ArgumentChecker;
 import j3l.util.check.ElementChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.core.manager.ChunkManager;
 import snowflake.core.manager.FlakeManager;
 
@@ -15,7 +16,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.07_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public final class ChunkUtility {
@@ -70,12 +71,16 @@ public final class ChunkUtility {
 	 * @return
 	 */
 	public static void getBinaryData(ChunkData chunk_data, byte[] buffer) {
-
-		ArgumentChecker.checkForNull(chunk_data, GlobalString.ChunkData.toString());
-		ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
 		
-		if( buffer.length != ChunkUtility.BINARY_CHUNK_SIZE ) {
-			throw new IllegalArgumentException("The length of the buffer must be equal to " + ChunkUtility.BINARY_CHUNK_SIZE);
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForNull(chunk_data, GlobalString.ChunkData.toString());
+			ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
+			ArgumentChecker.checkForBoundaries(
+				buffer.length,
+				ChunkUtility.BINARY_CHUNK_SIZE,
+				ChunkUtility.BINARY_CHUNK_SIZE,
+				GlobalString.BufferLength.toString()
+			);
 		}
 		
 		
@@ -127,11 +132,14 @@ public final class ChunkUtility {
 	 */
 	public static ChunkData getChunkData(byte[] buffer) {
 		
-		ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
-		
-		if( buffer.length != ChunkUtility.BINARY_CHUNK_SIZE ) {
-			throw new IllegalArgumentException("The length of the buffer must be equal to ChunkUtility.BINARY_CHUNK_SIZE: "
-					+ ChunkUtility.BINARY_CHUNK_SIZE + "!");
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
+			ArgumentChecker.checkForBoundaries(
+				buffer.length,
+				ChunkUtility.BINARY_CHUNK_SIZE,
+				ChunkUtility.BINARY_CHUNK_SIZE,
+				GlobalString.BufferLength.toString()
+			);
 		}
 		
 		
@@ -191,7 +199,9 @@ public final class ChunkUtility {
 	 */
 	public static ChunkData getChunkData(Flake owner_flake, Chunk chunk) {
 
-		ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
+		}
 		
 		long identification = FlakeManager.ROOT_IDENTIFICATION;
 		int index_in_flake = 0;

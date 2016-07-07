@@ -3,12 +3,13 @@ package snowflake.core;
 import j3l.util.IBinaryData;
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.03.10_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public final class ChunkData implements IBinaryData {
@@ -51,14 +52,21 @@ public final class ChunkData implements IBinaryData {
 	 * @return
 	 */
 	public ChunkData(long start_address, long length, long flake_indentification, int index_in_flake, byte flag_vector) {
-		this.start_address = ArgumentChecker.checkForBoundaries(
-			start_address, 0, Long.MAX_VALUE, GlobalString.StartAdress.toString()
-		);
-		this.length = ArgumentChecker.checkForBoundaries(length, 0, Long.MAX_VALUE, GlobalString.Length.toString());
+		if( StaticMode.TESTING_MODE ) {
+			this.start_address = ArgumentChecker.checkForBoundaries(
+				start_address, 0, Long.MAX_VALUE, GlobalString.StartAddress.toString()
+			);
+			this.length = ArgumentChecker.checkForBoundaries(length, 0, Long.MAX_VALUE, GlobalString.Length.toString());
+			this.index_in_flake = ArgumentChecker.checkForBoundaries(
+				index_in_flake, 0, Integer.MAX_VALUE, GlobalString.IndexInFlake.toString()
+			);
+		}
+		else {
+			this.start_address = start_address;
+			this.length = length;
+			this.index_in_flake = index_in_flake;
+		}
 		this.flake_identification = flake_indentification;
-		this.index_in_flake = ArgumentChecker.checkForBoundaries(
-			index_in_flake, 0, Integer.MAX_VALUE, GlobalString.IndexInFlake.toString()
-		);
 		this.flag_vector = flag_vector;
 	}
 	
@@ -139,9 +147,7 @@ public final class ChunkData implements IBinaryData {
 	 * @see java.lang.Object#toString()
 	 */
 	@Override public String toString() {
-		
 		StringBuilder string_builder = new StringBuilder(130);
-		
 		string_builder.append("ChunkData: [start_address = ");
 		string_builder.append(getStartAddress());
 		string_builder.append(" | length = ");
@@ -153,11 +159,8 @@ public final class ChunkData implements IBinaryData {
 		string_builder.append(" | flag_vector = ");
 		string_builder.append(getFlagVector());
 		string_builder.append("]");
-		
 		string_builder.trimToSize();
-		
 		return string_builder.toString();
-		
 	}
 	
 	

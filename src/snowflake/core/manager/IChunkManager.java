@@ -4,13 +4,14 @@ import java.util.Collection;
 
 import j3l.util.close.IStateClosure;
 import snowflake.core.Chunk;
+import snowflake.core.SplitChunk;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.23_0
+ * @version 2016.07.02_0
  * @author Johannes B. Latzel
  */
 public interface IChunkManager extends IStateClosure  {
@@ -59,7 +60,7 @@ public interface IChunkManager extends IStateClosure  {
 	 * @param
 	 * @return
 	 */
-	Chunk[] splitChunk(Chunk chunk, long position);
+	SplitChunk splitChunk(Chunk chunk, long position);
 	
 	
 	/**

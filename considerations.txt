@@ -1,0 +1,13 @@
+	
+	
+	LOGGER?
+	
+	StorageException -> wo muss diese Exception geworfen, und wo muss sie abgefangen werden?
+	
+	
+Klasse:
+	
+	
+Server:
+	- FTP/eigene Schnittstelle/NFS/Ciffs?
+	- Kompatibilität mit java.io.File?

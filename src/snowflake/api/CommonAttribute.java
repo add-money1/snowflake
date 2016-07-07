@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.filesystem.Attribute;
 import snowflake.filesystem.attribute.NameAttribute;
 import snowflake.filesystem.attribute.TimeStampAttribute;
@@ -13,7 +14,7 @@ import snowflake.filesystem.attribute.TimeStampAttribute;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.12_0
+ * @version 2016.07.01_0
  * @author Johannes B. Latzel
  */
 public class CommonAttribute<T> {
@@ -69,10 +70,16 @@ public class CommonAttribute<T> {
 	 * @param
 	 */
 	private CommonAttribute(String name, Function<T, IAttributeValue<?>> constructor_function) {
-		this.name = ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
-		this.constructor_function = ArgumentChecker.checkForNull(
-			constructor_function, GlobalString.ConstructorFunction.toString()
-		);
+		if( StaticMode.TESTING_MODE ) {
+			this.name = ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
+			this.constructor_function = ArgumentChecker.checkForNull(
+				constructor_function, GlobalString.ConstructorFunction.toString()
+			);
+		}
+		else {
+			this.name = name;
+			this.constructor_function = constructor_function;
+		}
 	}
 	
 	

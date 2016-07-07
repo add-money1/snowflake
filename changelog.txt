@@ -1,4 +1,125 @@
 	
+	2016.07.02
+	
+		snowflake.core.ChunkData
+			-> deleted whitespaces in "String toString()"
+		
+		snowflake.StaticMode
+			-> changed "final static boolean DEBUG_MODE" to "final static boolean TESTING_MODE"
+		
+		snowflake.core.Flake
+			-> removed "void insertChunk(Chunk, int)"
+			-> removed checks in "FlakeInputStream getFlakeInputStream() throws IOException" and
+				"FlakeOutputStream getFlakeOutputStream() throws IOException"
+			-> "void open()" throws an exception when the flake has already been opened
+		
+		snowflake.core.TableMember
+			-> removed unnecessary else in "boolean equals(Object)"
+		
+		snowflake.api.DataPointer
+			-> "DataPointer(Flake, long)" check for validation of the flake
+		
+		snowflake.core.manager.FlakeManager
+			-> changed core-format
+		
+		snowflake.core.manager.ChunkManager
+			-> "void deleteChunk(Chunk)" uses "j3l.util.ArgumentChecker" instead of manual checks
+			-> changed "Chunk[] splitChunk(Chunk, long)" to "SplitChunk splitChunk(Chunk, long)"
+			-> modified "Chunk trimToSizeUnsafe(Chunk, long)" and "Chunk trimToSize(Chunk, long)"
+				due to above changes
+		
+		snowflake.core.manager.IChunkManager
+			-> changed "Chunk[] splitChunk(Chunk, long)" to "SplitChunk splitChunk(Chunk, long)"
+		
+		snowflake.core.SplitChunk
+			-> added class
+		
+		snowflake.GlobalString
+			-> added:
+				LeftChunk("left_chunk")
+				RightChunk("right_chunk")
+		
+		implemented the use of conditional compilation by "snowflake.StaticMode.DEBUG_MODE" in:
+			-> snowflake
+				-> core
+					-> Chunk, ChunkData, DataTable, Flake, TableMember
+					-> manager
+						-> FlakeManager, ChunkRecyclingManager, ChunkManager
+					-> storage
+	
+	2016.07.01
+	
+		snowflake.filesystem.manager.DeduplicationBlock
+			-> removed length-check in "boolean hasData(byte[])"
+			-> changed "static long DEDUPLICATION_BLOCK_SIZE" to
+				"static int DEDUPLICATION_BLOCK_SIZE"
+		
+		snowflake.filesystem.manager.DeduplicationMap
+			-> merged functionality into "snowflake.filesystem.manager.DeduplicationTable"
+			-> deleted class
+			
+		snowflake.filesystem.manager.DeduplicationTable
+			-> merged functionality of "snowflake.filesystem.manager.DeduplicationMap" into the
+				class
+			-> modified all methods
+			-> implemented "void load()"
+		
+		snowflake.GlobalString
+			-> added:
+				DeduplicationTable("deduplication_table")
+		
+		snowflake.StaticMode
+			-> created class
+		
+		
+		implemented the use of conditional compilation by "snowflake.StaticMode.DEBUG_MODE" in:
+			-> snowflake
+				-> api
+					-> FlakeOutpuStream, FlakeInputStream, DataPointer, CommonAttribute
+				-> core
+					-> Channel
+			
+		
+	2016.06.27
+	
+		snowflake.GlobalString
+			-> added:
+				DeduplicationBlock("deduplication_block")
+				DataBlock("data_block")
+		
+		snowflake.filesystem.manager.DeduplicationMap
+			-> implemented "void add(DeduplicationBlock)"
+			-> added "long getIndex(byte[])"
+		
+		snowflake.filesystem.manager.DeduplicaionTable
+			-> changed "HashMap<ByteBuffer, DeduplicationBlock> deduplication_map" to
+				"DeduplicationMap deduplication_map"
+			
+		snowflake.filesystem.manager.DeduplicationBlock
+			-> added "long last_used_time", "void clearWhenUnusedFor(long)", "long getIndex()",
+				"static long DEDUPLICATION_BLOCK_SIZE", "byte[] getBlockBufferInternal()", and
+				"boolean hasData(byte[])"
+			-> made all attributes private
+			
+			
+		
+	2016.06.26
+	
+		snowflake.GlobalString
+			-> added:
+				BlockSize("block_size")
+				Identification("identification")
+			-> changed StartAdress("start_address") to StartAddress("start_address")
+				
+		snowflake.filesystem.manager.DeduplicationBlock
+			-> added class
+		
+		
+	2016.06.25
+	
+		snowflake.filesystem.manager.DeduplicationManager
+			-> added class
+	
 	2016.06.19
 	
 		snowflake.filesystem.Node
@@ -31,6 +152,9 @@
 			
 		snowflake.api.IDirectory
 			-> added "IDirectory getParentDirectory()"
+		
+		snowflake.core.Storage
+			-> fixed "double getAverageFlakeSize()": returned reciprocal value 
 			
 		
 	2016.06.18

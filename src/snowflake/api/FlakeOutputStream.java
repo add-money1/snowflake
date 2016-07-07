@@ -5,6 +5,7 @@ import java.io.OutputStream;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.core.Flake;
 import snowflake.core.manager.IReturnChannel;
 import snowflake.core.storage.IWrite;
@@ -14,7 +15,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.06_0
+ * @version 2016.07.01_0
  * @author Johannes B. Latzel
  */
 public final class FlakeOutputStream extends OutputStream {
@@ -57,11 +58,18 @@ public final class FlakeOutputStream extends OutputStream {
 	 * @return
 	 */
 	public FlakeOutputStream(Flake flake, IWrite write, IReturnChannel channel_returner) {
-		this.flake = ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString());
-		this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
-		this.channel_returner = ArgumentChecker.checkForNull(
-			channel_returner, GlobalString.ChannelReturner.toString()
-		);
+		if( StaticMode.TESTING_MODE ) {
+			this.flake = ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString());
+			this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
+			this.channel_returner = ArgumentChecker.checkForNull(
+				channel_returner, GlobalString.ChannelReturner.toString()
+			);
+		}
+		else {
+			this.flake = flake;
+			this.write = write;
+			this.channel_returner = channel_returner;
+		}
 		data_pointer = new DataPointer(flake, 0L);
 		is_closed = false;
 	}
