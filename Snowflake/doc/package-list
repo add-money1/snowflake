@@ -1,7 +1,0 @@
-snowflake
-snowflake.api
-snowflake.core
-snowflake.core.manager
-snowflake.core.storage
-snowflake.filesystem
-snowflake.filesystem.attribute
