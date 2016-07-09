@@ -27,13 +27,14 @@ import snowflake.core.IChunk;
 import snowflake.core.manager.ChannelManager;
 import snowflake.core.manager.ChunkManager;
 import snowflake.core.manager.FlakeManager;
+import snowflake.core.manager.SpecialFlakeIdentification;
 
 
 /**
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.06.17_0
+ * @version 2016.07.09_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IStorageInformation, IAllocateSpace, 
@@ -321,7 +322,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @return
 	 */
 	public IFlake getFileTableFlake() {
-		return flake_manager.getFileTableFlake(chunk_manager);
+		return flake_manager.getSpecialFlake(SpecialFlakeIdentification.FlakeTable, chunk_manager);
 	}
 
 
@@ -329,7 +330,15 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @return
 	 */
 	public IFlake getDirectoryTableFlake() {
-		return flake_manager.getDirectoryTableFlake(chunk_manager);
+		return flake_manager.getSpecialFlake(SpecialFlakeIdentification.DirectoryTable, chunk_manager);
+	}
+	
+	
+	/**
+	 * @return
+	 */
+	public IFlake getDeduplicationTableFlake() {
+		return flake_manager.getSpecialFlake(SpecialFlakeIdentification.DeduplicationTable, chunk_manager);
 	}
 	
 				
@@ -440,7 +449,9 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 			if( new_length == current_length ) {
 				throw new StorageException("There is not enough capacity available to allocate a new chunk!");
 			}
-			chunk_data = new ChunkData(current_length, new_length - current_length, FlakeManager.ROOT_IDENTIFICATION, 0, (byte)0);
+			chunk_data = new ChunkData(
+				current_length, new_length - current_length, FlakeManager.ROOT_IDENTIFICATION, 0, (byte)0
+			);
 			try {
 				data_file.setLength(new_length);
 			} catch (IOException e) {
@@ -459,10 +470,8 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 		if( number_of_flakes > Integer.MAX_VALUE ) {
 			return Integer.MAX_VALUE;
 		}
-		else {
-			// cast okay, because number_of_flakes is smaller than or equal to Integer.MAX_VALUE
-			return (int)number_of_flakes;
-		}
+		// cast okay, because number_of_flakes is smaller than or equal to Integer.MAX_VALUE
+		return (int)number_of_flakes;
 	}
 
 	
@@ -474,9 +483,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 		if( number_of_damaged_flakes > Integer.MAX_VALUE ) {
 			return Integer.MAX_VALUE;
 		}
-		else {
-			return (int)number_of_damaged_flakes;
-		}
+		return (int)number_of_damaged_flakes;
 	}
 	
 	

@@ -16,7 +16,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.02_0
+ * @version 2016.07.08_0
  * @author Johannes B. Latzel
  */
 public final class ChunkUtility {
@@ -199,9 +199,7 @@ public final class ChunkUtility {
 	 */
 	public static ChunkData getChunkData(Flake owner_flake, Chunk chunk) {
 
-		if( StaticMode.TESTING_MODE ) {
-			ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
-		}
+		ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
 		
 		long identification = FlakeManager.ROOT_IDENTIFICATION;
 		int index_in_flake = 0;

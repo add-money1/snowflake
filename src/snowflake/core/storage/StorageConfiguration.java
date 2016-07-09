@@ -8,13 +8,14 @@ import java.util.LinkedList;
 import j3l.configuration.ConfigurationManager;
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.12_0
+ * @version 2016.07.08_0
  * @author Johannes B. Latzel
  */
 public final class StorageConfiguration implements IStorageConfiguration {
@@ -34,7 +35,9 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	 * @throws IOException 
 	 */
 	public StorageConfiguration(File configuration_file) throws IOException {
-		ArgumentChecker.checkForNull(configuration_file, GlobalString.ConfigurationFile.toString());
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForNull(configuration_file, GlobalString.ConfigurationFile.toString());
+		}
 		if( !configuration_file.exists() ) {
 			try {
 				configuration_file.createNewFile();

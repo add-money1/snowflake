@@ -1,4 +1,87 @@
 	
+	2016.07.09
+	
+		snowflake.filesystem.manager.DeduplicationManager
+			-> replaced "HashMap<Long, DeduplicationBlock> deduplication_block_map" with
+				"DeduplicationTable deduplication_table"
+			-> initialize "deduplication_table" in "DeduplicationManager(FileSystem)"
+			-> provided primitive implementation of "boolean isPotentialDeduplicant(File)"
+			-> changed "DeduplicationManager(FileSystem)" to
+				"DeduplicationManager(FileSystem, IFlake)"
+			-> implements "j3l.util.IClose<FileSystemException>"
+			-> added "ClosureState closure_state"
+		
+		snowflake.filesystem.FileSystem
+			-> added "DeduplicationManager deduplication_manager"
+			-> implements "j3l.util.IClose<FileSystemException>"
+			-> added "ClosureState closure_state"
+		
+		snowflake.core.storage.Storage
+			-> added "IFlake getDeduplicationTableFlake()"
+			-> changed "IFlake getDirectoryTableFlake()" and "IFlake getFileTableFlake()" due to
+				changes in "snowflake.core.manager.FlakeManager"
+		
+		snowflake.core.manager.FlakeManager
+			-> removed "static long FILE_TABLE_IDENTIFICATION",
+				"static long DIRECTORY_TABLE_IDENTIFICATION",
+				"IFlake getFileTableFlake(ChunkManager)" and
+				"IFlake getDirectoryTableFlake(ChunkManager)"
+			-> modified "IFlake createFlake(ChunkManager)" due to changes above
+		
+		snowflake.core.manager.SpecialFlakeIdentifcation
+			-> added enum
+	
+	2016.07.08
+	
+		snowflake.core.manager.ChannelManager
+			-> changes in code format
+		
+		snowflake.core.manager.ChunkManager
+			-> removed check in "void recycleChunk(Chunk)" and "void saveChunk(Flake, Chunk)"
+			-> added check in "void setInitialIndices(ArrayList<Long>)" and
+				"void addAvailableChunks(ArrayList<Chunk>)"
+		
+		snowflake.core.ChunkUtility
+			-> modified "ChunkData getChunkData(Flake, Chunk)": removed conditional compiled check
+		
+		snowflake.GlobalString
+			-> added:
+				AvailableIndexList("available_index_list")
+				ChunkList("chunk_list")
+		
+		snowflake.core.manager.ChunkRecyclingManager
+			-> added check in "void start()" and "void stop()"
+		
+		snowflake.core.storage.Storage
+			-> changes in code format
+			-> removed unnecessary elses in "int getNumberOfFlakes()" and
+				"int getNumberOfDamagedFlakes()"
+		
+		snowflake.filesystem.manager.DeduplicationManager
+			-> added "void deduplicateFile(File)", "void dededuplicateFile(File)",
+				"void analyzeFileSystem()", and "boolean isPotentialDeduplicant(File)"
+			-> fixed copy&paste-error in "DeduplicationManager(FileSystem)"
+			-> implemented "void deduplicateFile()"
+			-> changed "ArrayList<File> potential_file_list" to "ArrayList<File> deduplicant_list"
+		
+		implemented the use of conditional compilation by "snowflake.StaticMode.DEBUG_MODE" in:
+			-> snowflake.core
+				-> manager
+					-> ChannelManager, ChunkMergingManager, ChunkRecyclingManager
+				-> storage
+					-> StorageConfigurationElement
+				
+	
+	2016.07.07
+	
+		snowflake.core.Flake
+			-> modified "void cutFromStart(long)", "void cutAt(long, long)",
+				and "void expandAt(long, long)" due to changes in
+				"snowflake.core.manager.ChunkManager"
+		
+		snowflake.core.storage.StreamDescription
+			-> deleted unused class
+	
 	2016.07.02
 	
 		snowflake.core.ChunkData
@@ -45,7 +128,6 @@
 					-> Chunk, ChunkData, DataTable, Flake, TableMember
 					-> manager
 						-> FlakeManager, ChunkRecyclingManager, ChunkManager
-					-> storage
 	
 	2016.07.01
 	

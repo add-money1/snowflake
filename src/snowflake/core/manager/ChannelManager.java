@@ -8,6 +8,7 @@ import java.util.ArrayList;
 
 import j3l.util.check.ArgumentChecker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.StorageException;
 import snowflake.core.Channel;
 import snowflake.core.Returnable;
@@ -17,7 +18,7 @@ import snowflake.core.storage.IChannelManagerConfiguration;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.04.07_0
+ * @version 2016.07.08_0
  * @author Johannes B. Latzel
  */
 public final class ChannelManager implements Closeable, IChannelManager {
@@ -54,9 +55,14 @@ public final class ChannelManager implements Closeable, IChannelManager {
 	 * @return
 	 */
 	public ChannelManager(IChannelManagerConfiguration channel_manager_configuration) {
-		this.channel_manager_configuration = ArgumentChecker.checkForNull(
-				channel_manager_configuration, GlobalString.ChannelManagerConfiguration.toString()
-		);
+		if( StaticMode.TESTING_MODE ) {
+			this.channel_manager_configuration = ArgumentChecker.checkForNull(
+					channel_manager_configuration, GlobalString.ChannelManagerConfiguration.toString()
+			);
+		}
+		else {
+			this.channel_manager_configuration = channel_manager_configuration;
+		}
 		available_channel_list = new ArrayList<>();
 		unavailable_channel_list = new ArrayList<>();
 	}
@@ -69,8 +75,7 @@ public final class ChannelManager implements Closeable, IChannelManager {
 	 * @return
 	 * @throws FileNotFoundException 
 	 */
-	@SuppressWarnings("resource")
-	private void createChannel() {
+	@SuppressWarnings("resource") private void createChannel() {
 		RandomAccessFile random_access_file;
 		try {
 			random_access_file = new RandomAccessFile(channel_manager_configuration.getDataFilePath(), "rw");
@@ -89,8 +94,7 @@ public final class ChannelManager implements Closeable, IChannelManager {
 	 * (non-Javadoc)
 	 * @see snowflake.core.manager.IGetChannel#getChannel()
 	 */
-	@SuppressWarnings("resource")
-	@Override public Channel getChannel() {
+	@SuppressWarnings("resource") @Override public Channel getChannel() {
 		Channel channel = null;
 		while( !is_closed ) {
 			synchronized( available_channel_list ) {
@@ -119,7 +123,9 @@ public final class ChannelManager implements Closeable, IChannelManager {
 	 * @see snowflake.core.manager.IReturnChannel#returnChannel(snowflake.core.Returnable)
 	 */
 	@Override public void returnChannel(Returnable channel) throws IOException {
-		ArgumentChecker.checkForNull(channel, GlobalString.Channel.toString());
+		if( StaticMode.TESTING_MODE ) {
+			ArgumentChecker.checkForNull(channel, GlobalString.Channel.toString());
+		}
 		if( !(channel instanceof Channel) ) {
 			throw new StorageException("The returnable is no instance of Channel!");
 		}
@@ -152,8 +158,7 @@ public final class ChannelManager implements Closeable, IChannelManager {
 	/* (non-Javadoc)
 	 * @see java.io.Closeable#close()
 	 */
-	@SuppressWarnings("resource")
-	@Override public void close() throws IOException {
+	@SuppressWarnings("resource") @Override public void close() throws IOException {
 		if( is_closed ) {
 			return;
 		}

@@ -24,7 +24,7 @@ import snowflake.core.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.02_0
+ * @version 2016.07.09_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IClose<StorageException> {
@@ -34,18 +34,6 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	 * <p></p>
 	 */
 	public final static long ROOT_IDENTIFICATION = 0;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	public final static long FILE_TABLE_IDENTIFICATION = 1;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	public final static long DIRECTORY_TABLE_IDENTIFICATION = 2;
 	
 	
 	/**
@@ -114,43 +102,19 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	
 	/**
 	 * <p></p>
-	 *
-	 * @param
-	 * @return
 	 */
-	public IFlake getFileTableFlake(ChunkManager chunk_manager) {
-		long file_table_flake_identification = FlakeManager.FILE_TABLE_IDENTIFICATION;
-		if( !flakeExists(file_table_flake_identification) ) {
+	public IFlake getSpecialFlake(SpecialFlakeIdentification special_flake_identification, ChunkManager chunk_manager) {
+		long identification = special_flake_identification.getIdentification();
+		if( !flakeExists(identification) ) {
 			synchronized( flake_creation_lock ) {
-				Flake flake = new Flake(file_table_flake_identification);
+				Flake flake = new Flake(identification);
 				flake.initialize(channel_manager, chunk_manager, null);
 				flake.open();
-				flake_table.put(new Long(file_table_flake_identification), flake);
+				flake_table.put(new Long(identification), flake);
 				return flake;
 			}
 		}
-		return getFlake(file_table_flake_identification);
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	public IFlake getDirectoryTableFlake(ChunkManager chunk_manager) {
-		long directory_table_flake_identification = FlakeManager.DIRECTORY_TABLE_IDENTIFICATION;
-		if( !flakeExists(directory_table_flake_identification) ) {
-			synchronized( flake_creation_lock ) {
-				Flake flake = new Flake(directory_table_flake_identification);
-				flake.initialize(channel_manager, chunk_manager, null);
-				flake.open();
-				flake_table.put(new Long(directory_table_flake_identification), flake);
-				return flake;
-			}
-		}
-		return getFlake(directory_table_flake_identification);
+		return getFlake(identification);
 	}
 	
 	
@@ -239,8 +203,9 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 			while(
 				flakeExists(identification)
 				|| identification == FlakeManager.ROOT_IDENTIFICATION
-				|| identification == FlakeManager.FILE_TABLE_IDENTIFICATION
-				|| identification == FlakeManager.DIRECTORY_TABLE_IDENTIFICATION
+				|| identification == SpecialFlakeIdentification.FlakeTable.getIdentification()
+				| identification == SpecialFlakeIdentification.DirectoryTable.getIdentification()
+				|| identification == SpecialFlakeIdentification.DeduplicationTable.getIdentification()
 			);
 			flake = new Flake(identification);
 			flake_table.put(new Long(identification), flake);

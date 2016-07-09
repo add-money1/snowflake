@@ -8,21 +8,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 import j3l.util.check.ArgumentChecker;
+import j3l.util.close.ClosureState;
+import j3l.util.close.IClose;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.CommonAttribute;
 import snowflake.api.FileSystemException;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
 import snowflake.core.storage.Storage;
+import snowflake.filesystem.manager.DeduplicationManager;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.19_0
+ * @version 2016.07.09_0
  * @author Johannes B. Latzel
  */
-public class FileSystem {
+public class FileSystem implements IClose<FileSystemException> {
 	
 	
 	/**
@@ -53,6 +57,18 @@ public class FileSystem {
 	 * <p></p>
 	 */
 	private final DirectoryTable directory_table;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private final DeduplicationManager deduplication_manager;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private ClosureState closure_state;
 		
 	
 	/**
@@ -76,12 +92,8 @@ public class FileSystem {
 		catch( IOException e ) {
 			throw new FileSystemException("Can create the directory_table!", e);
 		}
-		try {
-			load();
-		}
-		catch( IOException e ) {
-			throw new FileSystemException("Can not load the entries of file_table and directory_table!", e);
-		}
+		deduplication_manager = new DeduplicationManager(this, storage.getDeduplicationTableFlake());
+		closure_state = ClosureState.None;
 	}
 	
 	
@@ -283,6 +295,52 @@ public class FileSystem {
 	 */
 	public RootDirectory getRootDirectory() {
 		return root_directory;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see j3l.util.close.IStateClosure#getClosureState()
+	 */
+	@Override public ClosureState getClosureState() {
+		return closure_state;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see j3l.util.close.IClose#open()
+	 */
+	@Override public synchronized void open() {
+		if( isOpen() ) {
+			if( StaticMode.TESTING_MODE ) {
+				throw new FileSystemException("The FileSystem has already been opened!");
+			}
+			return;
+		}
+		closure_state = ClosureState.InOpening;
+		try {
+			load();
+		}
+		catch( IOException e ) {
+			throw new FileSystemException("Can not load the entries of file_table and directory_table!", e);
+		}
+		deduplication_manager.open();
+		closure_state = ClosureState.Open;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see j3l.util.close.IClose#close()
+	 */
+	@Override public void close() {
+		if( !isOpen() ) {
+			if( StaticMode.TESTING_MODE ) {
+				throw new FileSystemException("The FileSystem is not open!");
+			}
+			return;
+		}
+		closure_state = ClosureState.InClosure;
+		deduplication_manager.close();
+		closure_state = ClosureState.Closed;
 	}
 	
 }

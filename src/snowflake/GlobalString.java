@@ -6,7 +6,7 @@ import j3l.util.check.ArgumentChecker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.02_0
+ * @version 2016.07.08_0
  * @author Johannes B. Latzel
  */
 public enum GlobalString {
@@ -83,7 +83,9 @@ public enum GlobalString {
 	DeduplicationTable("deduplication_table"),
 	DeduplicationTableFlake("deduplication_table_flake"),
 	LeftChunk("left_chunk"),
-	RightChunk("right_chunk");
+	RightChunk("right_chunk"),
+	AvailableIndexList("available_index_list"),
+	ChunkList("chunk_list");
 	
 	
 	private final String string;

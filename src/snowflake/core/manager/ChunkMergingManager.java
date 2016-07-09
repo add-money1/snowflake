@@ -13,6 +13,7 @@ import j3l.util.stream.StreamFactory;
 import j3l.util.stream.StreamFilter;
 import j3l.util.stream.StreamMode;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.StorageException;
 import snowflake.core.Chunk;
 import snowflake.core.IChunk;
@@ -22,7 +23,7 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.21_0
+ * @version 2016.07.08_0
  * @author Johannes B. Latzel
  */
 public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
@@ -59,7 +60,12 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 	 * @return
 	 */
 	public ChunkMergingManager(IChunkManager chunk_manager) {
-		this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
+		if( StaticMode.TESTING_MODE ) {
+			this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
+		}
+		else {
+			this.chunk_manager = chunk_manager;
+		}
 		chunk_list = new ArrayList<>();
 		chunk_merging_thread = new LoopedTaskThread(() -> {
 			merge();

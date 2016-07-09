@@ -22,7 +22,7 @@ import snowflake.core.manager.IChunkManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.02_0
+ * @version 2016.07.07_0
  * @author Johannes B. Latzel
  */
 public final class Flake implements IClose<IOException>, IFlake {
@@ -593,10 +593,10 @@ public final class Flake implements IClose<IOException>, IFlake {
 				current_chunk = chunk_list.remove(0);
 				length -= current_chunk.getLength();
 				if( current_chunk.getLength() > remaining_bytes ) {
-					Chunk[] split_chunk = chunk_manager.splitChunk(current_chunk, remaining_bytes);
-					chunk_manager.recycleChunk(split_chunk[0]);
-					chunk_list.add(0, split_chunk[1]);
-					length += split_chunk[1].getLength();
+					SplitChunk split_chunk = chunk_manager.splitChunk(current_chunk, remaining_bytes);
+					chunk_manager.recycleChunk(split_chunk.getLeftChunk());
+					chunk_list.add(0, split_chunk.getRightChunk());
+					length += split_chunk.getRightChunk().getLength();
 					remaining_bytes = 0;
 				}
 				else {
@@ -660,29 +660,29 @@ public final class Flake implements IClose<IOException>, IFlake {
 		Chunk current_chunk;
 		if( list.get(0).containsFlakePosition(position_in_flake) ) {
 			current_chunk = list.remove(0);
-			Chunk[] split_chunk = chunk_manager.splitChunk(
+			SplitChunk split_chunk = chunk_manager.splitChunk(
 				current_chunk, current_chunk.getPositionInFlake() - position_in_flake
 			);
 			synchronized( chunk_list ) {
-				chunk_list.add(split_chunk[0]);
+				chunk_list.add(split_chunk.getLeftChunk());
 				if( chunk_list.isEmpty() ) {
-					split_chunk[0].setPositionInFlake(0);
+					split_chunk.getLeftChunk().setPositionInFlake(0);
 				}
 				else {
 					Chunk previous_chunk = chunk_list.get(chunk_list.size() - 1);
-					split_chunk[0].setPositionInFlake(
+					split_chunk.getLeftChunk().setPositionInFlake(
 						previous_chunk.getPositionInFlake() + previous_chunk.getLength()
 					);
 				}
 			}
-			list.add(0, split_chunk[1]);
+			list.add(0, split_chunk.getRightChunk());
 		}
 		do {
 			current_chunk = list.remove(0);
 			if( current_chunk.getLength() > remaining_bytes ) {
-				Chunk[] split_chunk = chunk_manager.splitChunk(current_chunk, remaining_bytes);
-				chunk_manager.recycleChunk(split_chunk[0]);
-				list.add(0, split_chunk[1]);
+				SplitChunk split_chunk = chunk_manager.splitChunk(current_chunk, remaining_bytes);
+				chunk_manager.recycleChunk(split_chunk.getLeftChunk());
+				list.add(0, split_chunk.getRightChunk());
 				remaining_bytes = 0;
 			}
 			else {
@@ -793,22 +793,22 @@ public final class Flake implements IClose<IOException>, IFlake {
 		Chunk current_chunk;
 		if( !list.isEmpty() && list.get(0).containsFlakePosition(position_in_flake) ) {
 			current_chunk = list.remove(0);
-			Chunk[] split_chunk = chunk_manager.splitChunk(
+			SplitChunk split_chunk = chunk_manager.splitChunk(
 				current_chunk, current_chunk.getPositionInFlake() - position_in_flake
 			);
 			synchronized( chunk_list ) {
-				chunk_list.add(split_chunk[0]);
+				chunk_list.add(split_chunk.getLeftChunk());
 				if( chunk_list.isEmpty() ) {
-					split_chunk[0].setPositionInFlake(0);
+					split_chunk.getLeftChunk().setPositionInFlake(0);
 				}
 				else {
 					Chunk previous_chunk = chunk_list.get(chunk_list.size() - 1);
-					split_chunk[0].setPositionInFlake(
+					split_chunk.getLeftChunk().setPositionInFlake(
 						previous_chunk.getPositionInFlake() + previous_chunk.getLength()
 					);
 				}
 			}
-			list.add(0, split_chunk[1]);
+			list.add(0, split_chunk.getRightChunk());
 		}
 		Collection<Chunk> collection = chunk_manager.allocateSpace(number_of_bytes);
 		collection.addAll(list);
