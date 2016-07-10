@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Stream;
 
-import j3l.exception.ValueOverflowException;
 import j3l.util.BinaryTree;
 import j3l.util.ComparisonType;
 import j3l.util.LoopedTaskThread;
@@ -250,7 +249,7 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 				additional_length = (long)( allocated_space * chunk_manager_configuration.getDataFileIncreaseRate() );
 				
 				if( additional_length < 0 ) {
-					throw new ValueOverflowException("The additional_length of this method managed to overflow! :o");
+					throw new StorageException("The additional_length of this method managed to overflow! :o");
 				}
 				
 				chunk_length = minimum_length + additional_length;
