@@ -37,9 +37,7 @@ public interface IRead extends Returnable {
 		if( Checker.checkForNull(buffer, GlobalString.Buffer.toString()).length == 0 ) {
 			return 0;
 		}
-		else {
-			return read(data_pointer, buffer, 0, buffer.length);
-		}
+		return read(data_pointer, buffer, 0, buffer.length);
 	}
 	
 	
