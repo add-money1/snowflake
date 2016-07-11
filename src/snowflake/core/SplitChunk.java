@@ -36,6 +36,10 @@ public final class SplitChunk {
 			this.left_chunk = Checker.checkForValidation(left_chunk, GlobalString.LeftChunk.toString());
 			this.right_chunk = Checker.checkForValidation(right_chunk, GlobalString.RightChunk.toString());
 		}
+		else {
+			this.left_chunk = left_chunk;
+			this.right_chunk = right_chunk;
+		}
 	}
 	
 	
