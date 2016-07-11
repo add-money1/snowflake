@@ -2,7 +2,7 @@ package snowflake.filesystem;
 
 import java.io.IOException;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.api.FlakeInputStream;
 import snowflake.api.FlakeOutputStream;
@@ -14,7 +14,7 @@ import snowflake.api.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.18_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class File extends Node {
@@ -33,7 +33,7 @@ public final class File extends Node {
 	 */
 	public File(IFlake attribute_flake, IFlake data_flake, IDirectory parent_directory, long index) {
 		super(attribute_flake, parent_directory, index);
-		this.data_flake = ArgumentChecker.checkForValidation(data_flake, GlobalString.DataFlake.toString());
+		this.data_flake = Checker.checkForValidation(data_flake, GlobalString.DataFlake.toString());
 	}
 	
 	

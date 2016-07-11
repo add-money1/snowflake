@@ -8,8 +8,7 @@ import j3l.util.IDataTable;
 import j3l.util.Indexable;
 import j3l.util.InputUtility;
 import j3l.util.LongRange;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ElementChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.api.DataPointer;
 import snowflake.api.FlakeInputStream;
@@ -21,7 +20,7 @@ import snowflake.api.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.18_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public abstract class FileSystemDataTable<T extends Indexable, R extends IBinaryData> implements IDataTable<T, R> {
@@ -57,12 +56,12 @@ public abstract class FileSystemDataTable<T extends Indexable, R extends IBinary
 	 * @param
 	 */
 	protected FileSystemDataTable(IFlake table_flake, int data_entry_size) throws IOException {
-		ArgumentChecker.checkForNull(table_flake, GlobalString.TableFlake.toString());
+		Checker.checkForNull(table_flake, GlobalString.TableFlake.toString());
 		flake_input_stream = table_flake.getFlakeInputStream();
 		flake_output_stream = table_flake.getFlakeOutputStream();
 		available_index_list = new ArrayList<>(1000);
 		clear_array = new byte[
-		    ArgumentChecker.checkForBoundaries(data_entry_size, 1, Integer.MAX_VALUE, GlobalString.DataEntrySize.toString())
+		    Checker.checkForBoundaries(data_entry_size, 1, Integer.MAX_VALUE, GlobalString.DataEntrySize.toString())
 		];
 	}
 	
@@ -102,7 +101,7 @@ public abstract class FileSystemDataTable<T extends Indexable, R extends IBinary
 						pointer.changePosition(-data_length);
 						long current_position_in_flake = pointer.getPositionInFlake();
 						InputUtility.readComplete(flake_input_stream, buffer);
-						if( !ElementChecker.checkAllElements(buffer, (byte)0) ) {
+						if( !Checker.checkAllElements(buffer, (byte)0) ) {
 							long current_range_position;
 							LongRange current_range;
 							for(int a=available_index_list.size()-1;a>=0;a--) {

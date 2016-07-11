@@ -8,8 +8,7 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 
 import j3l.util.IBinaryData;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ElementChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.StorageException;
@@ -19,7 +18,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.02_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class DataTable<T extends IBinaryData> {
@@ -45,7 +44,7 @@ public final class DataTable<T extends IBinaryData> {
 	 */
 	public DataTable(File table_file) {
 		if( StaticMode.TESTING_MODE ) {
-			ArgumentChecker.checkForExistence(table_file, GlobalString.TableFile.toString());
+			Checker.checkForExistence(table_file, GlobalString.TableFile.toString());
 		}
 		try {
 			this.table_file = new RandomAccessFile(table_file, "rw");
@@ -169,7 +168,7 @@ public final class DataTable<T extends IBinaryData> {
 					while( pointer >= 0 ) {
 						table_file.seek(pointer);
 						table_file.readFully(chunk_buffer);
-						if( !ElementChecker.checkAllElementsForZero(chunk_buffer) ) {
+						if( !Checker.checkAllElementsForZero(chunk_buffer) ) {
 							found_non_empty_entry = true;
 							break;
 						}

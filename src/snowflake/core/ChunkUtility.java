@@ -4,8 +4,7 @@ import java.util.zip.CRC32;
 
 import j3l.util.ArrayTool;
 import j3l.util.TransformValue2;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ElementChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.core.manager.ChunkManager;
@@ -16,7 +15,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.08_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class ChunkUtility {
@@ -73,9 +72,9 @@ public final class ChunkUtility {
 	public static void getBinaryData(ChunkData chunk_data, byte[] buffer) {
 		
 		if( StaticMode.TESTING_MODE ) {
-			ArgumentChecker.checkForNull(chunk_data, GlobalString.ChunkData.toString());
-			ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
-			ArgumentChecker.checkForBoundaries(
+			Checker.checkForNull(chunk_data, GlobalString.ChunkData.toString());
+			Checker.checkForNull(buffer, GlobalString.Buffer.toString());
+			Checker.checkForBoundaries(
 				buffer.length,
 				ChunkUtility.BINARY_CHUNK_SIZE,
 				ChunkUtility.BINARY_CHUNK_SIZE,
@@ -133,8 +132,8 @@ public final class ChunkUtility {
 	public static ChunkData getChunkData(byte[] buffer) {
 		
 		if( StaticMode.TESTING_MODE ) {
-			ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
-			ArgumentChecker.checkForBoundaries(
+			Checker.checkForNull(buffer, GlobalString.Buffer.toString());
+			Checker.checkForBoundaries(
 				buffer.length,
 				ChunkUtility.BINARY_CHUNK_SIZE,
 				ChunkUtility.BINARY_CHUNK_SIZE,
@@ -143,7 +142,7 @@ public final class ChunkUtility {
 		}
 		
 		
-		if( ElementChecker.checkAllElementsForZero(buffer) ) {
+		if( Checker.checkAllElementsForZero(buffer) ) {
 			throw new SecurityException("All elements of the buffer are equal to 0!");
 		}
 		
@@ -199,7 +198,7 @@ public final class ChunkUtility {
 	 */
 	public static ChunkData getChunkData(Flake owner_flake, Chunk chunk) {
 
-		ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
+		Checker.checkForValidation(chunk, GlobalString.Chunk.toString());
 		
 		long identification = FlakeManager.ROOT_IDENTIFICATION;
 		int index_in_flake = 0;

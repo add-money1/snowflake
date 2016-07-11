@@ -1,7 +1,7 @@
 package snowflake.filesystem;
 
 import j3l.util.Nameable;
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.api.IAttributeValue;
 
@@ -9,7 +9,7 @@ import snowflake.api.IAttributeValue;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.02_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class Attribute implements Nameable {
@@ -34,8 +34,8 @@ public final class Attribute implements Nameable {
 	 * @return
 	 */
 	public Attribute(String name, IAttributeValue<?> attribute_value) {
-		this.name = ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
-		this.attribute_value = ArgumentChecker.checkForNull(
+		this.name = Checker.checkForEmptyString(name, GlobalString.Name.toString());
+		this.attribute_value = Checker.checkForNull(
 			attribute_value, GlobalString.AttributeValue.toString()
 		);
 	}

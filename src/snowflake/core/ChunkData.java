@@ -1,7 +1,7 @@
 package snowflake.core;
 
 import j3l.util.IBinaryData;
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 
@@ -9,7 +9,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.02_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class ChunkData implements IBinaryData {
@@ -53,11 +53,11 @@ public final class ChunkData implements IBinaryData {
 	 */
 	public ChunkData(long start_address, long length, long flake_indentification, int index_in_flake, byte flag_vector) {
 		if( StaticMode.TESTING_MODE ) {
-			this.start_address = ArgumentChecker.checkForBoundaries(
+			this.start_address = Checker.checkForBoundaries(
 				start_address, 0, Long.MAX_VALUE, GlobalString.StartAddress.toString()
 			);
-			this.length = ArgumentChecker.checkForBoundaries(length, 0, Long.MAX_VALUE, GlobalString.Length.toString());
-			this.index_in_flake = ArgumentChecker.checkForBoundaries(
+			this.length = Checker.checkForBoundaries(length, 0, Long.MAX_VALUE, GlobalString.Length.toString());
+			this.index_in_flake = Checker.checkForBoundaries(
 				index_in_flake, 0, Integer.MAX_VALUE, GlobalString.IndexInFlake.toString()
 			);
 		}

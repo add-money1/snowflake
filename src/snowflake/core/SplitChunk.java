@@ -1,6 +1,6 @@
 package snowflake.core;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 
@@ -8,7 +8,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.02_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class SplitChunk {
@@ -33,8 +33,8 @@ public final class SplitChunk {
 	 */
 	public SplitChunk(Chunk left_chunk, Chunk right_chunk) {
 		if( StaticMode.TESTING_MODE ) {
-			this.left_chunk = ArgumentChecker.checkForValidation(left_chunk, GlobalString.LeftChunk.toString());
-			this.right_chunk = ArgumentChecker.checkForValidation(right_chunk, GlobalString.RightChunk.toString());
+			this.left_chunk = Checker.checkForValidation(left_chunk, GlobalString.LeftChunk.toString());
+			this.right_chunk = Checker.checkForValidation(right_chunk, GlobalString.RightChunk.toString());
 		}
 	}
 	

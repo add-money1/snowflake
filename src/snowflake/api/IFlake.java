@@ -2,8 +2,8 @@ package snowflake.api;
 
 import java.io.IOException;
 
-import j3l.util.check.IValidate;
-import j3l.util.close.IStateClosure;
+import j3l.util.IValidate;
+import j3l.util.IStateClosure;
 import snowflake.core.IChunk;
 
 
@@ -11,7 +11,7 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.23_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public interface IFlake extends IStateClosure, IValidate {

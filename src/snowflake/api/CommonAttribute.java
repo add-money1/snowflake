@@ -3,7 +3,7 @@ package snowflake.api;
 import java.time.Instant;
 import java.util.function.Function;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.filesystem.Attribute;
@@ -14,7 +14,7 @@ import snowflake.filesystem.attribute.TimeStampAttribute;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.01_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public class CommonAttribute<T> {
@@ -71,8 +71,8 @@ public class CommonAttribute<T> {
 	 */
 	private CommonAttribute(String name, Function<T, IAttributeValue<?>> constructor_function) {
 		if( StaticMode.TESTING_MODE ) {
-			this.name = ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
-			this.constructor_function = ArgumentChecker.checkForNull(
+			this.name = Checker.checkForEmptyString(name, GlobalString.Name.toString());
+			this.constructor_function = Checker.checkForNull(
 				constructor_function, GlobalString.ConstructorFunction.toString()
 			);
 		}

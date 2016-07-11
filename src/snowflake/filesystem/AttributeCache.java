@@ -5,8 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import j3l.util.check.ArgumentChecker;
-import j3l.util.check.IValidate;
+import j3l.util.Checker;
+import j3l.util.IValidate;
 import snowflake.GlobalString;
 import snowflake.api.IFlake;
 import snowflake.api.StorageException;
@@ -15,7 +15,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.16_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class AttributeCache implements IValidate {
@@ -49,7 +49,7 @@ public final class AttributeCache implements IValidate {
 	 * @return
 	 */
 	public AttributeCache(IFlake attribute_flake) {
-		this.attribute_flake = ArgumentChecker.checkForValidation(
+		this.attribute_flake = Checker.checkForValidation(
 			attribute_flake, GlobalString.AttributeFlake.toString()
 		);
 		attribute_list = new ArrayList<>();
@@ -65,7 +65,7 @@ public final class AttributeCache implements IValidate {
 	 */
 	private void loadAttribute(String name) {
 		checkDeletion();
-		ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
+		Checker.checkForEmptyString(name, GlobalString.Name.toString());
 		synchronized( attribute_list ) {
 			if( containsAttribute(name) ) {
 				return;
@@ -164,7 +164,7 @@ public final class AttributeCache implements IValidate {
 	 */
 	public Attribute getAttribute(String name) {
 		checkDeletion();
-		ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
+		Checker.checkForEmptyString(name, GlobalString.Name.toString());
 		loadAttribute(name);
 		synchronized( attribute_list ) {
 			for( Attribute attribute : attribute_list ) {
@@ -201,7 +201,7 @@ public final class AttributeCache implements IValidate {
 	 */
 	public void setAttribute(Attribute attribute) {
 		checkDeletion();
-		ArgumentChecker.checkForNull(attribute, GlobalString.Attribute.toString());
+		Checker.checkForNull(attribute, GlobalString.Attribute.toString());
 		synchronized( attribute_list ) {
 			synchronized( attribute_flake ) {
 				attribute_list.removeIf(a -> a.getName().equals(attribute.getName()));

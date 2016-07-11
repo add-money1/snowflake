@@ -3,20 +3,19 @@ package snowflake.filesystem;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import j3l.exception.ValueOverflowException;
+import j3l.util.Checker;
 import j3l.util.InputUtility;
 import j3l.util.LongRange;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ElementChecker;
 import snowflake.GlobalString;
 import snowflake.api.DataPointer;
+import snowflake.api.FileSystemException;
 import snowflake.api.IFlake;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.18_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class FileTable extends FileSystemDataTable<File, FileData> {
@@ -36,12 +35,12 @@ public final class FileTable extends FileSystemDataTable<File, FileData> {
 	 * @see j3l.util.DataTable#saveEntry(j3l.util.Indexable)
 	 */
 	@Override public void saveEntry(File file) throws IOException {
-		ArgumentChecker.checkForValidation(file, GlobalString.File.toString());
+		Checker.checkForValidation(file, GlobalString.File.toString());
 		long index = file.getIndex();
 		synchronized( flake_output_stream ) {
 			long position = index * FileData.FILE_DATA_LENGTH;
 			if( position < 0 ) {
-				throw new ValueOverflowException("The index " + index + " is too big!");
+				throw new FileSystemException("The index " + index + " is too big!");
 			}
 			flake_output_stream.getDataPointer().setPosition(position);
 			flake_output_stream.write(FileData.getBinaryData(
@@ -59,12 +58,12 @@ public final class FileTable extends FileSystemDataTable<File, FileData> {
 	 * @see j3l.util.DataTable#deleteEntry(j3l.util.Indexable)
 	 */
 	@Override public void deleteEntry(File file) throws IOException {
-		ArgumentChecker.checkForValidation(file, GlobalString.File.toString());
+		Checker.checkForValidation(file, GlobalString.File.toString());
 		long index = file.getIndex();
 		synchronized( flake_output_stream ) {
 			long position = index * FileData.FILE_DATA_LENGTH;
 			if( position < 0 ) {
-				throw new ValueOverflowException("The index " + index + " is too big!");
+				throw new FileSystemException("The index " + index + " is too big!");
 			}
 			flake_output_stream.getDataPointer().setPosition(position);
 			flake_output_stream.write(clear_array);
@@ -107,7 +106,7 @@ public final class FileTable extends FileSystemDataTable<File, FileData> {
 			byte[] buffer = FileData.createBuffer();
 			long current_index = 0;
 			while( !pointer.isEOF() ) {
-				if( !ElementChecker.checkAllElements(InputUtility.readComplete(flake_input_stream, buffer), (byte)0) ) {
+				if( !Checker.checkAllElements(InputUtility.readComplete(flake_input_stream, buffer), (byte)0) ) {
 					list.add(new FileData(buffer, current_index));
 				}
 				else {

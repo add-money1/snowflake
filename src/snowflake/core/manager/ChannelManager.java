@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.StorageException;
@@ -18,7 +18,7 @@ import snowflake.core.storage.IChannelManagerConfiguration;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.08_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class ChannelManager implements Closeable, IChannelManager {
@@ -56,7 +56,7 @@ public final class ChannelManager implements Closeable, IChannelManager {
 	 */
 	public ChannelManager(IChannelManagerConfiguration channel_manager_configuration) {
 		if( StaticMode.TESTING_MODE ) {
-			this.channel_manager_configuration = ArgumentChecker.checkForNull(
+			this.channel_manager_configuration = Checker.checkForNull(
 					channel_manager_configuration, GlobalString.ChannelManagerConfiguration.toString()
 			);
 		}
@@ -124,7 +124,7 @@ public final class ChannelManager implements Closeable, IChannelManager {
 	 */
 	@Override public void returnChannel(Returnable channel) throws IOException {
 		if( StaticMode.TESTING_MODE ) {
-			ArgumentChecker.checkForNull(channel, GlobalString.Channel.toString());
+			Checker.checkForNull(channel, GlobalString.Channel.toString());
 		}
 		if( !(channel instanceof Channel) ) {
 			throw new StorageException("The returnable is no instance of Channel!");

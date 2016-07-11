@@ -2,14 +2,14 @@ package snowflake.filesystem;
 
 import j3l.util.ArrayTool;
 import j3l.util.TransformValue2;
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.18_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class FileData extends NodeData {
@@ -53,9 +53,9 @@ public final class FileData extends NodeData {
 	 */
 	public static byte[] getBinaryData(byte[] buffer, long attribute_flake_identification,
 			long data_flake_identification, long parent_directory_identification, boolean is_empty) {
-		ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
+		Checker.checkForNull(buffer, GlobalString.Buffer.toString());
 		int data_length = FileData.FILE_DATA_LENGTH;
-		ArgumentChecker.checkForBoundaries(
+		Checker.checkForBoundaries(
 			buffer.length, data_length, data_length, GlobalString.BufferLength.toString()
 		);
 		byte[] long_buffer = new byte[8];
@@ -118,9 +118,9 @@ public final class FileData extends NodeData {
 	 */
 	public FileData(byte[] buffer, long index) {
 		super(index);
-		ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString());
+		Checker.checkForNull(buffer, GlobalString.Buffer.toString());
 		int data_length = getDataLength();
-		ArgumentChecker.checkForBoundaries(
+		Checker.checkForBoundaries(
 			buffer.length, data_length, data_length, GlobalString.BufferLength.toString()
 		);
 		byte[] long_buffer = new byte[8];

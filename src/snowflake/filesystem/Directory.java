@@ -3,7 +3,7 @@ package snowflake.filesystem;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
@@ -14,7 +14,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.17_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class Directory extends Node implements IDirectory {
@@ -40,7 +40,7 @@ public final class Directory extends Node implements IDirectory {
 	 * @see snowflake.api.IDirectory#removeChildNode(snowflake.filesystem.Node)
 	 */
 	@Override public void addChildNode(Node node) {
-		ArgumentChecker.checkForValidation(node, GlobalString.Node.toString());
+		Checker.checkForValidation(node, GlobalString.Node.toString());
 		synchronized( child_node_list ) {
 			if( child_node_list.contains(node) ) {
 				throw new StorageException("The node \"" + node.toString() + "\" is already a child-node!");
@@ -60,7 +60,7 @@ public final class Directory extends Node implements IDirectory {
 	 * @see snowflake.api.IDirectory#removeChildNode(snowflake.filesystem.Node)
 	 */
 	@Override public void removeChildNode(Node node) {
-		ArgumentChecker.checkForValidation(node, GlobalString.Node.toString());
+		Checker.checkForValidation(node, GlobalString.Node.toString());
 		synchronized( child_node_list ) {
 			if( !child_node_list.contains(node) ) {
 				throw new StorageException("The directory does not contain the node \"" + node.toString() + "\"!");

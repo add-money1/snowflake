@@ -1,14 +1,14 @@
 package snowflake.filesystem;
 
 import j3l.util.IBinaryData;
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.18_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public abstract class NodeData implements IBinaryData {
@@ -26,7 +26,7 @@ public abstract class NodeData implements IBinaryData {
 	 * @param
 	 */
 	protected NodeData(long index) {
-		this.index = ArgumentChecker.checkForBoundaries(index, 0, Long.MAX_VALUE, GlobalString.Index.toString());
+		this.index = Checker.checkForBoundaries(index, 0, Long.MAX_VALUE, GlobalString.Index.toString());
 	}
 	
 	

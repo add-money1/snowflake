@@ -2,7 +2,7 @@ package snowflake.core.manager;
 
 import java.util.Collection;
 
-import j3l.util.close.IStateClosure;
+import j3l.util.IStateClosure;
 import snowflake.core.Chunk;
 import snowflake.core.SplitChunk;
 
@@ -11,7 +11,7 @@ import snowflake.core.SplitChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.02_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public interface IChunkManager extends IStateClosure  {

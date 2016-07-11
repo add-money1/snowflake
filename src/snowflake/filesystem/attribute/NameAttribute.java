@@ -3,7 +3,7 @@ package snowflake.filesystem.attribute;
 import java.util.Arrays;
 
 import j3l.util.ArrayTool;
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.api.IAttributeValue;
 
@@ -11,7 +11,7 @@ import snowflake.api.IAttributeValue;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.19_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class NameAttribute implements IAttributeValue<String> {
@@ -35,7 +35,7 @@ public final class NameAttribute implements IAttributeValue<String> {
 	 * @param
 	 */
 	public NameAttribute(String name) {
-		this.name = ArgumentChecker.checkForNull(name, GlobalString.Name.toString());
+		this.name = Checker.checkForNull(name, GlobalString.Name.toString());
 		encoded_name = null;
 	}
 	

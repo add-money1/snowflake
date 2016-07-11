@@ -10,12 +10,9 @@ import java.util.HashMap;
 import java.util.stream.Stream;
 
 import j3l.util.ArrayTool;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ElementChecker;
-import j3l.util.close.ClosureState;
-import j3l.util.close.IClose;
-import j3l.util.stream.StreamFilter;
-import j3l.util.stream.StreamMode;
+import j3l.util.Checker;
+import j3l.util.ClosureState;
+import j3l.util.IClose;
 import snowflake.GlobalString;
 import snowflake.api.IFlake;
 import snowflake.api.IStorageInformation;
@@ -34,7 +31,7 @@ import snowflake.core.manager.SpecialFlakeIdentification;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.07.09_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IStorageInformation, IAllocateSpace, 
@@ -92,7 +89,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @throws IOException 
 	 */
 	public Storage(StorageConfiguration storage_configuration) throws IOException {
-		this.storage_configuration = ArgumentChecker.checkForNull(
+		this.storage_configuration = Checker.checkForNull(
 			storage_configuration, GlobalString.StorageConfiguration.toString()
 		);
 		channel_manager 		= 	new ChannelManager(storage_configuration);
@@ -185,7 +182,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 					ArrayTool.transferValues(chunk_buffer, input_buffer, 0, position_in_input_buffer, chunk_buffer.length);
 					position_in_input_buffer += chunk_buffer.length;
 					
-					if( !ElementChecker.checkAllElementsForZero(chunk_buffer) ) {
+					if( !Checker.checkAllElementsForZero(chunk_buffer) ) {
 						
 						chunk_data = ChunkUtility.getChunkData(chunk_buffer);
 						chunk = new Chunk(chunk_manager, chunk_data.getStartAddress(), 
@@ -434,7 +431,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @see snowflake.core.IAllocateSpace#allocateSpace(long)
 	 */
 	@Override public ChunkData allocateSpace(long number_of_bytes) {
-		ArgumentChecker.checkForBoundaries(number_of_bytes, 1, Long.MAX_VALUE, GlobalString.NumberOfBytes.toString());
+		Checker.checkForBoundaries(number_of_bytes, 1, Long.MAX_VALUE, GlobalString.NumberOfBytes.toString());
 		ChunkData chunk_data;
 		long new_length;
 		long current_length;

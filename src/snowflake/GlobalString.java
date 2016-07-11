@@ -1,12 +1,12 @@
 package snowflake;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.08_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public enum GlobalString {
@@ -92,7 +92,7 @@ public enum GlobalString {
 	
 	
 	private GlobalString(String string) {
-		this.string = ArgumentChecker.checkForEmptyString(string, "string");
+		this.string = Checker.checkForEmptyString(string, "string");
 	}
 	
 	

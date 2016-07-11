@@ -3,7 +3,7 @@ package snowflake.filesystem.manager;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.api.FileSystemException;
 import snowflake.api.IFlake;
@@ -12,7 +12,7 @@ import snowflake.api.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.01_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationTable {
@@ -36,7 +36,7 @@ public final class DeduplicationTable {
 	 * @param
 	 */
 	public DeduplicationTable(IFlake deduplication_table_flake) {
-		this.deduplication_table_flake = ArgumentChecker.checkForValidation(
+		this.deduplication_table_flake = Checker.checkForValidation(
 			deduplication_table_flake, GlobalString.DeduplicationTableFlake.toString()
 		);
 		deduplication_map = new HashMap<>();
@@ -63,7 +63,7 @@ public final class DeduplicationTable {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked") public void add(DeduplicationBlock deduplication_block) {
-		ArgumentChecker.checkForNull(deduplication_block, GlobalString.DeduplicationBlock.toString());
+		Checker.checkForNull(deduplication_block, GlobalString.DeduplicationBlock.toString());
 		byte[] buffer = deduplication_block.getBlockBuffer();
 		final Object object;
 		synchronized( deduplication_map ) {
@@ -117,8 +117,8 @@ public final class DeduplicationTable {
 	 * @return the index of the associated deplucation_block or -1 if it does not exist
 	 */
 	@SuppressWarnings("unchecked") public long getIndex(byte[] data_block) {
-		ArgumentChecker.checkForNull(data_block, GlobalString.DataBlock.toString());
-		ArgumentChecker.checkForBoundaries(
+		Checker.checkForNull(data_block, GlobalString.DataBlock.toString());
+		Checker.checkForBoundaries(
 			data_block.length,
 			DeduplicationBlock.DEDUPLICATION_BLOCK_SIZE,
 			DeduplicationBlock.DEDUPLICATION_BLOCK_SIZE,

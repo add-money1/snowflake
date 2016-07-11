@@ -1,6 +1,6 @@
 package snowflake.core.storage;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 
@@ -9,7 +9,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.08_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public enum StorageConfigurationElement {
@@ -42,7 +42,7 @@ public enum StorageConfigurationElement {
 	 */
 	private StorageConfigurationElement(String name) {
 		if( StaticMode.TESTING_MODE ) {
-			this.name = ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
+			this.name = Checker.checkForEmptyString(name, GlobalString.Name.toString());
 		}
 		else {
 			this.name = name;

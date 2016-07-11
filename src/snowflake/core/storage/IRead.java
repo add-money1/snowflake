@@ -2,7 +2,7 @@ package snowflake.core.storage;
 
 import java.io.IOException;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.api.DataPointer;
 import snowflake.core.Returnable;
@@ -34,7 +34,7 @@ public interface IRead extends Returnable {
 	 * @return
 	 */
 	default int read(DataPointer data_pointer, byte[] buffer) throws IOException {
-		if( ArgumentChecker.checkForNull(buffer, GlobalString.Buffer.toString()).length == 0 ) {
+		if( Checker.checkForNull(buffer, GlobalString.Buffer.toString()).length == 0 ) {
 			return 0;
 		}
 		else {

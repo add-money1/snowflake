@@ -1,6 +1,6 @@
 package snowflake.core.manager;
 
-import j3l.util.close.IStateClosure;
+import j3l.util.IStateClosure;
 import snowflake.api.IFlake;
 
 
@@ -8,7 +8,7 @@ import snowflake.api.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.05.03_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public interface IFlakeManager extends IStateClosure  {

@@ -7,9 +7,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import j3l.util.check.ArgumentChecker;
-import j3l.util.close.ClosureState;
-import j3l.util.close.IClose;
+import j3l.util.Checker;
+import j3l.util.ClosureState;
+import j3l.util.IClose;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.CommonAttribute;
@@ -23,7 +23,7 @@ import snowflake.filesystem.manager.DeduplicationManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.09_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public class FileSystem implements IClose<FileSystemException> {
@@ -78,7 +78,7 @@ public class FileSystem implements IClose<FileSystemException> {
 	 * @throws IOException 
 	 */
 	public FileSystem(Storage storage) {
-		this.storage = ArgumentChecker.checkForNull(storage, GlobalString.Storage.toString());
+		this.storage = Checker.checkForNull(storage, GlobalString.Storage.toString());
 		root_directory = new RootDirectory(this);
 		try {
 			file_table = new FileTable(storage.getFileTableFlake());
@@ -193,7 +193,7 @@ public class FileSystem implements IClose<FileSystemException> {
 		file.setAttribute(CommonAttribute.Last_Modification_Time_Stamp.createAttribute(now));
 		file.setAttribute(
 			CommonAttribute.Name.createAttribute(
-				ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString())
+				Checker.checkForEmptyString(name, GlobalString.Name.toString())
 			)
 		);
 		file_table.saveEntry(file);
@@ -232,7 +232,7 @@ public class FileSystem implements IClose<FileSystemException> {
 		directory.setAttribute(CommonAttribute.Last_Modification_Time_Stamp.createAttribute(now));
 		directory.setAttribute(
 			CommonAttribute.Name.createAttribute(
-				ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString())
+				Checker.checkForEmptyString(name, GlobalString.Name.toString())
 			)
 		);
 		directory_table.saveEntry(directory);
@@ -247,7 +247,7 @@ public class FileSystem implements IClose<FileSystemException> {
 	 * @return
 	 */
 	public Node getNode(String path) {
-		String[] path_elements = ArgumentChecker.checkForEmptyString(
+		String[] path_elements = Checker.checkForEmptyString(
 			path, GlobalString.Path.toString()).split(FileSystem.NODE_SEPERATOR
 		);
 		if( path_elements == null || path_elements.length == 0 ) {

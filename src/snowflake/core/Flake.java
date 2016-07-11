@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import j3l.util.check.ArgumentChecker;
-import j3l.util.close.ClosureState;
-import j3l.util.close.IClose;
+import j3l.util.Checker;
+import j3l.util.ClosureState;
+import j3l.util.IClose;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.FlakeInputStream;
@@ -22,7 +22,7 @@ import snowflake.core.manager.IChunkManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.07_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class Flake implements IClose<IOException>, IFlake {
@@ -130,10 +130,10 @@ public final class Flake implements IClose<IOException>, IFlake {
 			throw new SecurityException("Can not change the flake_stream_manager after the flake has been opened!");
 		}
 		if( StaticMode.TESTING_MODE ) {
-			this.channel_manager = ArgumentChecker.checkForNull(
+			this.channel_manager = Checker.checkForNull(
 					channel_manager, GlobalString.ChannelManager.toString()
 			);
-			this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
+			this.chunk_manager = Checker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
 		}
 		else {
 			this.channel_manager = channel_manager;
@@ -225,7 +225,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 */
 	public int getIndexOfChunk(Chunk chunk) {
 		if( StaticMode.TESTING_MODE ) {
-			ArgumentChecker.checkForValidation(this);
+			Checker.checkForValidation(this);
 		}
 		synchronized( chunk_list ) {
 			return chunk_list.indexOf(chunk);
@@ -267,7 +267,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 		int index;
 		Chunk current_chunk;
 		synchronized( chunk_list ) {
-			ArgumentChecker.checkForBoundaries(
+			Checker.checkForBoundaries(
 				position_in_flake, 0, getLength(), GlobalString.PositionInFlake.toString()
 			);
 			right = chunk_list.size() - 1;
@@ -341,7 +341,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#setLength(long)
 	 */
 	@Override public void setLength(long new_length) {
-		ArgumentChecker.checkForValidation(this);
+		Checker.checkForValidation(this);
 		if( new_length < 0 ) {
 			throw new IllegalArgumentException("The new_length must be smaller than 0!");
 		}	
@@ -398,7 +398,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 		synchronized( chunk_list ) {
 			if( StaticMode.TESTING_MODE ) {
 				return chunk_list.get(
-					ArgumentChecker.checkForBoundaries(index, 0, chunk_list.size() - 1, GlobalString.Index.toString())
+					Checker.checkForBoundaries(index, 0, chunk_list.size() - 1, GlobalString.Index.toString())
 				);
 			}
 			return chunk_list.get(index);
@@ -411,8 +411,8 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 */
 	@Override public IChunk getChunkAtPositionInFlake(long position_in_flake) {
 		if( StaticMode.TESTING_MODE ) {
-			ArgumentChecker.checkForValidation(this);
-			ArgumentChecker.checkForBoundaries(
+			Checker.checkForValidation(this);
+			Checker.checkForBoundaries(
 				position_in_flake, 0, getLength() - 1, GlobalString.PositionInFlake.toString()
 			);
 		}
@@ -586,7 +586,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 		Chunk current_chunk;
 		long remaining_bytes;
 		synchronized( chunk_list ) {
-			remaining_bytes = ArgumentChecker.checkForBoundaries(
+			remaining_bytes = Checker.checkForBoundaries(
 				number_of_bytes, 1, getLength(), GlobalString.NumberOfBytes.toString()
 			);
 			do {
@@ -625,7 +625,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 		Chunk current_chunk;
 		long remaining_bytes;
 		synchronized( chunk_list ) {
-			remaining_bytes = ArgumentChecker.checkForBoundaries(
+			remaining_bytes = Checker.checkForBoundaries(
 				number_of_bytes, 1, getLength(), GlobalString.NumberOfBytes.toString()
 			);
 			do {
@@ -653,7 +653,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#cutAt(long, long)
 	 */
 	@Override public void cutAt(long position_in_flake, long number_of_bytes) {
-		long remaining_bytes = ArgumentChecker.checkForBoundaries(
+		long remaining_bytes = Checker.checkForBoundaries(
 			number_of_bytes, 1, getLength(), GlobalString.NumberOfBytes.toString()
 		);
 		List<Chunk> list = removeAllChunksFrom(position_in_flake);
@@ -725,7 +725,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 		Chunk previous_chunk, current_chunk;
 		synchronized( chunk_list ) {
 			for( Chunk chunk : chunk_collection ) {
-				ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
+				Checker.checkForValidation(chunk, GlobalString.Chunk.toString());
 				if( chunk_list.contains(chunk) ) {
 					throw new SecurityException("The flake already contains this chunk: " + chunk.toString() + "!");
 				}
@@ -762,7 +762,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 				last_chunk = chunk_list.get( chunk_list.size() - 1 );
 			}
 			for( Chunk chunk : chunk_collection ) {
-				ArgumentChecker.checkForValidation(chunk, GlobalString.Chunk.toString());
+				Checker.checkForValidation(chunk, GlobalString.Chunk.toString());
 				if( chunk_list.contains(chunk) ) {
 					throw new SecurityException("The flake already contains this chunk: " + chunk.toString() + "!");
 				}
@@ -786,7 +786,7 @@ public final class Flake implements IClose<IOException>, IFlake {
 	 * @see snowflake.api.IFlake#expandAt(long, long)
 	 */
 	@Override public void expandAt(long position_in_flake, long number_of_bytes) {
-		ArgumentChecker.checkForBoundaries(
+		Checker.checkForBoundaries(
 			number_of_bytes, 1, getLength(), GlobalString.NumberOfBytes.toString()
 		);
 		List<Chunk> list = removeAllChunksFrom(position_in_flake);

@@ -7,7 +7,7 @@ import java.util.List;
 
 import j3l.util.InputUtility;
 import j3l.util.TransformValue2;
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.api.DataPointer;
 import snowflake.api.FlakeInputStream;
@@ -20,7 +20,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.10_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 
@@ -40,8 +40,8 @@ public final class AttributeUtility {
 	 * @return
 	 */
 	public static Attribute loadAttribute(String name, IFlake attribute_flake) {
-		ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
-		ArgumentChecker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
+		Checker.checkForEmptyString(name, GlobalString.Name.toString());
+		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
 		DataPointer pointer;
 		int name_length;
 		int type_name_length;
@@ -147,7 +147,7 @@ public final class AttributeUtility {
 	 * @return
 	 */
 	public static List<Attribute> loadAllAttributes(IFlake attribute_flake) {
-		ArgumentChecker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
+		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
 		ArrayList<Attribute> list = new ArrayList<>(10);
 		DataPointer pointer;
 		int name_length;
@@ -253,7 +253,7 @@ public final class AttributeUtility {
 	 * @return
 	 */
 	public static List<Attribute> loadNecessaryAttributes(IFlake attribute_flake, List<Attribute> attribute_list) {
-		ArgumentChecker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
+		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
 		ArrayList<Attribute> list = new ArrayList<>(10);
 		DataPointer pointer;
 		int name_length;
@@ -370,8 +370,8 @@ public final class AttributeUtility {
 	 * @return
 	 */
 	public static void setAttribute(Attribute attribute, IFlake attribute_flake) {
-		ArgumentChecker.checkForNull(attribute, GlobalString.Attribute.toString());
-		ArgumentChecker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
+		Checker.checkForNull(attribute, GlobalString.Attribute.toString());
+		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
 		DataPointer pointer;
 		int name_length = 0;
 		int type_name_length = 0;

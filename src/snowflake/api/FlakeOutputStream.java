@@ -3,7 +3,7 @@ package snowflake.api;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.core.Flake;
@@ -15,7 +15,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.01_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class FlakeOutputStream extends OutputStream {
@@ -59,9 +59,9 @@ public final class FlakeOutputStream extends OutputStream {
 	 */
 	public FlakeOutputStream(Flake flake, IWrite write, IReturnChannel channel_returner) {
 		if( StaticMode.TESTING_MODE ) {
-			this.flake = ArgumentChecker.checkForNull(flake, GlobalString.Flake.toString());
-			this.write = ArgumentChecker.checkForNull(write, GlobalString.Write.toString());
-			this.channel_returner = ArgumentChecker.checkForNull(
+			this.flake = Checker.checkForNull(flake, GlobalString.Flake.toString());
+			this.write = Checker.checkForNull(write, GlobalString.Write.toString());
+			this.channel_returner = Checker.checkForNull(
 				channel_returner, GlobalString.ChannelReturner.toString()
 			);
 		}

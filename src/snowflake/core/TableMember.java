@@ -1,7 +1,7 @@
 package snowflake.core;
 
 import j3l.util.IBinaryData;
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 
@@ -10,7 +10,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.02_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class TableMember<T extends IBinaryData> {
@@ -36,8 +36,8 @@ public final class TableMember<T extends IBinaryData> {
 	 */ 
 	public TableMember(T binary_data, long table_index) {
 		if( StaticMode.TESTING_MODE ) {
-			this.binary_data = ArgumentChecker.checkForNull(binary_data, GlobalString.BinaryData.toString());
-			this.table_index = ArgumentChecker.checkForBoundaries(
+			this.binary_data = Checker.checkForNull(binary_data, GlobalString.BinaryData.toString());
+			this.table_index = Checker.checkForBoundaries(
 				table_index, 0, Long.MAX_VALUE, GlobalString.TableIndex.toString()
 			);
 		}

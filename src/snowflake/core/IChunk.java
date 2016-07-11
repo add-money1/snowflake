@@ -1,12 +1,12 @@
 package snowflake.core;
 
-import j3l.util.check.IValidate;
+import j3l.util.IValidate;
 
 /**
  * <p>provides read-only informations of a Chunk</p>
  * 
  * @since JDK 1.8
- * @version 2016.05.03_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public interface IChunk extends IValidate {

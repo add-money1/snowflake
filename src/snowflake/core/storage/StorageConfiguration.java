@@ -5,8 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import j3l.configuration.ConfigurationManager;
-import j3l.util.check.ArgumentChecker;
+import j3l.util.ConfigurationManager;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 
@@ -15,7 +15,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.08_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class StorageConfiguration implements IStorageConfiguration {
@@ -36,7 +36,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	 */
 	public StorageConfiguration(File configuration_file) throws IOException {
 		if( StaticMode.TESTING_MODE ) {
-			ArgumentChecker.checkForNull(configuration_file, GlobalString.ConfigurationFile.toString());
+			Checker.checkForNull(configuration_file, GlobalString.ConfigurationFile.toString());
 		}
 		if( !configuration_file.exists() ) {
 			try {
@@ -62,7 +62,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	 * @return
 	 */
 	private int getValue(String name, int default_value) {
-		ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
+		Checker.checkForEmptyString(name, GlobalString.Name.toString());
 		String value_string = configuration_manager.getValue(name);
 		int actual_value = default_value;
 		if( !value_string.equals("") ) {
@@ -87,7 +87,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	 * @return
 	 */
 	private long getValue(String name, long default_value) {
-		ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
+		Checker.checkForEmptyString(name, GlobalString.Name.toString());
 		String value_string = configuration_manager.getValue(name);
 		long actual_value = default_value;
 		if( !value_string.equals("") ) {
@@ -112,7 +112,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	 * @return
 	 */
 	private double getValue(String name, double default_value) {
-		ArgumentChecker.checkForEmptyString(name, GlobalString.Name.toString());
+		Checker.checkForEmptyString(name, GlobalString.Name.toString());
 		String value_string = configuration_manager.getValue(name);
 		double actual_value = default_value;
 		if( !value_string.equals("") ) {
@@ -194,7 +194,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		configuration_manager.setElement(
 			StorageConfigurationElement.DefragmentationTransferBufferSize.getName(), 
 			Integer.toString(
-				ArgumentChecker.checkForBoundaries(
+				Checker.checkForBoundaries(
 					defragmentation_transfer_buffer_size, 
 					1,
 					Integer.MAX_VALUE, 
@@ -215,7 +215,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		configuration_manager.setElement(
 			StorageConfigurationElement.ClearArraySize.getName(), 
 			Integer.toString(
-				ArgumentChecker.checkForBoundaries(
+				Checker.checkForBoundaries(
 					clear_array_size, 
 					1,
 					Integer.MAX_VALUE, 
@@ -236,7 +236,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		configuration_manager.setElement(
 			StorageConfigurationElement.MaximumAvailableChunks.getName(), 
 			Integer.toString(
-				ArgumentChecker.checkForBoundaries(
+				Checker.checkForBoundaries(
 					maximum_available_chunks, 
 					1,
 					Integer.MAX_VALUE, 
@@ -257,7 +257,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		configuration_manager.setElement(
 			StorageConfigurationElement.MaximumNumberOfAvailableChannel.getName(), 
 			Integer.toString(
-				ArgumentChecker.checkForBoundaries(
+				Checker.checkForBoundaries(
 					maximum_number_of_available_channel, 
 					1,
 					Integer.MAX_VALUE, 
@@ -278,7 +278,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		configuration_manager.setElement(
 			StorageConfigurationElement.PreferredAvailableStorageSize.getName(), 
 			Long.toString(
-				ArgumentChecker.checkForBoundaries(
+				Checker.checkForBoundaries(
 					preferred_available_storage_size, 
 					0, 
 					Long.MAX_VALUE, 
@@ -299,7 +299,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		configuration_manager.setElement(
 			StorageConfigurationElement.DefragmentationChunkSizeTreshhold.getName(), 
 			Long.toString(
-				ArgumentChecker.checkForBoundaries(
+				Checker.checkForBoundaries(
 					defragmentation_chunk_size_treshhold, 
 					1, 
 					Long.MAX_VALUE, 
@@ -320,7 +320,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		configuration_manager.setElement(
 			StorageConfigurationElement.ChunkRecyclingTreshhold.getName(), 
 			Long.toString(
-				ArgumentChecker.checkForBoundaries(
+				Checker.checkForBoundaries(
 					chunk_recycling_treshhold, 
 					1, 
 					Long.MAX_VALUE, 
@@ -341,7 +341,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		configuration_manager.setElement(
 			StorageConfigurationElement.MaximumStorageSize.getName(), 
 			Long.toString(
-				ArgumentChecker.checkForBoundaries(
+				Checker.checkForBoundaries(
 					maximum_storage_size, 
 					1, 
 					Long.MAX_VALUE, 
@@ -362,7 +362,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 		configuration_manager.setElement(
 			StorageConfigurationElement.DataFileIncreaseRate.getName(), 
 			Double.toString(
-				ArgumentChecker.checkForBoundaries(
+				Checker.checkForBoundaries(
 					data_file_increase_rate, 
 					0, 
 					Double.MAX_VALUE, 
@@ -382,7 +382,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	public void setChunkTableFilePath(String chunk_table_file_path) {
 		configuration_manager.setElement(
 			StorageConfigurationElement.ChunkTableFilePath.getName(), 
-			ArgumentChecker.checkForEmptyString(
+			Checker.checkForEmptyString(
 				chunk_table_file_path, 
 				StorageConfigurationElement.ChunkTableFilePath.getName()
 			)
@@ -399,7 +399,7 @@ public final class StorageConfiguration implements IStorageConfiguration {
 	public void setDataFilePath(String data_file_path) {
 		configuration_manager.setElement(
 			StorageConfigurationElement.DataFilePath.getName(), 
-			ArgumentChecker.checkForEmptyString(
+			Checker.checkForEmptyString(
 				data_file_path, 
 				StorageConfigurationElement.DataFilePath.getName()
 			)

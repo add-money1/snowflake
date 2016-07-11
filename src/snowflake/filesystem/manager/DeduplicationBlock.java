@@ -3,15 +3,14 @@ package snowflake.filesystem.manager;
 import java.time.Instant;
 import java.util.Arrays;
 
-import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ElementChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.01_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationBlock {
@@ -53,10 +52,10 @@ public final class DeduplicationBlock {
 	 * @param
 	 */
 	public DeduplicationBlock(DeduplicationTable deduplication_table, long index) {
-		this.deduplication_table = ArgumentChecker.checkForNull(
+		this.deduplication_table = Checker.checkForNull(
 				deduplication_table, GlobalString.DeduplicationTable.toString()
 		);
-		this.index = ArgumentChecker.checkForBoundaries(
+		this.index = Checker.checkForBoundaries(
 			index, 0, Long.MAX_VALUE, GlobalString.Index.toString()
 		);
 		block_buffer = null;
@@ -135,9 +134,9 @@ public final class DeduplicationBlock {
 	 * @return
 	 */
 	public boolean hasData(byte[] data_block) {
-		ArgumentChecker.checkForNull(data_block, GlobalString.DataBlock.toString());
+		Checker.checkForNull(data_block, GlobalString.DataBlock.toString());
 		byte[] block_buffer = getBlockBufferInternal();
-		return ElementChecker.checkAllElementsForEquality(block_buffer, data_block);
+		return Checker.checkAllElementsForEquality(block_buffer, data_block);
 	}
 
 }

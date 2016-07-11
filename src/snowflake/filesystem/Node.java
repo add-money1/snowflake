@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import j3l.util.Indexable;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.check.IValidate;
+import j3l.util.Checker;
+import j3l.util.IValidate;
 import snowflake.GlobalString;
 import snowflake.api.CommonAttribute;
 import snowflake.api.FileSystemException;
@@ -18,7 +18,7 @@ import snowflake.filesystem.attribute.NameAttribute;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.19_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public abstract class Node implements IValidate, Indexable {
@@ -58,7 +58,7 @@ public abstract class Node implements IValidate, Indexable {
 		attribute_cache = new AttributeCache(attribute_flake);
 		setParentDirectory(parent_directory);
 		is_deleted = false;
-		this.index = ArgumentChecker.checkForBoundaries(index, 0, Long.MAX_VALUE, GlobalString.Index.toString());
+		this.index = Checker.checkForBoundaries(index, 0, Long.MAX_VALUE, GlobalString.Index.toString());
 	}
 	
 	
@@ -113,7 +113,7 @@ public abstract class Node implements IValidate, Indexable {
 	 * @return
 	 */
 	public final void setParentDirectory(IDirectory parent_directory) {
-		ArgumentChecker.checkForNull(parent_directory, GlobalString.ParentDirectory.toString());
+		Checker.checkForNull(parent_directory, GlobalString.ParentDirectory.toString());
 		if( this.parent_directory != null ) {
 			this.parent_directory.removeChildNode(this);
 		}

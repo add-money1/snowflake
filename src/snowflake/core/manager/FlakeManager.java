@@ -6,12 +6,9 @@ import java.util.Random;
 import java.util.stream.Stream;
 
 import j3l.util.RandomFactory;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.close.ClosureState;
-import j3l.util.close.IClose;
-import j3l.util.stream.StreamFactory;
-import j3l.util.stream.StreamFilter;
-import j3l.util.stream.StreamMode;
+import j3l.util.Checker;
+import j3l.util.ClosureState;
+import j3l.util.IClose;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.IFlake;
@@ -24,7 +21,7 @@ import snowflake.core.Flake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.09_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class FlakeManager implements IFlakeManager, IClose<StorageException> {
@@ -74,7 +71,7 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	 */
 	public FlakeManager(IChannelManager channel_manager) {
 		if( StaticMode.TESTING_MODE ) {
-			this.channel_manager = ArgumentChecker.checkForNull(
+			this.channel_manager = Checker.checkForNull(
 				channel_manager, GlobalString.ChannelManager.toString()
 			);
 		}

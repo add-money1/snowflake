@@ -1,13 +1,13 @@
 package snowflake.filesystem;
 
-import j3l.util.check.ArgumentChecker;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.06_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class AttributeHeader {
@@ -55,10 +55,10 @@ public final class AttributeHeader {
 	public AttributeHeader(short name_length, short type_name_length, int value_length, long last_changed_time_stamp) {
 		this.name_length = name_length;
 		this.type_name_length = type_name_length;
-		this.value_length = ArgumentChecker.checkForBoundaries(
+		this.value_length = Checker.checkForBoundaries(
 			value_length, 0, Integer.MAX_VALUE, GlobalString.ValueLength.toString()
 		);
-		this.last_changed_time_stamp = ArgumentChecker.checkForBoundaries(
+		this.last_changed_time_stamp = Checker.checkForBoundaries(
 			last_changed_time_stamp, 0, Long.MAX_VALUE, GlobalString.LastChangedTimeStamp.toString()
 		);
 	}

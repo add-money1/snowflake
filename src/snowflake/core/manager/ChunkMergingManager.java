@@ -5,13 +5,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Stream;
 
-import j3l.util.IAdd;
 import j3l.util.LoopedTaskThread;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.stream.IStream;
-import j3l.util.stream.StreamFactory;
-import j3l.util.stream.StreamFilter;
-import j3l.util.stream.StreamMode;
+import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.StorageException;
@@ -23,10 +18,10 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.08_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
-public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
+public final class ChunkMergingManager {
 	
 	
 	/**
@@ -61,7 +56,7 @@ public final class ChunkMergingManager implements IAdd<Chunk>, IStream<IChunk> {
 	 */
 	public ChunkMergingManager(IChunkManager chunk_manager) {
 		if( StaticMode.TESTING_MODE ) {
-			this.chunk_manager = ArgumentChecker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
+			this.chunk_manager = Checker.checkForNull(chunk_manager, GlobalString.ChunkManager.toString());
 		}
 		else {
 			this.chunk_manager = chunk_manager;

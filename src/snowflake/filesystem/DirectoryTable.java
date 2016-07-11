@@ -3,20 +3,21 @@ package snowflake.filesystem;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import j3l.exception.ValueOverflowException;
+import com.sun.org.apache.xml.internal.security.utils.ElementChecker;
+
+import j3l.util.Checker;
 import j3l.util.InputUtility;
 import j3l.util.LongRange;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.check.ElementChecker;
 import snowflake.GlobalString;
 import snowflake.api.DataPointer;
 import snowflake.api.IFlake;
+import snowflake.api.StorageException;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.18_0
+ * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
 public final class DirectoryTable extends FileSystemDataTable<Directory, DirectoryData> {
@@ -36,12 +37,12 @@ public final class DirectoryTable extends FileSystemDataTable<Directory, Directo
 	 * @see j3l.util.DataTable#saveEntry(j3l.util.Indexable)
 	 */
 	@Override public void saveEntry(Directory directory) throws IOException {
-		ArgumentChecker.checkForValidation(directory, GlobalString.Directory.toString());
+		Checker.checkForValidation(directory, GlobalString.Directory.toString());
 		long index = directory.getIndex();
 		synchronized( flake_output_stream ) {
 			long position = index * DirectoryData.DIRECTORY_DATA_LENGTH;
 			if( position < 0 ) {
-				throw new ValueOverflowException("The index " + index + " is too big!");
+				throw new StorageException("The index " + index + " is too big!");
 			}
 			flake_output_stream.getDataPointer().setPosition(position);
 			flake_output_stream.write(DirectoryData.getBinaryData(
@@ -57,12 +58,12 @@ public final class DirectoryTable extends FileSystemDataTable<Directory, Directo
 	 * @see j3l.util.DataTable#deleteEntry(j3l.util.Indexable)
 	 */
 	@Override public void deleteEntry(Directory directory) throws IOException {
-		ArgumentChecker.checkForValidation(directory, GlobalString.Directory.toString());
+		Checker.checkForValidation(directory, GlobalString.Directory.toString());
 		long index = directory.getIndex();
 		synchronized( flake_output_stream ) {
 			long position = index * DirectoryData.DIRECTORY_DATA_LENGTH;
 			if( position < 0 ) {
-				throw new ValueOverflowException("The index " + index + " is too big!");
+				throw new StorageException("The index " + index + " is too big!");
 			}
 			flake_output_stream.getDataPointer().setPosition(position);
 			flake_output_stream.write(clear_array);
