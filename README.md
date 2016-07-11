@@ -1,3 +1,3 @@
 # snowflake
 
-- Read Snowflake/changelog.txt for detailed changes
+- code-improvements and constructive suggestions are welcomed
