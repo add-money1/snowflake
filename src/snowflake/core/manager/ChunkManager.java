@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.stream.Stream;
-
-import javax.xml.stream.StreamFilter;
 
 import j3l.util.Checker;
 import j3l.util.ClosureState;
@@ -281,13 +278,13 @@ public final class ChunkManager implements IChunkManager, IChunkMemory, IClose<I
 	 * @param
 	 * @return
 	 */
-	public Stream<IChunk> streamAvailableChunks(StreamMode stream_mode) {
+	public ArrayList<IChunk> getAvailableChunks() {
+		ArrayList<IChunk> list;
 		synchronized( available_chunk_tree ) {
-			return Stream.concat(
-				available_chunk_tree.stream(stream_mode).filter(StreamFilter::filterNull).<IChunk>map(_o->_o),
-				chunk_merging_manager.getStream(stream_mode)
-			);
+			list = new ArrayList<>(available_chunk_tree.toList());
+			list.addAll(chunk_merging_manager.getChunks());
 		}
+		return list;
 	}
 
 
