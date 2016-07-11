@@ -3,9 +3,9 @@ package snowflake.filesystem.manager;
 import java.util.ArrayList;
 
 import j3l.util.LoopedTaskThread;
-import j3l.util.check.ArgumentChecker;
-import j3l.util.close.ClosureState;
-import j3l.util.close.IClose;
+import j3l.util.Checker;
+import j3l.util.ClosureState;
+import j3l.util.IClose;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.FileSystemException;
@@ -68,7 +68,7 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 	 */
 	public DeduplicationManager(FileSystem file_system, IFlake deduplication_table_flake) {
 		if( StaticMode.TESTING_MODE ) {
-			this.file_system = ArgumentChecker.checkForNull(file_system, GlobalString.FileSystem.toString());
+			this.file_system = Checker.checkForNull(file_system, GlobalString.FileSystem.toString());
 		}
 		else {
 			this.file_system = file_system;
