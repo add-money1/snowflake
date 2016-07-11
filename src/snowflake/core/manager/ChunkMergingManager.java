@@ -3,10 +3,11 @@ package snowflake.core.manager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.stream.Stream;
 
-import j3l.util.LoopedTaskThread;
+import com.sun.swing.internal.plaf.synth.resources.synth;
+
 import j3l.util.Checker;
+import j3l.util.LoopedTaskThread;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.StorageException;
@@ -196,11 +197,13 @@ public final class ChunkMergingManager {
 	}
 	
 	
-	/*
-	 * (non-Javadoc)
-	 * @see j3l.util.collection.interfaces.add.IBasicAdd#add(java.lang.Object)
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
 	 */
-	@Override public boolean add(Chunk chunk) {
+	public boolean add(Chunk chunk) {
 		if( chunk == null ) {
 			return false;
 		}
@@ -213,11 +216,13 @@ public final class ChunkMergingManager {
 	}
 	
 	
-	/*
-	 * (non-Javadoc)
-	 * @see j3l.util.IBasicAdd#addAll(java.util.Collection)
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
 	 */
-	@Override public boolean addAll(Collection<? extends Chunk> chunk_collection) {
+	public boolean addAll(Collection<? extends Chunk> chunk_collection) {
 		if( chunk_collection == null || chunk_collection.size() == 0 ) {
 			return false;
 		}
@@ -227,12 +232,16 @@ public final class ChunkMergingManager {
 	}
 	
 	
-	/* (non-Javadoc)
-	 * @see j3l.util.stream.IStream#getStream(j3l.util.stream.StreamMode)
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
 	 */
-	@Override public Stream<IChunk> getStream(StreamMode stream_mode) {
-		return StreamFactory.getStream(chunk_list, stream_mode)
-				.filter(StreamFilter::filterNull).<IChunk>map(_i->_i);
+	public ArrayList<IChunk> getChunks() {
+		synchronized( chunk_list ) {
+			return new ArrayList<>(chunk_list);
+		}
 	}
 	
 }
