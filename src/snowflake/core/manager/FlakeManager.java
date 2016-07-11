@@ -3,12 +3,11 @@ package snowflake.core.manager;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Random;
-import java.util.stream.Stream;
 
-import j3l.util.RandomFactory;
 import j3l.util.Checker;
 import j3l.util.ClosureState;
 import j3l.util.IClose;
+import j3l.util.RandomFactory;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.IFlake;
@@ -91,9 +90,8 @@ public final class FlakeManager implements IFlakeManager, IClose<StorageExceptio
 	 * @param
 	 * @return
 	 */
-	public Stream<IFlake> streamFlakes(StreamMode stream_mode) {
-		return StreamFactory.getStream(new ArrayList<>(flake_table.values()), stream_mode)
-				.filter(StreamFilter::filterNull).filter(flake -> !flake.isDeleted()).<IFlake>map(_O_->_O_);
+	public ArrayList<IFlake> getFlakes() {
+		return new ArrayList<>(flake_table.values());
 	}
 	
 	
