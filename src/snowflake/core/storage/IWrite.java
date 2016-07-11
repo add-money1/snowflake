@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import j3l.util.Checker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.DataPointer;
 import snowflake.core.Returnable;
 
@@ -33,7 +34,10 @@ public interface IWrite extends Returnable {
 	 * @return
 	 */
 	default void write(DataPointer data_pointer, byte[] buffer) throws IOException {
-		if( Checker.checkForNull(buffer, GlobalString.Buffer.toString()).length == 0 ) {
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(buffer, GlobalString.Buffer.toString());
+		}
+		if( buffer.length == 0 ) {
 			return;
 		}
 		write(data_pointer, buffer, 0, buffer.length);
