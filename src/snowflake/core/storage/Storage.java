@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.stream.Stream;
 
 import j3l.util.ArrayTool;
 import j3l.util.Checker;
@@ -263,8 +262,8 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @param
 	 * @return
 	 */
-	public Stream<IFlake> getFlakes(StreamMode stream_mode) {
-		return flake_manager.streamFlakes(stream_mode);
+	public ArrayList<IFlake> getFlakes() {
+		return flake_manager.getFlakes();
 	}
 	
 	
@@ -274,8 +273,8 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @param
 	 * @return
 	 */
-	public Stream<IChunk> getAvailableChunks(StreamMode stream_mode) {
-		return chunk_manager.streamAvailableChunks(stream_mode);
+	public ArrayList<IChunk> getAvailableChunks() {
+		return chunk_manager.getAvailableChunks();
 	}
 	
 	
@@ -463,7 +462,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfFlakes()
 	 */
 	@Override public int getNumberOfFlakes() {
-		long number_of_flakes = flake_manager.streamFlakes(StreamMode.Parallel).count();
+		long number_of_flakes = flake_manager.getFlakes().size();
 		if( number_of_flakes > Integer.MAX_VALUE ) {
 			return Integer.MAX_VALUE;
 		}
@@ -476,7 +475,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfDamagedFlakes()
 	 */
 	@Override public int getNumberOfDamagedFlakes() {
-		long number_of_damaged_flakes = flake_manager.streamFlakes(StreamMode.Parallel).filter(flake -> flake.isDamaged()).count();
+		long number_of_damaged_flakes = flake_manager.getFlakes().stream().filter(flake -> flake.isDamaged()).count();
 		if( number_of_damaged_flakes > Integer.MAX_VALUE ) {
 			return Integer.MAX_VALUE;
 		}
@@ -513,7 +512,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfUsedChunks()
 	 */
 	@Override public long getNumberOfUsedChunks() {
-		return flake_manager.streamFlakes(StreamMode.Parallel).mapToLong(flake -> flake.getNumberOfChunks()).sum();
+		return flake_manager.getFlakes().stream().mapToLong(flake -> flake.getNumberOfChunks()).sum();
 	}
 	
 	
@@ -522,7 +521,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @see snowflake.api.storage.IStorageInformation#getNumberOfFreeChunks()
 	 */
 	@Override public long getNumberOfFreeChunks() {
-		return chunk_manager.streamAvailableChunks(StreamMode.Parallel).count();
+		return chunk_manager.getAvailableChunks().size();
 	}
 	
 	
@@ -543,7 +542,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @see snowflake.api.storage.IStorageInformation#getFreeSpace()
 	 */
 	@Override public long getFreeSpace() {
-		return chunk_manager.streamAvailableChunks(StreamMode.Parallel).mapToLong(chunk -> chunk.getLength()).sum();
+		return chunk_manager.getAvailableChunks().stream().mapToLong(chunk -> chunk.getLength()).sum();
 	}
 	
 	
@@ -551,8 +550,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 * @see snowflake.api.storage.IStorageInformation#getUsedSpace()
 	 */
 	@Override public long getUsedSpace() {
-		return flake_manager.streamFlakes(StreamMode.Parallel).filter(StreamFilter::filterInvalid)
-			.mapToLong(flake -> flake.getLength()).sum();
+		return flake_manager.getFlakes().stream().filter(f -> f.isValid()).mapToLong(f -> f.getLength()).sum();
 	}
 	
 	
