@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-import com.sun.swing.internal.plaf.synth.resources.synth;
-
 import j3l.util.Checker;
 import j3l.util.LoopedTaskThread;
 import snowflake.GlobalString;
