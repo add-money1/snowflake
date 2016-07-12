@@ -9,10 +9,16 @@ import snowflake.api.IAttributeValue;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.06.11_0
+ * @version 2016.06.12_0
  * @author Johannes B. Latzel
  */
 public final class TimeStampAttribute implements IAttributeValue<Long> {
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private final static int TIME_STAMP_ATTRIBUTE_LENGTH = 8;
 	
 	
 	/**
@@ -73,7 +79,7 @@ public final class TimeStampAttribute implements IAttributeValue<Long> {
 	 * @see snowflake.core.IBinaryData#getDataLength()
 	 */
 	@Override public int getDataLength() {
-		return 8;
+		return TimeStampAttribute.TIME_STAMP_ATTRIBUTE_LENGTH;
 	}
 	
 	
