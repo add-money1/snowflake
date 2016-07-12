@@ -86,7 +86,9 @@ public enum GlobalString {
 	RightChunk("right_chunk"),
 	AvailableIndexList("available_index_list"),
 	ChunkList("chunk_list"),
-	DeduplicationDescription("deduplication_description");
+	DeduplicationDescription("deduplication_description"),
+	DeduplicationLevel("deduplication_level"),
+	EndOfDeduplicationPointer("end_of_deduplication_pointer");
 	
 	
 	private final String string;
