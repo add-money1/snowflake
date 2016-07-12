@@ -6,7 +6,7 @@ import j3l.util.Checker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.12_0
  * @author Johannes B. Latzel
  */
 public enum GlobalString {
@@ -85,7 +85,8 @@ public enum GlobalString {
 	LeftChunk("left_chunk"),
 	RightChunk("right_chunk"),
 	AvailableIndexList("available_index_list"),
-	ChunkList("chunk_list");
+	ChunkList("chunk_list"),
+	DeduplicationDescription("deduplication_description");
 	
 	
 	private final String string;
