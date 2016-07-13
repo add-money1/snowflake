@@ -14,7 +14,7 @@ import snowflake.api.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.13_0
  * @author Johannes B. Latzel
  */
 public final class File extends Node {
@@ -55,6 +55,9 @@ public final class File extends Node {
 	 * @return
 	 */
 	public FlakeOutputStream getFlakeOutputStream() throws IOException  {
+		if( isLocked() ) {
+			throw new IOException("The file is locked!");
+		}
 		return data_flake.getFlakeOutputStream();
 	}
 	

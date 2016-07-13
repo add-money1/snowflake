@@ -5,6 +5,7 @@ import java.util.Collection;
 
 import j3l.util.Checker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.FileSystemException;
 import snowflake.api.IDirectory;
 import snowflake.api.StorageException;
@@ -14,7 +15,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.13_0
  * @author Johannes B. Latzel
  */
 public class RootDirectory implements IDirectory {
@@ -30,6 +31,12 @@ public class RootDirectory implements IDirectory {
 	 * <p></p>
 	 */
 	private final FileSystem file_system;
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private Lock lock;
 	
 	
 	/**
@@ -134,6 +141,49 @@ public class RootDirectory implements IDirectory {
 	 */
 	@Override public IDirectory getParentDirectory() {
 		throw new FileSystemException("The root-directory has not got a parent-directory!");
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.filesystem.ILock#lock()
+	 */
+	@Override public Lock lock() {
+		if( isLocked() ) {
+			throw new FileSystemException("The root_directory is already locked!");
+		}
+		return (lock = new Lock());
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.filesystem.ILock#unlock(snowflake.filesystem.Lock)
+	 */
+	@Override public final void unlock(Lock lock) {
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(lock, GlobalString.Lock.toString());
+		}
+		if( !isLocked() ) {
+			throw new FileSystemException("The root_directory is not locked!");
+		}
+		synchronized( lock ) {
+			if( this.lock != lock ) {
+				throw new FileSystemException(
+					"The provided lock \"" + lock.toString() + "\" can not unlock the root_directory!"
+				);
+			}
+			this.lock = null;
+		}
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.filesystem.ILock#isLocked()
+	 */
+	@Override public final boolean isLocked() {
+		return lock != null;
 	}
 	
 }

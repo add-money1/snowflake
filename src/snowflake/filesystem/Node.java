@@ -3,25 +3,27 @@ package snowflake.filesystem;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import j3l.util.Indexable;
 import j3l.util.Checker;
 import j3l.util.IValidate;
+import j3l.util.Indexable;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.CommonAttribute;
 import snowflake.api.FileSystemException;
 import snowflake.api.IAttributeValue;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
+import snowflake.api.ILock;
 import snowflake.filesystem.attribute.NameAttribute;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.13_0
  * @author Johannes B. Latzel
  */
-public abstract class Node implements IValidate, Indexable {
+public abstract class Node implements IValidate, Indexable, ILock {
 
 	
 	/**
@@ -50,6 +52,12 @@ public abstract class Node implements IValidate, Indexable {
 	
 	/**
 	 * <p></p>
+	 */
+	private Lock lock;
+	
+	
+	/**
+	 * <p></p>
 	 *
 	 * @param
 	 * @return
@@ -59,6 +67,20 @@ public abstract class Node implements IValidate, Indexable {
 		setParentDirectory(parent_directory);
 		is_deleted = false;
 		this.index = Checker.checkForBoundaries(index, 0, Long.MAX_VALUE, GlobalString.Index.toString());
+		lock = null;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	private void checkForLock() {
+		if( isLocked() ) {
+			throw new FileSystemException("The node is locked!");
+		}
 	}
 	
 	
@@ -91,6 +113,7 @@ public abstract class Node implements IValidate, Indexable {
 	 * @return
 	 */
 	public final void setAttribute(Attribute attribute) {
+		checkForLock();
 		attribute_cache.setAttribute(attribute);
 	}
 	
@@ -113,7 +136,15 @@ public abstract class Node implements IValidate, Indexable {
 	 * @return
 	 */
 	public final void setParentDirectory(IDirectory parent_directory) {
-		Checker.checkForNull(parent_directory, GlobalString.ParentDirectory.toString());
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(parent_directory, GlobalString.ParentDirectory.toString());
+		}
+		else {
+			if( parent_directory == null ) {
+				return;
+			}
+		}
+		checkForLock();
 		if( this.parent_directory != null ) {
 			this.parent_directory.removeChildNode(this);
 		}
@@ -132,6 +163,7 @@ public abstract class Node implements IValidate, Indexable {
 		if( is_deleted ) {
 			return;
 		}
+		checkForLock();
 		is_deleted = true;
 		attribute_cache.delete();
 		reactToDeletion();
@@ -198,6 +230,45 @@ public abstract class Node implements IValidate, Indexable {
 	 * @return
 	 */
 	protected abstract void reactToDeletion();
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.filesystem.ILock#lock()
+	 */
+	@Override public Lock lock() {
+		checkForLock();
+		return (lock = new Lock());
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.filesystem.ILock#unlock(snowflake.filesystem.Lock)
+	 */
+	@Override public final void unlock(Lock lock) {
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(lock, GlobalString.Lock.toString());
+		}
+		if( !isLocked() ) {
+			throw new FileSystemException("The node is not locked!");
+		}
+		synchronized( lock ) {
+			if( this.lock != lock ) {
+				throw new FileSystemException("The provided lock \"" + lock.toString() + "\" can not unlock the node!");
+			}
+			this.lock = null;
+		}
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.filesystem.ILock#isLocked()
+	 */
+	@Override public final boolean isLocked() {
+		return parent_directory.isLocked() || lock != null;
+	}
 	
 	
 	/*
