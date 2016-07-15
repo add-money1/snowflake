@@ -6,7 +6,7 @@ import j3l.util.Checker;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.13_0
+ * @version 2016.07.15_0
  * @author Johannes B. Latzel
  */
 public enum GlobalString {
@@ -89,7 +89,8 @@ public enum GlobalString {
 	DeduplicationDescription("deduplication_description"),
 	DeduplicationLevel("deduplication_level"),
 	EndOfDeduplicationPointer("end_of_deduplication_pointer"),
-	Lock("lock");
+	Lock("lock"),
+	CreateFlake("create_flake");
 	
 	
 	private final String string;
