@@ -19,7 +19,7 @@ public final class DeduplicationBlock {
 	/**
 	 * <p></p>
 	 */
-	public final static int DEDUPLICATION_BLOCK_SIZE = 4_096;
+	public final static int SIZE = 4_096;
 	
 	
 	/**
@@ -53,7 +53,7 @@ public final class DeduplicationBlock {
 	 */
 	public DeduplicationBlock(DeduplicationTable deduplication_table, long index) {
 		this.deduplication_table = Checker.checkForNull(
-				deduplication_table, GlobalString.DeduplicationTable.toString()
+			deduplication_table, GlobalString.DeduplicationTable.toString()
 		);
 		this.index = Checker.checkForBoundaries(
 			index, 0, Long.MAX_VALUE, GlobalString.Index.toString()
@@ -71,9 +71,9 @@ public final class DeduplicationBlock {
 	 */
 	private void load() {
 		if( block_buffer == null ) {
-			block_buffer = new byte[DeduplicationBlock.DEDUPLICATION_BLOCK_SIZE];
+			block_buffer = new byte[DeduplicationBlock.SIZE];
 		}
-		deduplication_table.loadDeduplicationBlock(block_buffer);
+		deduplication_table.loadDeduplicationBlock(this, block_buffer);
 	}
 	
 	
