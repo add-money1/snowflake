@@ -79,7 +79,18 @@ public final class File extends Node {
 	 * @return
 	 */
 	public boolean isEmpty() {
-		return data_flake.getLength() == 0;
+		return getLength() == 0;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public long getLength() {
+		return data_flake.getLength();
 	}
 	
 	
