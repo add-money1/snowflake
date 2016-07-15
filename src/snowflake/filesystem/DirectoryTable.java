@@ -3,8 +3,6 @@ package snowflake.filesystem;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.sun.org.apache.xml.internal.security.utils.ElementChecker;
-
 import j3l.util.Checker;
 import j3l.util.InputUtility;
 import j3l.util.LongRange;
@@ -106,7 +104,7 @@ public final class DirectoryTable extends FileSystemDataTable<Directory, Directo
 			byte[] buffer = DirectoryData.createBuffer();
 			long current_index = 0;
 			while( !pointer.isEOF() ) {
-				if( !ElementChecker.checkAllElements(InputUtility.readComplete(flake_input_stream, buffer), (byte)0) ) {
+				if( !Checker.checkAllElements(InputUtility.readComplete(flake_input_stream, buffer), (byte)0) ) {
 					list.add(new DirectoryData(buffer, current_index));
 				}
 				else {
