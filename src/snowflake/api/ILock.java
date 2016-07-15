@@ -6,7 +6,7 @@ import snowflake.filesystem.Lock;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.13_0
+ * @version 2016.07.15_0
  * @author Johannes B. Latzel
  */
 public interface ILock {
@@ -37,5 +37,14 @@ public interface ILock {
 	 * @return
 	 */
 	public boolean isLocked();
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	boolean isLockedBy(Lock lock);
 	
 }

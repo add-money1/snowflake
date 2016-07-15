@@ -263,16 +263,10 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @see snowflake.filesystem.ILock#unlock(snowflake.filesystem.Lock)
 	 */
 	@Override public final void unlock(Lock lock) {
-		if( StaticMode.TESTING_MODE ) {
-			Checker.checkForNull(lock, GlobalString.Lock.toString());
+		if( !isLockedBy(lock) ) {
+			throw new FileSystemException("The provided lock \"" + lock.toString() + "\" can not unlock the node!");
 		}
-		if( !isLocked() ) {
-			throw new FileSystemException("The node is not locked!");
-		}
-		synchronized( lock ) {
-			if( this.lock != lock ) {
-				throw new FileSystemException("The provided lock \"" + lock.toString() + "\" can not unlock the node!");
-			}
+		synchronized( this.lock ) {
 			this.lock = null;
 		}
 	}
@@ -284,6 +278,23 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 */
 	@Override public final boolean isLocked() {
 		return parent_directory.isLocked() || lock != null;
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.api.ILock#isLockedBy(snowflake.filesystem.Lock)
+	 */
+	@Override public boolean isLockedBy(Lock lock) {
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(lock, GlobalString.Lock.toString());
+		}
+		if( !isLocked() ) {
+			throw new FileSystemException("The node is not locked!");
+		}
+		synchronized( this.lock ) {
+			return this.lock == lock;
+		}
 	}
 	
 	
