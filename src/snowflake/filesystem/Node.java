@@ -14,13 +14,13 @@ import snowflake.api.IAttributeValue;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
 import snowflake.api.ILock;
-import snowflake.filesystem.attribute.NameAttribute;
+import snowflake.filesystem.attribute.Name;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.13_0
+ * @version 2016.07.15_0
  * @author Johannes B. Latzel
  */
 public abstract class Node implements IValidate, Indexable, ILock {
@@ -92,6 +92,22 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 */
 	public final Collection<Attribute> getAttributes() {
 		return attribute_cache.getAttributes();
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final boolean hasAttribute(String name) {
+		for( Attribute attribute : attribute_cache.getAttributes() ) {
+			if( attribute.getName().equals(name) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	
@@ -189,8 +205,8 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 */
 	public final String getName() {
 		IAttributeValue<?> attribute_value = getAttribute(CommonAttribute.Name.toString()).getAttributeValue();
-		if( attribute_value instanceof NameAttribute ) {
-			return ((NameAttribute)attribute_value).getValue();
+		if( attribute_value instanceof Name ) {
+			return ((Name)attribute_value).getValue();
 		}
 		throw new FileSystemException("The node has not got a name!");
 	}

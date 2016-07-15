@@ -4,17 +4,22 @@ import java.io.IOException;
 
 import j3l.util.Checker;
 import snowflake.GlobalString;
+import snowflake.api.CommonAttribute;
+import snowflake.api.FileSystemException;
 import snowflake.api.FlakeInputStream;
 import snowflake.api.FlakeOutputStream;
+import snowflake.api.IAttributeValue;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
+import snowflake.filesystem.attribute.DeduplicationDescription;
+import snowflake.filesystem.manager.IDeduplicationDescription;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.13_0
+ * @version 2016.07.15_0
  * @author Johannes B. Latzel
  */
 public final class File extends Node {
@@ -75,6 +80,30 @@ public final class File extends Node {
 	 */
 	public boolean isEmpty() {
 		return data_flake.getLength() == 0;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final IDeduplicationDescription getDeduplicationDescription() {
+		IAttributeValue<?> attribute_value = null;
+		if( hasAttribute(CommonAttribute.DeduplicationDescription.toString()) ) {
+			attribute_value = getAttribute(
+				CommonAttribute.DeduplicationDescription.toString()
+			).getAttributeValue();
+		}
+		else {
+			attribute_value = new DeduplicationDescription((byte)0, 0L);
+			setAttribute(new Attribute(CommonAttribute.DeduplicationDescription.toString(), attribute_value));
+		}
+		if( attribute_value instanceof DeduplicationDescription ) {
+			return ((DeduplicationDescription)attribute_value).getValue();
+		}
+		throw new FileSystemException("The file has no deduplication_description!");
 	}
 	
 	

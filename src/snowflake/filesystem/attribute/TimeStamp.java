@@ -12,7 +12,7 @@ import snowflake.api.IAttributeValue;
  * @version 2016.06.12_0
  * @author Johannes B. Latzel
  */
-public final class TimeStampAttribute implements IAttributeValue<Long> {
+public final class TimeStamp implements IAttributeValue<Long> {
 	
 	
 	/**
@@ -32,7 +32,7 @@ public final class TimeStampAttribute implements IAttributeValue<Long> {
 	 * 
 	 * @param
 	 */
-	public TimeStampAttribute(Instant instant) {
+	public TimeStamp(Instant instant) {
 		this(instant.toEpochMilli());
 	}
 	
@@ -42,7 +42,7 @@ public final class TimeStampAttribute implements IAttributeValue<Long> {
 	 * 
 	 * @param
 	 */
-	public TimeStampAttribute(Long time_stamp) {
+	public TimeStamp(Long time_stamp) {
 		this(time_stamp.longValue());
 	}
 	
@@ -52,7 +52,7 @@ public final class TimeStampAttribute implements IAttributeValue<Long> {
 	 * 
 	 * @param
 	 */
-	public TimeStampAttribute(long time_stamp) {
+	public TimeStamp(long time_stamp) {
 		this.time_stamp = time_stamp;
 	}
 	
@@ -62,7 +62,7 @@ public final class TimeStampAttribute implements IAttributeValue<Long> {
 	 * 
 	 * @param
 	 */
-	public TimeStampAttribute(byte[] buffer) {
+	public TimeStamp(byte[] buffer) {
 		this.time_stamp = TransformValue2.toLong(buffer);
 	}
 	
@@ -79,7 +79,7 @@ public final class TimeStampAttribute implements IAttributeValue<Long> {
 	 * @see snowflake.core.IBinaryData#getDataLength()
 	 */
 	@Override public int getDataLength() {
-		return TimeStampAttribute.TIME_STAMP_ATTRIBUTE_LENGTH;
+		return TimeStamp.TIME_STAMP_ATTRIBUTE_LENGTH;
 	}
 	
 	

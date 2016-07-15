@@ -15,7 +15,7 @@ import snowflake.filesystem.manager.IDeduplicationDescription;
  * @version 2016.07.12_0
  * @author Johannes B. Latzel
  */
-public final class DeduplicationDescriptionAttribute implements IAttributeValue<IDeduplicationDescription>, IDeduplicationDescription {
+public final class DeduplicationDescription implements IAttributeValue<IDeduplicationDescription>, IDeduplicationDescription {
 	
 	
 	/**
@@ -51,7 +51,7 @@ public final class DeduplicationDescriptionAttribute implements IAttributeValue<
 	 * 
 	 * @param
 	 */
-	public DeduplicationDescriptionAttribute(byte deduplication_level, long end_of_deduplication_pointer) {
+	public DeduplicationDescription(byte deduplication_level, long end_of_deduplication_pointer) {
 		if( StaticMode.TESTING_MODE ) {
 			this.deduplication_level = Checker.checkForBoundaries(
 				deduplication_level, (byte)0, Byte.MAX_VALUE, GlobalString.DeduplicationLevel.toString()
@@ -72,15 +72,15 @@ public final class DeduplicationDescriptionAttribute implements IAttributeValue<
 	 * 
 	 * @param
 	 */
-	public DeduplicationDescriptionAttribute(byte[] buffer) {
+	public DeduplicationDescription(byte[] buffer) {
 		this(
-			buffer[DeduplicationDescriptionAttribute.DEDUPLICATION_LEVEL_POSITION],
+			buffer[DeduplicationDescription.DEDUPLICATION_LEVEL_POSITION],
 			TransformValue2.toLong(
 				ArrayTool.transferValues(
 					new byte[Long.BYTES],
 					buffer,
 					0,
-					DeduplicationDescriptionAttribute.END_OF_DEDUPLICATION_POINTER_POSITION,
+					DeduplicationDescription.END_OF_DEDUPLICATION_POINTER_POSITION,
 					Long.BYTES,
 					StaticMode.TESTING_MODE
 				)
@@ -111,11 +111,11 @@ public final class DeduplicationDescriptionAttribute implements IAttributeValue<
 	 * @see snowflake.core.IBinaryData#getBinaryData(byte[])
 	 */
 	@Override public void getBinaryData(byte[] buffer) {
-		buffer[DeduplicationDescriptionAttribute.DEDUPLICATION_LEVEL_POSITION] = deduplication_level;
+		buffer[DeduplicationDescription.DEDUPLICATION_LEVEL_POSITION] = deduplication_level;
 		ArrayTool.transferValues(
 			buffer,
 			TransformValue2.toByteArray(end_of_deduplication_pointer),
-			DeduplicationDescriptionAttribute.END_OF_DEDUPLICATION_POINTER_POSITION,
+			DeduplicationDescription.END_OF_DEDUPLICATION_POINTER_POSITION,
 			0,
 			Long.BYTES
 		);
@@ -126,7 +126,7 @@ public final class DeduplicationDescriptionAttribute implements IAttributeValue<
 	 * @see snowflake.core.IBinaryData#getDataLength()
 	 */
 	@Override public int getDataLength() {
-		return DeduplicationDescriptionAttribute.BINARY_DATA_LENGTH;
+		return DeduplicationDescription.BINARY_DATA_LENGTH;
 	}
 	
 	

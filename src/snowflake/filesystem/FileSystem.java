@@ -17,13 +17,15 @@ import snowflake.api.FileSystemException;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
 import snowflake.core.storage.Storage;
+import snowflake.filesystem.attribute.Name;
+import snowflake.filesystem.attribute.TimeStamp;
 import snowflake.filesystem.manager.DeduplicationManager;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.15_0
  * @author Johannes B. Latzel
  */
 public class FileSystem implements IClose<FileSystemException> {
@@ -187,15 +189,11 @@ public class FileSystem implements IClose<FileSystemException> {
 			parent_directory != null ? parent_directory : root_directory,
 			file_table.getAvailableIndex()
 		);
-		Instant now = Instant.now();
-		file.setAttribute(CommonAttribute.Creation_Time_Stamp.createAttribute(now));
-		file.setAttribute(CommonAttribute.Last_Acces_Time_Stamp.createAttribute(now));
-		file.setAttribute(CommonAttribute.Last_Modification_Time_Stamp.createAttribute(now));
-		file.setAttribute(
-			CommonAttribute.Name.createAttribute(
-				Checker.checkForEmptyString(name, GlobalString.Name.toString())
-			)
-		);
+		TimeStamp time_stamp = new TimeStamp(Instant.now());
+		file.setAttribute(new Attribute(CommonAttribute.Name.toString(), new Name(name)));
+		file.setAttribute(new Attribute(CommonAttribute.CreationTimeStamp.toString(), time_stamp));
+		file.setAttribute(new Attribute(CommonAttribute.LastModificationTimeStamp.toString(), time_stamp));
+		file.setAttribute(new Attribute(CommonAttribute.LastAccessTimeStamp.toString(), time_stamp));
 		file_table.saveEntry(file);
 		return file;
 	}
@@ -226,15 +224,11 @@ public class FileSystem implements IClose<FileSystemException> {
 			parent_directory != null ? parent_directory : root_directory,
 			directory_table.getAvailableIndex()
 		);
-		Instant now = Instant.now();
-		directory.setAttribute(CommonAttribute.Creation_Time_Stamp.createAttribute(now));
-		directory.setAttribute(CommonAttribute.Last_Acces_Time_Stamp.createAttribute(now));
-		directory.setAttribute(CommonAttribute.Last_Modification_Time_Stamp.createAttribute(now));
-		directory.setAttribute(
-			CommonAttribute.Name.createAttribute(
-				Checker.checkForEmptyString(name, GlobalString.Name.toString())
-			)
-		);
+		TimeStamp time_stamp = new TimeStamp(Instant.now());
+		directory.setAttribute(new Attribute(CommonAttribute.Name.toString(), new Name(name)));
+		directory.setAttribute(new Attribute(CommonAttribute.CreationTimeStamp.toString(), time_stamp));
+		directory.setAttribute(new Attribute(CommonAttribute.LastModificationTimeStamp.toString(), time_stamp));
+		directory.setAttribute(new Attribute(CommonAttribute.LastAccessTimeStamp.toString(), time_stamp));
 		directory_table.saveEntry(directory);
 		return directory;
 	}

@@ -14,7 +14,7 @@ import snowflake.api.IAttributeValue;
  * @version 2016.07.11_0
  * @author Johannes B. Latzel
  */
-public final class NameAttribute implements IAttributeValue<String> {
+public final class Name implements IAttributeValue<String> {
 	
 	
 	/**
@@ -34,7 +34,7 @@ public final class NameAttribute implements IAttributeValue<String> {
 	 * 
 	 * @param
 	 */
-	public NameAttribute(String name) {
+	public Name(String name) {
 		this.name = Checker.checkForNull(name, GlobalString.Name.toString());
 		encoded_name = null;
 	}
@@ -45,7 +45,7 @@ public final class NameAttribute implements IAttributeValue<String> {
 	 * 
 	 * @param
 	 */
-	public NameAttribute(byte[] buffer) {
+	public Name(byte[] buffer) {
 		this.name = new String(buffer);
 		encoded_name = Arrays.copyOf(buffer, buffer.length);
 	}
