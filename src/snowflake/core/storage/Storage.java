@@ -30,11 +30,11 @@ import snowflake.core.manager.SpecialFlakeIdentification;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.15_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IStorageInformation, IAllocateSpace, 
-										IClearChunk, IClose<IOException> {
+										IClearChunk, IClose<IOException>, ICreateFlake {
 	
 	
 		
@@ -275,17 +275,6 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	 */
 	public ArrayList<IChunk> getAvailableChunks() {
 		return chunk_manager.getAvailableChunks();
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	public IFlake createFlake() {
-		return flake_manager.createFlake(chunk_manager);
 	}
 	
 	
@@ -566,6 +555,14 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 				throw new StorageException("Failed to retrieve the number of allocated bytes!", e);
 			}
 		}
+	}
+
+
+	/* (non-Javadoc)
+	 * @see snowflake.core.storage.ICreateFlake#createFlake()
+	 */
+	@Override public IFlake createFlake() {
+		return flake_manager.createFlake(chunk_manager);
 	}
 	
 }
