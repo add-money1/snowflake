@@ -94,7 +94,7 @@ public class FileSystem implements IClose<FileSystemException> {
 		catch( IOException e ) {
 			throw new FileSystemException("Can create the directory_table!", e);
 		}
-		deduplication_manager = new DeduplicationManager(this, storage.getDeduplicationTableFlake());
+		deduplication_manager = new DeduplicationManager(this, storage.getDeduplicationTableFlake(), storage);
 		closure_state = ClosureState.None;
 	}
 	
