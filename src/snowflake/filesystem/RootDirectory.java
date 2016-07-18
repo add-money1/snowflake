@@ -15,7 +15,7 @@ import snowflake.core.manager.FlakeManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.13_0
+ * @version 2016.07.18_0
  * @author Johannes B. Latzel
  */
 public class RootDirectory implements IDirectory {
@@ -184,6 +184,22 @@ public class RootDirectory implements IDirectory {
 	 */
 	@Override public final boolean isLocked() {
 		return lock != null;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.api.ILock#isLockedBy(snowflake.filesystem.Lock)
+	 */
+	@Override public boolean isLockedBy(Lock lock) {
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(lock, GlobalString.Lock.toString());
+		}
+		if( !isLocked() ) {
+			throw new FileSystemException("The root_directory is not locked!");
+		}
+		synchronized( this.lock ) {
+			return this.lock == lock;
+		}
 	}
 	
 }

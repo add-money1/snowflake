@@ -19,7 +19,7 @@ import snowflake.filesystem.manager.IDeduplicationDescription;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.15_0
+ * @version 2016.07.18_0
  * @author Johannes B. Latzel
  */
 public final class File extends Node {
@@ -60,7 +60,18 @@ public final class File extends Node {
 	 * @return
 	 */
 	public FlakeOutputStream getFlakeOutputStream() throws IOException  {
-		if( isLocked() ) {
+		return getFlakeOutputStream(null);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public FlakeOutputStream getFlakeOutputStream(Lock lock) throws IOException {
+		if( isLocked() && (lock == null || !isLockedBy(lock)) ) {
 			throw new IOException("The file is locked!");
 		}
 		return data_flake.getFlakeOutputStream();
@@ -108,6 +119,11 @@ public final class File extends Node {
 			).getAttributeValue();
 		}
 		else {
+			if( isLocked() ) {
+				throw new FileSystemException(
+					"Can not create a deduplication_description, because the file is locked!"
+				);
+			}
 			attribute_value = new DeduplicationDescription((byte)0, 0L);
 			setAttribute(new Attribute(CommonAttribute.DeduplicationDescription.toString(), attribute_value));
 		}

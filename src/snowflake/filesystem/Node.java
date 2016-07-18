@@ -20,7 +20,7 @@ import snowflake.filesystem.attribute.Name;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.15_0
+ * @version 2016.07.18_0
  * @author Johannes B. Latzel
  */
 public abstract class Node implements IValidate, Indexable, ILock {
@@ -77,8 +77,8 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @param
 	 * @return
 	 */
-	private void checkForLock() {
-		if( isLocked() ) {
+	private void checkForLock(Lock lock) {
+		if( isLocked() && (lock == null || !isLockedBy(lock)) ) {
 			throw new FileSystemException("The node is locked!");
 		}
 	}
@@ -129,7 +129,18 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @return
 	 */
 	public final void setAttribute(Attribute attribute) {
-		checkForLock();
+		setAttribute(attribute, null);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final void setAttribute(Attribute attribute, Lock lock) {
+		checkForLock(lock);
 		attribute_cache.setAttribute(attribute);
 	}
 	
@@ -152,15 +163,19 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @return
 	 */
 	public final void setParentDirectory(IDirectory parent_directory) {
-		if( StaticMode.TESTING_MODE ) {
-			Checker.checkForNull(parent_directory, GlobalString.ParentDirectory.toString());
-		}
-		else {
-			if( parent_directory == null ) {
-				return;
-			}
-		}
-		checkForLock();
+		setParentDirectory(parent_directory, null);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final void setParentDirectory(IDirectory parent_directory, Lock lock) {
+		Checker.checkForNull(parent_directory, GlobalString.ParentDirectory.toString());
+		checkForLock(lock);
 		if( this.parent_directory != null ) {
 			this.parent_directory.removeChildNode(this);
 		}
@@ -175,11 +190,22 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @param
 	 * @return
 	 */
-	public final synchronized void delete() {
+	public final void delete() {
+		delete(null);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final synchronized void delete(Lock lock) {
 		if( is_deleted ) {
-			return;
+			throw new FileSystemException("The node has already been deleted!");
 		}
-		checkForLock();
+		checkForLock(lock);
 		is_deleted = true;
 		attribute_cache.delete();
 		reactToDeletion();
@@ -246,14 +272,16 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @return
 	 */
 	protected abstract void reactToDeletion();
-	
+
 	
 	/*
 	 * (non-Javadoc)
 	 * @see snowflake.filesystem.ILock#lock()
 	 */
 	@Override public Lock lock() {
-		checkForLock();
+		if( isLocked() ) {
+			throw new FileSystemException("The node is locked!");
+		}
 		return (lock = new Lock());
 	}
 	
