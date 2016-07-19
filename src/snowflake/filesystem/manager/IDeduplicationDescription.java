@@ -4,7 +4,7 @@ package snowflake.filesystem.manager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.12_0
+ * @version 2016.07.19_0
  * @author Johannes B. Latzel
  */
 public interface IDeduplicationDescription {
@@ -16,7 +16,7 @@ public interface IDeduplicationDescription {
 	 * @param
 	 * @return
 	 */
-	public byte getDeduplicationLevel();
+	byte getDeduplicationLevel();
 	
 	
 	/**
@@ -25,6 +25,15 @@ public interface IDeduplicationDescription {
 	 * @param
 	 * @return
 	 */
-	public long getEndOfDeduplicationPointer();
+	long getEndOfDeduplicationPointer();
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	long getEOFPointer();
 
 }
