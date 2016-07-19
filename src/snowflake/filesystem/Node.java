@@ -101,7 +101,7 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @param
 	 * @return
 	 */
-	public boolean hasAttribute(CommonAttribute common_attribute) {
+	public final boolean hasAttribute(CommonAttribute common_attribute) {
 		return hasAttribute(common_attribute.toString());
 	}
 	
@@ -119,6 +119,17 @@ public abstract class Node implements IValidate, Indexable, ILock {
 			}
 		}
 		return false;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final Attribute getAttribute(CommonAttribute common_attribute) {
+		return getAttribute(common_attribute.toString());
 	}
 	
 	
