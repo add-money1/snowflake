@@ -20,7 +20,7 @@ import snowflake.filesystem.attribute.Name;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.18_0
+ * @version 2016.07.19_0
  * @author Johannes B. Latzel
  */
 public abstract class Node implements IValidate, Indexable, ILock {
@@ -92,6 +92,17 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 */
 	public final Collection<Attribute> getAttributes() {
 		return attribute_cache.getAttributes();
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public boolean hasAttribute(CommonAttribute common_attribute) {
+		return hasAttribute(common_attribute.toString());
 	}
 	
 	
