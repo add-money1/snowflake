@@ -1,15 +1,16 @@
 package snowflake.filesystem;
 
-import j3l.util.Nameable;
 import j3l.util.Checker;
+import j3l.util.Nameable;
 import snowflake.GlobalString;
+import snowflake.api.CommonAttribute;
 import snowflake.api.IAttributeValue;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.19_0
  * @author Johannes B. Latzel
  */
 public final class Attribute implements Nameable {
@@ -25,6 +26,17 @@ public final class Attribute implements Nameable {
 	 * <p></p>
 	 */
 	private final IAttributeValue<?> attribute_value;
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public Attribute(CommonAttribute common_attribute, IAttributeValue<?> attribute_value) {
+		this(common_attribute.toString(), attribute_value);
+	}
 	
 	
 	/**

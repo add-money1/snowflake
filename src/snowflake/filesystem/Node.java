@@ -252,7 +252,7 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @return
 	 */
 	public final String getName() {
-		IAttributeValue<?> attribute_value = getAttribute(CommonAttribute.Name.toString()).getAttributeValue();
+		IAttributeValue<?> attribute_value = getAttribute(CommonAttribute.Name).getAttributeValue();
 		if( attribute_value instanceof Name ) {
 			return ((Name)attribute_value).getValue();
 		}
