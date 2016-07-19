@@ -11,15 +11,15 @@ import snowflake.api.FlakeOutputStream;
 import snowflake.api.IAttributeValue;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
-import snowflake.filesystem.attribute.DeduplicationDescription;
-import snowflake.filesystem.manager.IDeduplicationDescription;
+import snowflake.filesystem.attribute.DataDescription;
+import snowflake.filesystem.manager.IDataDescription;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.18_0
+ * @version 2016.07.19_0
  * @author Johannes B. Latzel
  */
 public final class File extends Node {
@@ -111,7 +111,7 @@ public final class File extends Node {
 	 * @param
 	 * @return
 	 */
-	public final IDeduplicationDescription getDeduplicationDescription() {
+	public final IDataDescription getDeduplicationDescription() {
 		IAttributeValue<?> attribute_value = null;
 		if( hasAttribute(CommonAttribute.DeduplicationDescription.toString()) ) {
 			attribute_value = getAttribute(
@@ -124,11 +124,11 @@ public final class File extends Node {
 					"Can not create a deduplication_description, because the file is locked!"
 				);
 			}
-			attribute_value = new DeduplicationDescription((byte)0, 0L);
+			attribute_value = new DataDescription((byte)0, 0L, 0L);
 			setAttribute(new Attribute(CommonAttribute.DeduplicationDescription.toString(), attribute_value));
 		}
-		if( attribute_value instanceof DeduplicationDescription ) {
-			return ((DeduplicationDescription)attribute_value).getValue();
+		if( attribute_value instanceof DataDescription ) {
+			return ((DataDescription)attribute_value).getValue();
 		}
 		throw new FileSystemException("The file has no deduplication_description!");
 	}

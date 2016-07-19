@@ -7,7 +7,7 @@ package snowflake.filesystem.manager;
  * @version 2016.07.19_0
  * @author Johannes B. Latzel
  */
-public interface IDeduplicationDescription {
+public interface IDataDescription {
 	
 	
 	/**
@@ -34,6 +34,6 @@ public interface IDeduplicationDescription {
 	 * @param
 	 * @return
 	 */
-	long getEOFPointer();
+	boolean isDeduplicated();
 
 }
