@@ -111,12 +111,10 @@ public final class File extends Node {
 	 * @param
 	 * @return
 	 */
-	public final IDataDescription getDeduplicationDescription() {
+	public final IDataDescription getDataDescription() {
 		IAttributeValue<?> attribute_value = null;
-		if( hasAttribute(CommonAttribute.DeduplicationDescription.toString()) ) {
-			attribute_value = getAttribute(
-				CommonAttribute.DeduplicationDescription.toString()
-			).getAttributeValue();
+		if( hasAttribute(CommonAttribute.DataDescription) ) {
+			attribute_value = getAttribute(CommonAttribute.DataDescription).getAttributeValue();
 		}
 		else {
 			if( isLocked() ) {
@@ -124,13 +122,24 @@ public final class File extends Node {
 					"Can not create a deduplication_description, because the file is locked!"
 				);
 			}
-			attribute_value = new DataDescription((byte)0, 0L, 0L);
-			setAttribute(new Attribute(CommonAttribute.DeduplicationDescription.toString(), attribute_value));
+			attribute_value = new DataDescription((byte)0, 0L);
+			setAttribute(new Attribute(CommonAttribute.DataDescription, attribute_value));
 		}
 		if( attribute_value instanceof DataDescription ) {
 			return ((DataDescription)attribute_value).getValue();
 		}
 		throw new FileSystemException("The file has no deduplication_description!");
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public boolean isInDeduplication() {
+		return hasAttribute(CommonAttribute.DeduplicationDescription);
 	}
 	
 	

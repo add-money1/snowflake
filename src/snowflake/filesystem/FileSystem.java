@@ -190,10 +190,10 @@ public class FileSystem implements IClose<FileSystemException> {
 			file_table.getAvailableIndex()
 		);
 		TimeStamp time_stamp = new TimeStamp(Instant.now());
-		file.setAttribute(new Attribute(CommonAttribute.Name.toString(), new Name(name)));
-		file.setAttribute(new Attribute(CommonAttribute.CreationTimeStamp.toString(), time_stamp));
-		file.setAttribute(new Attribute(CommonAttribute.LastModificationTimeStamp.toString(), time_stamp));
-		file.setAttribute(new Attribute(CommonAttribute.LastAccessTimeStamp.toString(), time_stamp));
+		file.setAttribute(new Attribute(CommonAttribute.Name, new Name(name)));
+		file.setAttribute(new Attribute(CommonAttribute.CreationTimeStamp, time_stamp));
+		file.setAttribute(new Attribute(CommonAttribute.LastModificationTimeStamp, time_stamp));
+		file.setAttribute(new Attribute(CommonAttribute.LastAccessTimeStamp, time_stamp));
 		file_table.saveEntry(file);
 		return file;
 	}
@@ -225,10 +225,10 @@ public class FileSystem implements IClose<FileSystemException> {
 			directory_table.getAvailableIndex()
 		);
 		TimeStamp time_stamp = new TimeStamp(Instant.now());
-		directory.setAttribute(new Attribute(CommonAttribute.Name.toString(), new Name(name)));
-		directory.setAttribute(new Attribute(CommonAttribute.CreationTimeStamp.toString(), time_stamp));
-		directory.setAttribute(new Attribute(CommonAttribute.LastModificationTimeStamp.toString(), time_stamp));
-		directory.setAttribute(new Attribute(CommonAttribute.LastAccessTimeStamp.toString(), time_stamp));
+		directory.setAttribute(new Attribute(CommonAttribute.Name, new Name(name)));
+		directory.setAttribute(new Attribute(CommonAttribute.CreationTimeStamp, time_stamp));
+		directory.setAttribute(new Attribute(CommonAttribute.LastModificationTimeStamp, time_stamp));
+		directory.setAttribute(new Attribute(CommonAttribute.LastAccessTimeStamp, time_stamp));
 		directory_table.saveEntry(directory);
 		return directory;
 	}
