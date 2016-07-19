@@ -92,7 +92,9 @@ public enum GlobalString {
 	Lock("lock"),
 	CreateFlake("create_flake"),
 	DeduplicatedFlake("deduplicated_flake"),
-	EOFPointer("eof_pointer");
+	EOFPointer("eof_pointer"), 
+	CurrentDataPointer("current_data_pointer"),
+	CurrentIndexPointer("current_index_pointer");
 	
 	
 	private final String string;
