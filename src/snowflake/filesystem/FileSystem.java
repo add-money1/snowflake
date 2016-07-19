@@ -25,7 +25,7 @@ import snowflake.filesystem.manager.DeduplicationManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.15_0
+ * @version 2016.07.19_0
  * @author Johannes B. Latzel
  */
 public class FileSystem implements IClose<FileSystemException> {
@@ -278,6 +278,38 @@ public class FileSystem implements IClose<FileSystemException> {
 		}
 		throw new FileSystemException("Can not resolve the path \"" + path + "\" - Uknown path_element \""
 				+ path_elements[path_elements.length - 1] + "\"!");
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public File getFile(String path) {
+		Node node = getNode(path);
+		if( node instanceof File ) {
+			// cast okay, because node is an instance of File
+			return (File)node;
+		}
+		throw new FileSystemException("The path \"" + path + "\" does not correspond to a file!");
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public IDirectory getDirectory(String path) {
+		Node node = getNode(path);
+		if( node instanceof IDirectory ) {
+			// cast okay, because node is an instance of IDirectory
+			return (IDirectory)node;
+		}
+		throw new FileSystemException("The path \"" + path + "\" does not correspond to a directory!");
 	}
 	
 	
