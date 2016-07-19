@@ -8,7 +8,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.15_0
+ * @version 2016.07.19_0
  * @author Johannes B. Latzel
  */
 public enum CommonAttribute {
@@ -18,7 +18,8 @@ public enum CommonAttribute {
 	CreationTimeStamp("creation_time_stamp"),
 	LastAccessTimeStamp("last_access_time_stamp"),
 	LastModificationTimeStamp("last_modification_time_stamp"),
-	DeduplicationDescription("deduplication_description");
+	DeduplicationDescription("deduplication_description"),
+	DataDescription("data_description");
 	
 	
 	/**
