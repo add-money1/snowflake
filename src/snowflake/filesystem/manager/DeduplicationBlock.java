@@ -19,7 +19,7 @@ public final class DeduplicationBlock {
 	/**
 	 * <p></p>
 	 */
-	public final static int SIZE = 4_096;
+	public final static int SIZE = Long.BYTES * 512;
 	
 	
 	/**
