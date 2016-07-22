@@ -11,15 +11,16 @@ import snowflake.api.FlakeOutputStream;
 import snowflake.api.IAttributeValue;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
-import snowflake.filesystem.attribute.DataDescription;
-import snowflake.filesystem.manager.IDataDescription;
+import snowflake.filesystem.attribute.DeduplicationDescription;
+import snowflake.filesystem.attribute.DeduplicationProgressDescription;
+import snowflake.filesystem.manager.IDeduplicationDescription;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.19_0
+ * @version 2016.07.22_0
  * @author Johannes B. Latzel
  */
 public final class File extends Node {
@@ -111,7 +112,7 @@ public final class File extends Node {
 	 * @param
 	 * @return
 	 */
-	public final IDataDescription getDataDescription() {
+	public final IDeduplicationDescription getDeduplicationDescription() {
 		IAttributeValue<?> attribute_value = null;
 		if( hasAttribute(CommonAttribute.DataDescription) ) {
 			attribute_value = getAttribute(CommonAttribute.DataDescription).getAttributeValue();
@@ -122,11 +123,11 @@ public final class File extends Node {
 					"Can not create a deduplication_description, because the file is locked!"
 				);
 			}
-			attribute_value = new DataDescription((byte)0, 0L);
+			attribute_value = new DeduplicationProgressDescription((byte)0, 0L);
 			setAttribute(new Attribute(CommonAttribute.DataDescription, attribute_value));
 		}
-		if( attribute_value instanceof DataDescription ) {
-			return ((DataDescription)attribute_value).getValue();
+		if( attribute_value instanceof DeduplicationDescription ) {
+			return ((DeduplicationDescription)attribute_value).getValue();
 		}
 		throw new FileSystemException("The file has no deduplication_description!");
 	}
@@ -138,8 +139,19 @@ public final class File extends Node {
 	 * @param
 	 * @return
 	 */
-	public boolean isInDeduplication() {
+	public boolean isDeduplicated() {
 		return hasAttribute(CommonAttribute.DeduplicationDescription);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public boolean isInDeduplication() {
+		return hasAttribute(CommonAttribute.DeduplicationProgressDescription);
 	}
 	
 	

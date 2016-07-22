@@ -7,7 +7,7 @@ package snowflake.filesystem.manager;
  * @version 2016.07.19_0
  * @author Johannes B. Latzel
  */
-public interface IDataDescription {
+public interface IDeduplicationProgressDescription {
 	
 	
 	/**
@@ -16,7 +16,7 @@ public interface IDataDescription {
 	 * @param
 	 * @return
 	 */
-	byte getDeduplicationLevel();
+	long getCurrentDataPointer();
 	
 	
 	/**
@@ -25,15 +25,6 @@ public interface IDataDescription {
 	 * @param
 	 * @return
 	 */
-	long getEndOfDeduplicationPointer();
+	long getCurrentIndexPointer();
 	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	boolean isDeduplicated();
-
 }

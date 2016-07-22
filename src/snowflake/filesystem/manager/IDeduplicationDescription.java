@@ -16,7 +16,7 @@ public interface IDeduplicationDescription {
 	 * @param
 	 * @return
 	 */
-	long getCurrentDataPointer();
+	byte getDeduplicationLevel();
 	
 	
 	/**
@@ -25,6 +25,15 @@ public interface IDeduplicationDescription {
 	 * @param
 	 * @return
 	 */
-	long getCurrentIndexPointer();
+	long getEndOfDeduplicationPointer();
 	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	boolean isDeduplicated();
+
 }

@@ -12,40 +12,34 @@ import snowflake.filesystem.manager.IDeduplicationDescription;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.19_0
+ * @version 2016.07.22_0
  * @author Johannes B. Latzel
  */
-public class DeduplicationDescription implements IAttributeValue<IDeduplicationDescription>, IDeduplicationDescription {
+public final class DeduplicationDescription implements IAttributeValue<IDeduplicationDescription>, IDeduplicationDescription {
 	
 	
 	/**
 	 * <p></p>
 	 */
-	private final static int BINARY_DATA_LENGTH = 16;
+	private final static int BINARY_DATA_LENGTH = 8;
 	
 	
 	/**
 	 * <p></p>
 	 */
-	private final static int CURRENT_DATA_POINTER_POSITION = 0;
+	private final static int END_OF_DEDUPLICATION_POINTER_POSITION = 0;
 	
 	
 	/**
 	 * <p></p>
 	 */
-	private final static int CURRENT_INDEX_POINTER_POSITION = 8; 
+	private final long end_of_deduplication_pointer;
 	
 	
 	/**
 	 * <p></p>
 	 */
-	private final long current_data_pointer;
-	
-	
-	/**
-	 * <p></p>
-	 */
-	private final long current_index_pointer;
+	private final DeduplicationDescription previous_deduplication_description;
 	
 	
 	/**
@@ -53,18 +47,20 @@ public class DeduplicationDescription implements IAttributeValue<IDeduplicationD
 	 * 
 	 * @param
 	 */
-	public DeduplicationDescription(long current_data_pointer, long current_index_pointer) {
+	public DeduplicationDescription(DeduplicationDescription previous_deduplication_description,
+			long end_of_deduplication_pointer) {
 		if( StaticMode.TESTING_MODE ) {
-			this.current_data_pointer = Checker.checkForBoundaries(
-					current_data_pointer, (byte)0, Byte.MAX_VALUE, GlobalString.CurrentDataPointer.toString()
+			this.previous_deduplication_description = Checker.checkForNull(
+				previous_deduplication_description,
+				GlobalString.PreviousDeduplcationDescription.toString()
 			);
-			this.current_index_pointer = Checker.checkForBoundaries(
-				current_index_pointer, 0, Long.MAX_VALUE, GlobalString.CurrentIndexPointer.toString()
+			this.end_of_deduplication_pointer = Checker.checkForBoundaries(
+				end_of_deduplication_pointer, 0, Long.MAX_VALUE, GlobalString.EndOfDeduplicationPointer.toString()
 			);
 		}
 		else {
-			this.current_data_pointer = current_data_pointer;
-			this.current_index_pointer = current_index_pointer;
+			this.previous_deduplication_description = previous_deduplication_description;
+			this.end_of_deduplication_pointer = end_of_deduplication_pointer;
 		}
 	}
 	
@@ -76,22 +72,13 @@ public class DeduplicationDescription implements IAttributeValue<IDeduplicationD
 	 */
 	public DeduplicationDescription(byte[] buffer) {
 		this(
+			buffer[DeduplicationDescription.DEDUPLICATION_LEVEL_POSITION],
 			TransformValue2.toLong(
 				ArrayTool.transferValues(
 					new byte[Long.BYTES],
 					buffer,
 					0,
-					DeduplicationDescription.CURRENT_DATA_POINTER_POSITION,
-					Long.BYTES,
-					StaticMode.TESTING_MODE
-				)
-			),
-			TransformValue2.toLong(
-				ArrayTool.transferValues(
-					new byte[Long.BYTES],
-					buffer,
-					0,
-					DeduplicationDescription.CURRENT_INDEX_POINTER_POSITION,
+					DeduplicationDescription.END_OF_DEDUPLICATION_POINTER_POSITION,
 					Long.BYTES,
 					StaticMode.TESTING_MODE
 				)
@@ -100,22 +87,33 @@ public class DeduplicationDescription implements IAttributeValue<IDeduplicationD
 	}
 	
 	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.filesystem.attribute.IDeduplicationDescription#getDeduplicationLevel()
+	 */
+	@Override public byte getDeduplicationLevel() {
+		return deduplication_level;
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.filesystem.attribute.IDeduplicationDescription#getEndOfDeduplicationPointer()
+	 */
+	@Override public long getEndOfDeduplicationPointer() {
+		return end_of_deduplication_pointer;
+	}
+	
+	
 	/* (non-Javadoc)
-	 * @see j3l.util.IBinaryData#getBinaryData(byte[])
+	 * @see snowflake.core.IBinaryData#getBinaryData(byte[])
 	 */
 	@Override public void getBinaryData(byte[] buffer) {
-		byte[] long_buffer = new byte[Long.BYTES];
+		buffer[DeduplicationDescription.DEDUPLICATION_LEVEL_POSITION] = deduplication_level;
 		ArrayTool.transferValues(
 			buffer,
-			TransformValue2.toByteArray(current_data_pointer, long_buffer),
-			DeduplicationDescription.CURRENT_DATA_POINTER_POSITION,
-			0,
-			Long.BYTES
-		);
-		ArrayTool.transferValues(
-			buffer,
-			TransformValue2.toByteArray(current_index_pointer, long_buffer),
-			DeduplicationDescription.CURRENT_INDEX_POINTER_POSITION,
+			TransformValue2.toByteArray(end_of_deduplication_pointer),
+			DeduplicationDescription.END_OF_DEDUPLICATION_POINTER_POSITION,
 			0,
 			Long.BYTES
 		);
@@ -123,26 +121,10 @@ public class DeduplicationDescription implements IAttributeValue<IDeduplicationD
 	
 	
 	/* (non-Javadoc)
-	 * @see j3l.util.IBinaryData#getDataLength()
+	 * @see snowflake.core.IBinaryData#getDataLength()
 	 */
 	@Override public int getDataLength() {
 		return DeduplicationDescription.BINARY_DATA_LENGTH;
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.filesystem.manager.IDeduplicationDescription#getCurrentDataPointer()
-	 */
-	@Override public long getCurrentDataPointer() {
-		return current_data_pointer;
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.filesystem.manager.IDeduplicationDescription#getCurrentIndexPointer()
-	 */
-	@Override public long getCurrentIndexPointer() {
-		return current_index_pointer;
 	}
 	
 	
@@ -151,6 +133,14 @@ public class DeduplicationDescription implements IAttributeValue<IDeduplicationD
 	 */
 	@Override public IDeduplicationDescription getValue() {
 		return this;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see snowflake.filesystem.manager.IDeduplicationDescription#isDeduplicated()
+	 */
+	@Override public boolean isDeduplicated() {
+		return deduplication_level > 0;
 	}
 	
 }

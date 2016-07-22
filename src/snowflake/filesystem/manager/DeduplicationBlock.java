@@ -10,7 +10,7 @@ import snowflake.GlobalString;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.15_0
+ * @version 2016.07.20_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationBlock {
