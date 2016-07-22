@@ -14,6 +14,7 @@ import snowflake.api.IFlake;
 import snowflake.filesystem.attribute.DeduplicationDescription;
 import snowflake.filesystem.attribute.DeduplicationProgressDescription;
 import snowflake.filesystem.manager.IDeduplicationDescription;
+import snowflake.filesystem.manager.IDeduplicationProgressDescription;
 
 
 /**
@@ -114,22 +115,31 @@ public final class File extends Node {
 	 */
 	public final IDeduplicationDescription getDeduplicationDescription() {
 		IAttributeValue<?> attribute_value = null;
-		if( hasAttribute(CommonAttribute.DataDescription) ) {
-			attribute_value = getAttribute(CommonAttribute.DataDescription).getAttributeValue();
-		}
-		else {
-			if( isLocked() ) {
-				throw new FileSystemException(
-					"Can not create a deduplication_description, because the file is locked!"
-				);
+		if( hasAttribute(CommonAttribute.DeduplicationDescription) ) {
+			attribute_value = getAttribute(CommonAttribute.DeduplicationDescription).getAttributeValue();
+			if( attribute_value instanceof DeduplicationDescription ) {
+				return ((DeduplicationDescription)attribute_value).getValue();
 			}
-			attribute_value = new DeduplicationProgressDescription((byte)0, 0L);
-			setAttribute(new Attribute(CommonAttribute.DataDescription, attribute_value));
-		}
-		if( attribute_value instanceof DeduplicationDescription ) {
-			return ((DeduplicationDescription)attribute_value).getValue();
 		}
 		throw new FileSystemException("The file has no deduplication_description!");
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final IDeduplicationProgressDescription getDeduplicationProgressDescription() {
+		IAttributeValue<?> attribute_value = null;
+		if( hasAttribute(CommonAttribute.DeduplicationProgressDescription) ) {
+			attribute_value = getAttribute(CommonAttribute.DeduplicationProgressDescription).getAttributeValue();
+			if( attribute_value instanceof DeduplicationProgressDescription ) {
+				return ((DeduplicationProgressDescription)attribute_value).getValue();
+			}
+		}
+		throw new FileSystemException("The file has no deduplication_progress_description!");
 	}
 	
 	

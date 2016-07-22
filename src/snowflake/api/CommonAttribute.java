@@ -19,7 +19,6 @@ public enum CommonAttribute {
 	LastAccessTimeStamp("last_access_time_stamp"),
 	LastModificationTimeStamp("last_modification_time_stamp"),
 	DeduplicationDescription("deduplication_description"),
-	DataDescription("data_description"),
 	DeduplicationProgressDescription("deduplication_progress_description");
 	
 	
