@@ -8,6 +8,7 @@ import java.util.NoSuchElementException;
 import j3l.util.Checker;
 import j3l.util.IValidate;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.IFlake;
 import snowflake.api.StorageException;
 
@@ -15,7 +16,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.23_0
  * @author Johannes B. Latzel
  */
 public final class AttributeCache implements IValidate {
@@ -201,13 +202,32 @@ public final class AttributeCache implements IValidate {
 	 */
 	public void setAttribute(Attribute attribute) {
 		checkDeletion();
-		Checker.checkForNull(attribute, GlobalString.Attribute.toString());
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(attribute, GlobalString.Attribute.toString());
+		}
 		synchronized( attribute_list ) {
 			synchronized( attribute_flake ) {
 				attribute_list.removeIf(a -> a.getName().equals(attribute.getName()));
 				AttributeUtility.setAttribute(attribute, attribute_flake);
 			}
 			attribute_list.add(attribute);
+		}
+	}
+	
+	
+	/**
+	 * @param attribute
+	 */
+	public void removeAttribute(Attribute attribute) {
+		checkDeletion();
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(attribute, GlobalString.Attribute.toString());
+		}
+		synchronized( attribute_list ) {
+			synchronized( attribute_flake ) {
+				attribute_list.removeIf(a -> a.getName().equals(attribute.getName()));
+				AttributeUtility.removeAttribute(attribute, attribute_flake);
+			}
 		}
 	}
 	

@@ -9,6 +9,7 @@ import j3l.util.InputUtility;
 import j3l.util.TransformValue2;
 import j3l.util.Checker;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 import snowflake.api.DataPointer;
 import snowflake.api.FlakeInputStream;
 import snowflake.api.FlakeOutputStream;
@@ -20,7 +21,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.23_0
  * @author Johannes B. Latzel
  */
 
@@ -447,6 +448,62 @@ public final class AttributeUtility {
 		}
 		catch( Exception e ) {
 			throw new StorageException("Could not load the attribute \"" + name + "\"!", e);
+		}
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public static void removeAttribute(Attribute attribute, IFlake attribute_flake) {
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(attribute, GlobalString.Attribute.toString());
+			Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
+		}
+		DataPointer pointer;
+		int name_length = 0;
+		int type_name_length = 0;
+		int value_length = 0;
+		byte[] short_buffer = new byte[2];
+		byte[] int_buffer = new byte[4];
+		String name = null;
+		long position_of_attribute = -1;
+		long length_of_attribute = -1;
+		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
+			pointer = input.getDataPointer();
+			pointer.setPosition(0);
+			while( !pointer.isEOF() ) {
+				// read in first header
+				InputUtility.readComplete(input, short_buffer);
+				name_length = TransformValue2.toShort(short_buffer);
+				InputUtility.readComplete(input, short_buffer);
+				type_name_length = TransformValue2.toShort(short_buffer);
+				InputUtility.readComplete(input, int_buffer);
+				value_length = TransformValue2.toInteger(int_buffer);
+				name = new String(InputUtility.readComplete(input, new byte[name_length]));
+				// is it the searched for attribute?
+				if( !attribute.getName().equals(name) ) {
+					// no: skip bytes and continue searching
+					pointer.changePosition(type_name_length + value_length);
+					continue;
+				}
+				position_of_attribute = pointer.getPositionInFlake() - name_length
+						- int_buffer.length - 2 * short_buffer.length;
+				length_of_attribute = int_buffer.length + 2 * short_buffer.length + name_length
+						+ type_name_length + value_length;
+				break;
+			}
+			if( position_of_attribute < 0 ) {
+				throw new IllegalArgumentException("The attribute_flake does not contain the attribute \""
+						+ attribute.toString() + "\"!");
+			}
+			attribute_flake.cutAt(position_of_attribute, length_of_attribute);
+		}
+		catch( Exception e ) {
+			throw new StorageException("Could remove the attribute \"" + name + "\"!", e);
 		}
 	}
 	
