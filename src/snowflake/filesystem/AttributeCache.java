@@ -218,15 +218,15 @@ public final class AttributeCache implements IValidate {
 	/**
 	 * @param attribute
 	 */
-	public void removeAttribute(Attribute attribute) {
+	public void removeAttribute(String attribute_name) {
 		checkDeletion();
 		if( StaticMode.TESTING_MODE ) {
-			Checker.checkForNull(attribute, GlobalString.Attribute.toString());
+			Checker.checkForEmptyString(attribute_name, GlobalString.AttributeName.toString());
 		}
 		synchronized( attribute_list ) {
 			synchronized( attribute_flake ) {
-				attribute_list.removeIf(a -> a.getName().equals(attribute.getName()));
-				AttributeUtility.removeAttribute(attribute, attribute_flake);
+				attribute_list.removeIf(a -> a.getName().equals(attribute_name));
+				AttributeUtility.removeAttribute(attribute_name, attribute_flake);
 			}
 		}
 	}

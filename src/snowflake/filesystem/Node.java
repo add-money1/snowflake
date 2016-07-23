@@ -173,8 +173,8 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @param
 	 * @return
 	 */
-	public final void removeAttribute(Attribute attribute) {
-		removeAttribute(attribute, null);
+	public final void removeAttribute(CommonAttribute attribute_name) {
+		removeAttribute(attribute_name.toString());
 	}
 	
 	
@@ -184,9 +184,31 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @param
 	 * @return
 	 */
-	public final void removeAttribute(Attribute attribute, Lock lock) {
+	public final void removeAttribute(String attribute_name) {
+		removeAttribute(attribute_name, null);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final void removeAttribute(CommonAttribute attribute_name, Lock lock) {
+		removeAttribute(attribute_name.toString(), lock);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final void removeAttribute(String attribute_name, Lock lock) {
 		checkForLock(lock);
-		attribute_cache.removeAttribute(attribute);
+		attribute_cache.removeAttribute(attribute_name);
 	}
 	
 	

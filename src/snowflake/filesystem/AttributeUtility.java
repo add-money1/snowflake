@@ -458,9 +458,9 @@ public final class AttributeUtility {
 	 * @param
 	 * @return
 	 */
-	public static void removeAttribute(Attribute attribute, IFlake attribute_flake) {
+	public static void removeAttribute(String attribute_name, IFlake attribute_flake) {
 		if( StaticMode.TESTING_MODE ) {
-			Checker.checkForNull(attribute, GlobalString.Attribute.toString());
+			Checker.checkForEmptyString(attribute_name, GlobalString.AttributeName.toString());
 			Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
 		}
 		DataPointer pointer;
@@ -485,7 +485,7 @@ public final class AttributeUtility {
 				value_length = TransformValue2.toInteger(int_buffer);
 				name = new String(InputUtility.readComplete(input, new byte[name_length]));
 				// is it the searched for attribute?
-				if( !attribute.getName().equals(name) ) {
+				if( !attribute_name.equals(name) ) {
 					// no: skip bytes and continue searching
 					pointer.changePosition(type_name_length + value_length);
 					continue;
@@ -498,7 +498,7 @@ public final class AttributeUtility {
 			}
 			if( position_of_attribute < 0 ) {
 				throw new IllegalArgumentException("The attribute_flake does not contain the attribute \""
-						+ attribute.toString() + "\"!");
+						+ attribute_name + "\"!");
 			}
 			attribute_flake.cutAt(position_of_attribute, length_of_attribute);
 		}
