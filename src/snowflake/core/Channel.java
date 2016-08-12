@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 
 import j3l.util.Checker;
 import snowflake.GlobalString;
@@ -16,7 +17,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.08.12_0
  * @author Johannes B. Latzel
  */
 public final class Channel implements IRead, IWrite, Closeable {
@@ -46,29 +47,15 @@ public final class Channel implements IRead, IWrite, Closeable {
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.core.IWrite#write(snowflake.api.DataPointer, byte)
+	 * @see snowflake.core.storage.IWrite#write(snowflake.api.DataPointer, java.nio.ByteBuffer)
 	 */
-	@Override public void write(DataPointer data_pointer, byte b) throws IOException {
+	@Override public void write(DataPointer data_pointer, ByteBuffer buffer) throws IOException {
 		if( !data_file.getChannel().isOpen() ) {
 			throw new IOException("The chanel is not open!");
 		}
-		if( data_pointer.getRemainingBytes() < 1 ) {
-			throw new IndexOutOfBoundsException("The length must not succeed the number of available bytes in the flake!");
-		}
-		data_file.seek(data_pointer.getPositionInStorage());
-		data_file.write(b);
-		data_pointer.increasePosition();
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.core.IWrite#write(snowflake.api.DataPointer, byte[], int, int)
-	 */
-	@Override public void write(DataPointer data_pointer, byte[] buffer, int offset, int length) throws IOException {
-		if( !data_file.getChannel().isOpen() ) {
-			throw new IOException("The chanel is not open!");
-		}
-		int remaining_bytes = length;
+		byte[] byte_array_buffer = new byte[buffer.remaining()];
+		buffer.get(byte_array_buffer);
+		int remaining_bytes = byte_array_buffer.length;
 		int advance_in_buffer;
 		int remaining_bytes_in_chunk;
 		long actual_remaining_bytes_in_chunk;
@@ -86,7 +73,7 @@ public final class Channel implements IRead, IWrite, Closeable {
 				remaining_bytes_in_chunk = (int)actual_remaining_bytes_in_chunk;
 			}
 			advance_in_buffer = Math.min(remaining_bytes, remaining_bytes_in_chunk);
-			data_file.write(buffer, length - remaining_bytes + offset, advance_in_buffer);
+			data_file.write(byte_array_buffer, byte_array_buffer.length - remaining_bytes, advance_in_buffer);
 			remaining_bytes -= advance_in_buffer;
 			data_pointer.changePosition(advance_in_buffer);
 		}
@@ -95,35 +82,21 @@ public final class Channel implements IRead, IWrite, Closeable {
 	
 	
 	/* (non-Javadoc)
-	 * @see snowflake.core.IRead#read(snowflake.api.DataPointer)
+	 * @see snowflake.core.storage.IRead#read(snowflake.api.DataPointer, java.nio.ByteBuffer)
 	 */
-	@Override public byte read(DataPointer data_pointer) throws IOException {
+	@Override public int read(DataPointer data_pointer, ByteBuffer buffer) throws IOException {
 		if( !data_file.getChannel().isOpen() ) {
 			throw new IOException("The chanel is not open!");
 		}
-		if( data_pointer.isEOF() ) {
-			throw new IOException("Can not read from a eof-stated stream!");
-		}
-		data_file.seek(data_pointer.getPositionInStorage());
-		data_pointer.increasePosition();
-		return (byte)data_file.read();
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see snowflake.core.IRead#read(snowflake.api.DataPointer, byte[], int, int)
-	 */
-	@Override public int read(DataPointer data_pointer, byte[] buffer, int offset, int length) throws IOException {
-		if( !data_file.getChannel().isOpen() ) {
-			throw new IOException("The chanel is not open!");
-		}
+		byte[] byte_array_buffer = new byte[buffer.remaining()];
+		buffer.get(byte_array_buffer);
 		int remaining_bytes;
 		if( data_pointer.getRemainingBytes() < Integer.MAX_VALUE ) {
 			// cast ok, because data_pointer.getRemainingBytes() < Integer.MAX_VALUE
-			remaining_bytes = Math.min(length, (int)data_pointer.getRemainingBytes());
+			remaining_bytes = Math.min(byte_array_buffer.length, (int)data_pointer.getRemainingBytes());
 		}
 		else {
-			remaining_bytes = Math.min(length, Integer.MAX_VALUE);
+			remaining_bytes = Math.min(byte_array_buffer.length, Integer.MAX_VALUE);
 		}
 		if( remaining_bytes == 0 ) {
 			return 0;
@@ -145,7 +118,7 @@ public final class Channel implements IRead, IWrite, Closeable {
 			}
 			advance_in_buffer = Math.min(remaining_bytes, remaining_bytes_in_chunk);
 			current_read_in_bytes = data_file.read(
-				buffer, length - remaining_bytes + offset, advance_in_buffer
+				byte_array_buffer, byte_array_buffer.length - remaining_bytes, advance_in_buffer
 			);
 			if( current_read_in_bytes < 0 ) {
 				return read_in_bytes;
