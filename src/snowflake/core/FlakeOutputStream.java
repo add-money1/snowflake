@@ -1,12 +1,13 @@
-package snowflake.api;
+package snowflake.core;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.WritableByteChannel;
 
 import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
-import snowflake.core.Flake;
+import snowflake.api.DataPointer;
 import snowflake.core.manager.IReturnChannel;
 import snowflake.core.storage.IWrite;
 
@@ -15,10 +16,10 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.08.12_0
  * @author Johannes B. Latzel
  */
-public final class FlakeOutputStream extends OutputStream {
+public final class FlakeOutputStream implements WritableByteChannel {
 		
 	
 	/**
@@ -124,50 +125,40 @@ public final class FlakeOutputStream extends OutputStream {
 	
 	
 	/* (non-Javadoc)
-	 * @see java.io.OutputStream#write(int)
+	 * @see java.nio.channels.WritableByteChannel#write(java.nio.ByteBuffer)
 	 */
-	@Override public void write(int b) throws IOException {
-		if( is_closed ) {
-			throw new IOException("The stream is not open!");
-		}
-		if( data_pointer.getRemainingBytes() == 0 ) {
-			flake.setLength( flake.getLength() + 1 );
-		}
-		write.write(data_pointer, (byte)(b));	
-	}
-	
-	
-	/*
-	 * (non-Javadoc)
-	 * @see java.io.OutputStream#write(byte[], int, int)
-	 */
-	@Override public void write(byte[] buffer, int offset, int length) throws IOException {
+	@Override public int write(ByteBuffer buffer) throws IOException {
 		if( is_closed ) {
 			throw new IOException("The stream is not open!");
 		}
 		long remaining_bytes = data_pointer.getRemainingBytes();
+		int length = buffer.capacity();
 		if( remaining_bytes < length ) {
 			flake.setLength( flake.getLength() + length - remaining_bytes );
 		}
-		write.write(data_pointer, buffer, offset, length);
+		write.write(data_pointer, buffer);
+		return length;
 	}
 	
 	
 	/*
 	 * (non-Javadoc)
-	 * @see java.io.OutputStream#close()
+	 * @see java.io.Closeable#close()
 	 */
 	@Override public synchronized void close() throws IOException {
 		if( is_closed ) {
 			return;
 		}
-		try {
-			flush();
-		}
-		catch( IOException e ) {
-			throw new IOException("Failed to flush the stream!", e);
-		}
 		channel_returner.returnChannel(write);
 		is_closed = true;
 	}
+	
+	
+	/* (non-Javadoc)
+	 * @see java.nio.channels.Channel#isOpen()
+	 */
+	@Override public boolean isOpen() {
+		return !is_closed;
+	}
+	
 }
