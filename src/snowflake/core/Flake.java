@@ -10,8 +10,6 @@ import j3l.util.ClosureState;
 import j3l.util.IClose;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
-import snowflake.api.FlakeInputStream;
-import snowflake.api.FlakeOutputStream;
 import snowflake.api.IFlake;
 import snowflake.api.StorageException;
 import snowflake.core.manager.IChannelManager;

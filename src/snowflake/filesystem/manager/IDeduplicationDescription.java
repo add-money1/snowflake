@@ -1,13 +1,15 @@
 package snowflake.filesystem.manager;
 
+import snowflake.api.IAttributeValue;
+
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.22_0
+ * @version 2016.07.23_0
  * @author Johannes B. Latzel
  */
-public interface IDeduplicationDescription {
+public interface IDeduplicationDescription extends IAttributeValue<IDeduplicationDescription> {
 	
 	
 	/**

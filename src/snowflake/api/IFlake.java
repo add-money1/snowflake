@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import j3l.util.IValidate;
 import j3l.util.IStateClosure;
+import snowflake.core.FlakeInputStream;
+import snowflake.core.FlakeOutputStream;
 import snowflake.core.IChunk;
 
 

@@ -5,17 +5,16 @@ import j3l.util.Checker;
 import j3l.util.TransformValue2;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
-import snowflake.api.IAttributeValue;
 import snowflake.filesystem.manager.IDeduplicationDescription;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.22_0
+ * @version 2016.07.23_0
  * @author Johannes B. Latzel
  */
-public final class DeduplicationDescription implements IAttributeValue<IDeduplicationDescription>, IDeduplicationDescription {
+public final class DeduplicationDescription implements IDeduplicationDescription {
 	
 	
 	/**
@@ -45,7 +44,7 @@ public final class DeduplicationDescription implements IAttributeValue<IDeduplic
 	/**
 	 * <p></p>
 	 */
-	private final DeduplicationDescription previous_deduplication_description;
+	private final IDeduplicationDescription previous_deduplication_description;
 	
 	
 	/**
@@ -53,7 +52,7 @@ public final class DeduplicationDescription implements IAttributeValue<IDeduplic
 	 * 
 	 * @param
 	 */
-	public DeduplicationDescription(DeduplicationDescription previous_deduplication_description,
+	public DeduplicationDescription(IDeduplicationDescription previous_deduplication_description,
 			long end_of_deduplication_pointer) {
 		if( StaticMode.TESTING_MODE ) {
 			this.end_of_deduplication_pointer = Checker.checkForBoundaries(
