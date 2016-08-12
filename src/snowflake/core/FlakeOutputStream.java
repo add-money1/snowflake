@@ -132,7 +132,7 @@ public final class FlakeOutputStream implements WritableByteChannel {
 			throw new IOException("The stream is not open!");
 		}
 		long remaining_bytes = data_pointer.getRemainingBytes();
-		int length = buffer.capacity();
+		int length = buffer.remaining();
 		if( remaining_bytes < length ) {
 			flake.setLength( flake.getLength() + length - remaining_bytes );
 		}
