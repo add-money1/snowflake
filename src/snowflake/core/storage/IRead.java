@@ -1,5 +1,6 @@
 package snowflake.core.storage;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import snowflake.api.DataPointer;
@@ -22,6 +23,6 @@ public interface IRead extends Returnable {
 	 * @param
 	 * @return
 	 */
-	int read(DataPointer data_pointer, ByteBuffer buffer);
+	int read(DataPointer data_pointer, ByteBuffer buffer) throws IOException;
 	
 }
