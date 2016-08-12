@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import j3l.util.Checker;
-import j3l.util.TransformValue2;
+import j3l.util.InputUtility;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.core.Flake;
@@ -86,16 +86,12 @@ public final class DededuplicationFileInputStream implements Closeable {
 	 */
 	private void loadBuffer() throws IOException {
 		if( !data_buffer.hasRemaining() ) {
-			byte[] long_buffer = new byte[Long.BYTES];
+			ByteBuffer long_buffer = ByteBuffer.allocate(Long.BYTES);
 			long index_position = deduplication_data_pointer.getDeduplicationIndexPosition();
 			flake_input_stream.getDataPointer().setPosition(index_position);
-			int number_of_bytes = flake_input_stream.read(long_buffer);
-			while( number_of_bytes != long_buffer.length ) {
-				flake_input_stream.read(long_buffer, number_of_bytes, long_buffer.length - number_of_bytes);
-			}
-			DeduplicationBlock deduplication_block = deduplication_table.getDataBlock(
-				TransformValue2.toLong(long_buffer)
-			);
+			InputUtility.readComplete(flake_input_stream, long_buffer);
+			long_buffer.flip();
+			DeduplicationBlock deduplication_block = deduplication_table.getDataBlock(long_buffer.getLong());
 			byte[] block_buffer = deduplication_block.getBlockBuffer();
 			data_buffer.rewind();
 			data_buffer.put(block_buffer);
