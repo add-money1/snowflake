@@ -11,7 +11,7 @@ import snowflake.filesystem.manager.IDeduplicationDescription;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.08.12_0
+ * @version 2016.09.10_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationDataPointer {
@@ -52,8 +52,7 @@ public final class DeduplicationDataPointer {
 			this.deduplication_description = file.getDeduplicationDescription();
 		}
 		position_in_file = 0;
-		eof_pointer = file.getLength() - deduplication_description.getEndOfDeduplicationPointer()
-				+ deduplication_description.getDeduplicationLevel() * DeduplicationBlock.SIZE;
+		eof_pointer = file.getLength() - deduplication_description.getEndOfDeduplicationPointer();
 	}
 	
 	
@@ -75,11 +74,7 @@ public final class DeduplicationDataPointer {
 	 * @return
 	 */
 	public long getDeduplicationIndexPosition() {
-		long index_position = position_in_file;
-		for(int a=0,n=deduplication_description.getDeduplicationLevel();a<n;a++) {
-			index_position /= DeduplicationBlock.SIZE;
-		}
-		return index_position;
+		return position_in_file / DeduplicationBlock.SIZE;
 	}
 	
 	
