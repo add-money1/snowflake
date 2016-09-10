@@ -1,8 +1,11 @@
 package snowflake.filesystem.manager;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
 import java.util.ArrayList;
 
+import j3l.util.ArrayTool;
 import j3l.util.Checker;
 import j3l.util.ClosureState;
 import j3l.util.IClose;
@@ -11,26 +14,54 @@ import j3l.util.LoopedTaskThread;
 import j3l.util.TransformValue2;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
+import snowflake.api.CommonAttribute;
 import snowflake.api.DataPointer;
 import snowflake.api.FileSystemException;
-import snowflake.api.FlakeInputStream;
-import snowflake.api.FlakeOutputStream;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
-import snowflake.core.storage.ICreateFlake;
+import snowflake.core.FlakeInputStream;
+import snowflake.core.FlakeOutputStream;
+import snowflake.filesystem.Attribute;
 import snowflake.filesystem.File;
 import snowflake.filesystem.FileSystem;
 import snowflake.filesystem.Lock;
 import snowflake.filesystem.Node;
+import snowflake.filesystem.attribute.DeduplicationDescription;
+import snowflake.filesystem.attribute.DeduplicationProgressDescription;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.15_0
+ * @version 2016.07.23_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationManager implements IClose<FileSystemException> {
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	private static ByteBuffer getByteBuffer(LongBuffer long_buffer) {
+		byte[] buffer = new byte[ Long.BYTES * long_buffer.remaining() ];
+		byte[] l_buffer = new byte[Long.BYTES];
+		int current_index = 0;
+		while( long_buffer.hasRemaining() ) {
+			ArrayTool.transferValues(
+				buffer,
+				TransformValue2.toByteArray(long_buffer.get(), l_buffer),
+				current_index,
+				0,
+				l_buffer.length,
+				StaticMode.TESTING_MODE
+			);
+			current_index += l_buffer.length;
+		}
+		return ByteBuffer.wrap(buffer);
+	}
 	
 	
 	/**
@@ -71,23 +102,15 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 	
 	/**
 	 * <p></p>
-	 */
-	private final ICreateFlake create_flake;
-	
-	
-	/**
-	 * <p></p>
 	 * 
 	 * @param
 	 */
-	public DeduplicationManager(FileSystem file_system, IFlake deduplication_table_flake, ICreateFlake create_flake) {
+	public DeduplicationManager(FileSystem file_system, IFlake deduplication_table_flake) {
 		if( StaticMode.TESTING_MODE ) {
 			this.file_system = Checker.checkForNull(file_system, GlobalString.FileSystem.toString());
-			this.create_flake = Checker.checkForNull(create_flake, GlobalString.CreateFlake.toString());
 		}
 		else {
 			this.file_system = file_system;
-			this.create_flake = create_flake;
 		}
 		deduplicant_list = new ArrayList<>();
 		try {
@@ -97,7 +120,7 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 			throw new FileSystemException("Can not instantiate the deduplication_table!", e);
 		}
 		this.deduplication_thread = new LoopedTaskThread(
-			this::deduplicateFile,
+			this::deduplicateNextFile,
 			"Snowflake Deduplication Thread",
 			1_000
 		);
@@ -116,7 +139,7 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 	 * @param
 	 * @return
 	 */
-	private void deduplicateFile() {
+	private void deduplicateNextFile() {
 		File file;
 		synchronized( deduplicant_list ) {
 			while( deduplicant_list.isEmpty() ) {
@@ -183,8 +206,8 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 	 * @return
 	 */
 	public boolean isPotentialDeduplicant(File file) {
-		// assumes all files are okay
-		return file != null && deduplication_table != null;
+		// assumes all undeduplicated files are okay
+		return file != null && deduplication_table != null && !file.isDeduplicated();
 	}
 	
 	
@@ -199,42 +222,89 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 			Checker.checkForValidation(file, GlobalString.File.toString());
 		}
 		Lock lock = file.lock();
-		IDeduplicationDescription deduplication_description = file.getDeduplicationDescription();
-		byte new_deduplication_level = (byte)(deduplication_description.getDeduplicationLevel() + 1);
-		if( new_deduplication_level < 0 ) {
-			throw new FileSystemException("Can not deduplicate a file more than 127 times!");
+		if( file.isDeduplicated() ) {
+			return;
 		}
-		long end_of_dedupublication_pointer = 0;
-		IFlake deduplication_flake = create_flake.createFlake();
-		byte[] current_data_block = new byte[DeduplicationBlock.SIZE];
-		byte[] long_buffer = new byte[Long.BYTES];
-		long current_index;
+		final IDeduplicationProgressDescription deduplication_progress_description;
+		long current_index_pointer;
+		if( file.isInDeduplication() ) {
+			deduplication_progress_description = file.getDeduplicationProgressDescription();
+			current_index_pointer = deduplication_progress_description.getCurrentIndexPointer();
+		}
+		else {
+			current_index_pointer = 0L;
+			final DeduplicationProgressDescription dedup_descr = new DeduplicationProgressDescription(
+				0L, current_index_pointer
+			);
+			deduplication_progress_description = dedup_descr;
+			file.setAttribute(
+				new Attribute(CommonAttribute.DeduplicationProgressDescription, dedup_descr)
+			);
+		}
+		final DataPointer current_data_pointer;
+		long previous_current_index_pointer = current_index_pointer;
+		// fills at max one deduplication_block-sized block of data with indices, so that
+		// it never accidentally overwrites not yet processed data
+		LongBuffer long_buffer = LongBuffer.allocate( DeduplicationBlock.SIZE / Long.BYTES );
+		final byte[] deduplication_block_buffer = new byte[DeduplicationBlock.SIZE];
+		final long file_length = file.getLength();
 		try( FlakeInputStream fin = file.getFlakeInputStream() ) {
-			DataPointer data_pointer = fin.getDataPointer();
-			try( FlakeOutputStream fout = deduplication_flake.getFlakeOutputStream() ) {
-				while( data_pointer.getRemainingBytes() >= DeduplicationBlock.SIZE ) {
-					InputUtility.readComplete(fin, current_data_block);
-					if( !deduplication_table.isRegistered(current_data_block) ) {
-						current_index = deduplication_table.register(current_data_block);
+			current_data_pointer = fin.getDataPointer();
+			current_data_pointer.setPosition(deduplication_progress_description.getCurrentDataPointer());
+			while( true ) {
+				if( !long_buffer.hasRemaining() || current_data_pointer.isEOF() ) {
+					long_buffer.flip();
+					try( FlakeOutputStream fout = file.getFlakeOutputStream(lock) ) {
+						fout.getDataPointer().setPosition(previous_current_index_pointer);
+						fout.write(getByteBuffer(long_buffer));
+						previous_current_index_pointer = current_index_pointer;
 					}
-					else {
-						current_index = deduplication_table.getIndex(current_data_block);
+					catch( IOException e ) {
+						throw new IOException("Can not write to the FlakeOutputStream!", e);
 					}
-					fout.write(TransformValue2.toByteArray(current_index, long_buffer));
-					end_of_dedupublication_pointer += long_buffer.length;
+					file.setAttribute(
+						new Attribute(
+							CommonAttribute.DeduplicationProgressDescription,
+							new DeduplicationProgressDescription(
+								current_data_pointer.getPositionInFlake(),
+								current_index_pointer
+							)
+						),
+						lock
+					);
+					if( current_data_pointer.isEOF() ) {
+						break;
+					}
+					long_buffer.rewind();
 				}
-				// cast is okay, because data_pointer.getRemainingBytes() is file
-				byte[] remaining_data_buffer = new byte[(int)(data_pointer.getRemainingBytes())];
-				InputUtility.readComplete(fin, remaining_data_buffer);
+				if( current_data_pointer.getRemainingBytes() < deduplication_block_buffer.length ) {
+					current_data_pointer.seekEOF();
+					continue;
+				}
+				InputUtility.readComplete(fin, deduplication_block_buffer);
+				if( deduplication_table.isRegistered(deduplication_block_buffer) ) {
+					long_buffer.put(deduplication_table.getIndex(deduplication_block_buffer));
+				}
+				else {
+					long_buffer.put(deduplication_table.register(deduplication_block_buffer));
+				}
 			}
-			catch( IOException e ) {
-				throw new IOException("Could not write to the deduplication_flake!", e);
-			}
+			file.setAttribute(
+				new Attribute(
+					CommonAttribute.DeduplicationDescription, 
+					new DeduplicationDescription(
+						file_length - ( file_length % DeduplicationBlock.SIZE )
+					)
+				), 
+				lock
+			);
+			file.removeAttribute(CommonAttribute.DeduplicationProgressDescription, lock);
 		}
 		catch( IOException e ) {
-			// delete flake, because it is no longer needed
-			deduplication_flake.delete();
-			throw new FileSystemException("Can not deduplicate the file \"" + file.toString() + "!", e);
+			e.printStackTrace();
+		}
+		finally {
+			file.unlock(lock);
 		}
 	}
 	
