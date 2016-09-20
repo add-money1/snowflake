@@ -41,22 +41,15 @@ public final class DirectoryData extends NodeData {
 	 * @param
 	 * @return
 	 */
-	public static byte[] getBinaryData(byte[] buffer, long attribute_flake_identification,
+	public static ByteBuffer getBinaryData(ByteBuffer buffer, long attribute_flake_identification,
 			long parent_directory_identification) {
-		Checker.checkForNull(buffer, GlobalString.Buffer.toString());
+		Checker.checkForNull(buffer, GlobalString.Buffer.toString()).rewind();
 		int data_length = DirectoryData.DIRECTORY_DATA_LENGTH;
 		Checker.checkForBoundaries(
-			buffer.length, data_length, data_length, GlobalString.BufferLength.toString()
+			buffer.remaining(), data_length, data_length, GlobalString.BufferLength.toString()
 		);
-		byte[] long_buffer = new byte[8];
-		ArrayTool.transferValues(
-			buffer, TransformValue2.toByteArray(attribute_flake_identification, long_buffer),
-			DirectoryData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION
-		);
-		ArrayTool.transferValues(
-			buffer, TransformValue2.toByteArray(parent_directory_identification, long_buffer),
-			DirectoryData.PARENT_DIRECTORY_IDENTIFICATION_POSITION
-		);
+		buffer.putLong(DirectoryData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION, attribute_flake_identification);
+		buffer.putLong(DirectoryData.PARENT_DIRECTORY_IDENTIFICATION_POSITION, parent_directory_identification);
 		return buffer;
 	}
 	
@@ -139,7 +132,7 @@ public final class DirectoryData extends NodeData {
 	 */
 	@Override public void getBinaryData(byte[] buffer) {
 		DirectoryData.getBinaryData(
-			buffer, attribute_flake_identification, parent_directory_identification
+			ByteBuffer.wrap(buffer), attribute_flake_identification, parent_directory_identification
 		);
 	}
 	
