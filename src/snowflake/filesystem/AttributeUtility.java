@@ -2,26 +2,26 @@ package snowflake.filesystem;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import j3l.util.InputUtility;
-import j3l.util.TransformValue2;
 import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
+import snowflake.Util;
 import snowflake.api.DataPointer;
-import snowflake.api.FlakeInputStream;
-import snowflake.api.FlakeOutputStream;
 import snowflake.api.IAttributeValue;
 import snowflake.api.IFlake;
 import snowflake.api.StorageException;
+import snowflake.core.FlakeInputStream;
+import snowflake.core.FlakeOutputStream;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.23_0
+ * @version 2016.09.21_0
  * @author Johannes B. Latzel
  */
 
@@ -47,26 +47,27 @@ public final class AttributeUtility {
 		int name_length;
 		int type_name_length;
 		int value_length;
-		byte[] short_buffer = new byte[2];
-		byte[] int_buffer = new byte[4];
+		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
 		String read_in_name;
 		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
 			pointer = input.getDataPointer();
 			pointer.setPosition(0);
 			while( !pointer.isEOF() ) {
 				// read in first header
-				name_length = TransformValue2.toShort(InputUtility.readComplete(input, short_buffer));
-				type_name_length = TransformValue2.toShort(InputUtility.readComplete(input, short_buffer));
-				value_length = TransformValue2.toInteger(InputUtility.readComplete(input, int_buffer));
-				read_in_name = new String(InputUtility.readComplete(input, new byte[name_length]));
+				header_buffer.rewind();
+				Util.readComplete(input, header_buffer);
+				name_length = header_buffer.getShort();
+				type_name_length = header_buffer.getShort();
+				value_length = header_buffer.getInt();
+				read_in_name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
 				// is it the searched for attribute?
 				if( !name.equals(read_in_name) ) {
 					// no: skip bytes and continue searching
 					pointer.changePosition(type_name_length + value_length);
 					continue;
 				}
-				String type_name = new String(InputUtility.readComplete(input, new byte[type_name_length]));
-				byte[] value_buffer = InputUtility.readComplete(input, new byte[value_length]);
+				String type_name = new String(Util.readComplete(input, ByteBuffer.allocate(type_name_length)).array());
+				byte[] value_buffer = Util.readComplete(input, ByteBuffer.allocate(value_length)).array();
 				// get class
 				Class<?> attribute_value_class;
 				try {
@@ -154,25 +155,22 @@ public final class AttributeUtility {
 		int name_length;
 		int type_name_length;
 		int value_length;
-		byte[] short_buffer = new byte[2];
-		byte[] int_buffer = new byte[4];
+		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
 		byte[] value_buffer;
 		String name = null;
-		String type_name;
 		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
 			pointer = input.getDataPointer();
 			pointer.setPosition(0);
 			while( !pointer.isEOF() ) {
 				// read in first header
-				InputUtility.readComplete(input, short_buffer);
-				name_length = TransformValue2.toShort(short_buffer);
-				InputUtility.readComplete(input, short_buffer);
-				type_name_length = TransformValue2.toShort(short_buffer);
-				InputUtility.readComplete(input, int_buffer);
-				value_length = TransformValue2.toInteger(int_buffer);
-				name = new String(InputUtility.readComplete(input, new byte[name_length]));
-				type_name = new String(InputUtility.readComplete(input, new byte[type_name_length]));
-				value_buffer = InputUtility.readComplete(input, new byte[value_length]);
+				header_buffer.rewind();
+				Util.readComplete(input, header_buffer);
+				name_length = header_buffer.getShort();
+				type_name_length = header_buffer.getShort();
+				value_length = header_buffer.getInt();
+				name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
+				String type_name = new String(Util.readComplete(input, ByteBuffer.allocate(type_name_length)).array());
+				value_buffer = Util.readComplete(input, ByteBuffer.allocate(value_length)).array();
 				// get class
 				Class<?> attribute_value_class;
 				try {
@@ -260,21 +258,19 @@ public final class AttributeUtility {
 		int name_length;
 		int type_name_length;
 		int value_length;
-		byte[] short_buffer = new byte[2];
-		byte[] int_buffer = new byte[4];
+		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
 		String name = null;
 		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
 			pointer = input.getDataPointer();
 			pointer.setPosition(0);
 			while( !pointer.isEOF() ) {
 				// read in first header
-				InputUtility.readComplete(input, short_buffer);
-				name_length = TransformValue2.toShort(short_buffer);
-				InputUtility.readComplete(input, short_buffer);
-				type_name_length = TransformValue2.toShort(short_buffer);
-				InputUtility.readComplete(input, int_buffer);
-				value_length = TransformValue2.toInteger(int_buffer);
-				name = new String(InputUtility.readComplete(input, new byte[name_length]));
+				header_buffer.rewind();
+				Util.readComplete(input, header_buffer);
+				name_length = header_buffer.getShort();
+				type_name_length = header_buffer.getShort();
+				value_length = header_buffer.getInt();
+				name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
 				// check if the attribute is already there
 				boolean attribute_is_cached = false;
 				for( Attribute a : attribute_list ) {
@@ -288,8 +284,8 @@ public final class AttributeUtility {
 				if( attribute_is_cached ) {
 					continue;
 				}
-				String type_name = new String(InputUtility.readComplete(input, new byte[type_name_length]));
-				byte[] value_buffer = InputUtility.readComplete(input, new byte[value_length]);
+				String type_name = new String(Util.readComplete(input, ByteBuffer.allocate(type_name_length)).array());
+				byte[] value_buffer = Util.readComplete(input, ByteBuffer.allocate(value_length)).array();
 				// get class
 				Class<?> attribute_value_class;
 				try {
@@ -377,8 +373,7 @@ public final class AttributeUtility {
 		int name_length = 0;
 		int type_name_length = 0;
 		int value_length = 0;
-		byte[] short_buffer = new byte[2];
-		byte[] int_buffer = new byte[4];
+		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
 		String name = null;
 		boolean override = false;
 		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
@@ -386,13 +381,12 @@ public final class AttributeUtility {
 			pointer.setPosition(0);
 			while( !pointer.isEOF() ) {
 				// read in first header
-				InputUtility.readComplete(input, short_buffer);
-				name_length = TransformValue2.toShort(short_buffer);
-				InputUtility.readComplete(input, short_buffer);
-				type_name_length = TransformValue2.toShort(short_buffer);
-				InputUtility.readComplete(input, int_buffer);
-				value_length = TransformValue2.toInteger(int_buffer);
-				name = new String(InputUtility.readComplete(input, new byte[name_length]));
+				header_buffer.rewind();
+				Util.readComplete(input, header_buffer);
+				name_length = header_buffer.getShort();
+				type_name_length = header_buffer.getShort();
+				value_length = header_buffer.getInt();
+				name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
 				// is it the searched for attribute?
 				if( !attribute.getName().equals(name) ) {
 					// no: skip bytes and continue searching
@@ -435,12 +429,13 @@ public final class AttributeUtility {
 			}
 			try( FlakeOutputStream output = attribute_flake.getFlakeOutputStream() ) {
 				output.getDataPointer().setPosition(pointer.getPositionInFlake());
-				output.write(TransformValue2.toByteArray((short)new_name_buffer.length, short_buffer));
-				output.write(TransformValue2.toByteArray((short)new_type_name_buffer.length, short_buffer));
-				output.write(TransformValue2.toByteArray(new_value_length, int_buffer));
-				output.write(new_name_buffer);
-				output.write(new_type_name_buffer);
-				output.write(attribute_value.getBinaryData());
+				header_buffer.rewind();
+				header_buffer.putShort((short)new_name_buffer.length);
+				header_buffer.putShort((short)new_type_name_buffer.length);
+				header_buffer.putInt(new_value_length);
+				output.write(ByteBuffer.wrap(new_name_buffer));
+				output.write(ByteBuffer.wrap(new_type_name_buffer));
+				output.write(ByteBuffer.wrap(attribute_value.getBinaryData()));
 			}
 			catch( Exception e ) {
 				throw e;
@@ -467,8 +462,7 @@ public final class AttributeUtility {
 		int name_length = 0;
 		int type_name_length = 0;
 		int value_length = 0;
-		byte[] short_buffer = new byte[2];
-		byte[] int_buffer = new byte[4];
+		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
 		String name = null;
 		long position_of_attribute = -1;
 		long length_of_attribute = -1;
@@ -477,13 +471,12 @@ public final class AttributeUtility {
 			pointer.setPosition(0);
 			while( !pointer.isEOF() ) {
 				// read in first header
-				InputUtility.readComplete(input, short_buffer);
-				name_length = TransformValue2.toShort(short_buffer);
-				InputUtility.readComplete(input, short_buffer);
-				type_name_length = TransformValue2.toShort(short_buffer);
-				InputUtility.readComplete(input, int_buffer);
-				value_length = TransformValue2.toInteger(int_buffer);
-				name = new String(InputUtility.readComplete(input, new byte[name_length]));
+				header_buffer.rewind();
+				Util.readComplete(input, header_buffer);
+				name_length = header_buffer.getShort();
+				type_name_length = header_buffer.getShort();
+				value_length = header_buffer.getInt();
+				name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
 				// is it the searched for attribute?
 				if( !attribute_name.equals(name) ) {
 					// no: skip bytes and continue searching
@@ -491,8 +484,8 @@ public final class AttributeUtility {
 					continue;
 				}
 				position_of_attribute = pointer.getPositionInFlake() - name_length
-						- int_buffer.length - 2 * short_buffer.length;
-				length_of_attribute = int_buffer.length + 2 * short_buffer.length + name_length
+						- Integer.BYTES - 2 * Short.BYTES;
+				length_of_attribute = Integer.BYTES + 2 * Short.BYTES + name_length
 						+ type_name_length + value_length;
 				break;
 			}
