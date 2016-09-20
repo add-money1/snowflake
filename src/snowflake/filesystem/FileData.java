@@ -1,15 +1,17 @@
 package snowflake.filesystem;
 
+import java.nio.ByteBuffer;
+
 import j3l.util.ArrayTool;
-import j3l.util.TransformValue2;
 import j3l.util.Checker;
+import j3l.util.TransformValue2;
 import snowflake.GlobalString;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.07.21_0
  * @author Johannes B. Latzel
  */
 public final class FileData extends NodeData {
@@ -82,8 +84,8 @@ public final class FileData extends NodeData {
 	 * @param
 	 * @return
 	 */
-	public static byte[] createBuffer() {
-		return new byte[ FileData.FILE_DATA_LENGTH ];
+	public static ByteBuffer createBuffer() {
+		return ByteBuffer.allocate(FileData.FILE_DATA_LENGTH);
 	}
 	
 	
