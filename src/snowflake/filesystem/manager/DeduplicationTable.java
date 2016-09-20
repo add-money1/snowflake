@@ -1,6 +1,7 @@
 package snowflake.filesystem.manager;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -8,15 +9,15 @@ import j3l.util.Checker;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.FileSystemException;
-import snowflake.api.FlakeInputStream;
-import snowflake.api.FlakeOutputStream;
 import snowflake.api.IFlake;
+import snowflake.core.FlakeInputStream;
+import snowflake.core.FlakeOutputStream;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.15_0
+ * @version 2016.09.21_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationTable {
@@ -25,7 +26,24 @@ public final class DeduplicationTable {
 	/**
 	 * <p></p>
 	 */
-	private final HashMap<byte[], Object> deduplication_map;
+	private static void checkDataBlock(ByteBuffer data_block) {
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(data_block, GlobalString.Buffer.toString());
+		}
+		data_block.rewind();
+		if( data_block.remaining() != DeduplicationBlock.SIZE ) {
+			throw new FileSystemException(
+				"The buffer.length must be equal to DeduplicationBlock.SIZE " + DeduplicationBlock.SIZE + ", but is "
+				+ data_block.capacity()
+			);
+		}
+	}
+	
+	
+	/**
+	 * <p></p>
+	 */
+	private final HashMap<ByteBuffer, Object> deduplication_map;
 	
 	
 	/**
@@ -68,20 +86,24 @@ public final class DeduplicationTable {
 	 * @param
 	 * @return
 	 */
-	public void loadDeduplicationBlock(DeduplicationBlock deduplication_block, byte[] buffer) {
-		synchronized( table_input ) {
-			table_input.getDataPointer().setPosition(
-				DeduplicationBlock.SIZE * deduplication_block.getIndex()
-			);
-			try {
-				table_input.read(buffer);
-			}
-			catch( IOException e ) {
-				throw new FileSystemException(
-					"Can not read in the block with index: " + deduplication_block.getIndex() + "!", e
+	public ByteBuffer loadDeduplicationBlock(DeduplicationBlock deduplication_block, ByteBuffer buffer) {
+		DeduplicationTable.checkDataBlock(buffer);
+		synchronized( deduplication_table_flake ) {
+			synchronized( table_input ) {
+				table_input.getDataPointer().setPosition(
+					DeduplicationBlock.SIZE * deduplication_block.getIndex()
 				);
+				try {
+					table_input.read(buffer);
+				}
+				catch( IOException e ) {
+					throw new FileSystemException(
+						"Can not read in the block with index: " + deduplication_block.getIndex() + "!", e
+					);
+				}
 			}
 		}
+		return buffer;
 	}
 	
 	
@@ -91,16 +113,8 @@ public final class DeduplicationTable {
 	 * @param
 	 * @return
 	 */
-	@SuppressWarnings("unchecked") public long register(byte[] data_block) {
-		if( StaticMode.TESTING_MODE ) {
-			Checker.checkForNull(data_block, GlobalString.Buffer.toString());
-		}
-		if( data_block.length != DeduplicationBlock.SIZE ) {
-			throw new FileSystemException(
-				"The buffer.length must be equal to DeduplicationBlock.SIZE " + DeduplicationBlock.SIZE + ", but is "
-				+ data_block.length
-			);
-		}
+	@SuppressWarnings("unchecked") public long register(ByteBuffer data_block) {
+		DeduplicationTable.checkDataBlock(data_block);
 		if( isRegistered(data_block) ) {
 			throw new FileSystemException("The block is already registered!");
 		}
@@ -178,23 +192,12 @@ public final class DeduplicationTable {
 	 * <p></p>
 	 *
 	 * @param
-	 * @return
-	 */
-	public boolean isRegistered(byte[] data_block) {
-		return getIndex(data_block) != -1;
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
 	 * @return the index of the associated deplucation_block or -1 if it does not exist
 	 */
-	@SuppressWarnings("unchecked") public long getIndex(byte[] data_block) {
+	@SuppressWarnings("unchecked") public long getIndex(ByteBuffer data_block) {
 		Checker.checkForNull(data_block, GlobalString.DataBlock.toString());
 		Checker.checkForBoundaries(
-			data_block.length,
+			data_block.capacity(),
 			DeduplicationBlock.SIZE,
 			DeduplicationBlock.SIZE,
 			GlobalString.DataBlock.toString()
@@ -228,6 +231,34 @@ public final class DeduplicationTable {
 			return -1;
 		}
 		throw new FileSystemException("Can not process the associated entries \"" + object.toString() + "\"!");
+	}
+	
+	
+	/**
+	 * @param long1
+	 */
+	@SuppressWarnings("unchecked") public DeduplicationBlock getDataBlock(long index) {
+		DeduplicationBlock current_block;
+		ArrayList<DeduplicationBlock> current_list;
+		synchronized( deduplication_map ) {
+			for( Object o : deduplication_map.values() ) {
+				if( o instanceof DeduplicationBlock ) {
+					current_block = (DeduplicationBlock)o;
+					if( current_block.getIndex() == index ) {
+						return current_block;
+					}
+				}
+				else if( o instanceof ArrayList<?> ) {
+					current_list = (ArrayList<DeduplicationBlock>)o;
+					for( DeduplicationBlock block : current_list ) {
+						if( block.getIndex() == index ) {
+							return block;
+						}
+					}
+				}
+			}
+		}
+		throw new FileSystemException("The deduplication_block with the index " + index + " does not exist!");
 	}
 	
 }

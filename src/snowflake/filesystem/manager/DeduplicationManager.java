@@ -9,11 +9,11 @@ import j3l.util.ArrayTool;
 import j3l.util.Checker;
 import j3l.util.ClosureState;
 import j3l.util.IClose;
-import j3l.util.InputUtility;
 import j3l.util.LoopedTaskThread;
 import j3l.util.TransformValue2;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
+import snowflake.Util;
 import snowflake.api.CommonAttribute;
 import snowflake.api.DataPointer;
 import snowflake.api.FileSystemException;
@@ -33,7 +33,7 @@ import snowflake.filesystem.attribute.DeduplicationProgressDescription;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.23_0
+ * @version 2016.09.21_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationManager implements IClose<FileSystemException> {
@@ -246,7 +246,7 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 		// fills at max one deduplication_block-sized block of data with indices, so that
 		// it never accidentally overwrites not yet processed data
 		LongBuffer long_buffer = LongBuffer.allocate( DeduplicationBlock.SIZE / Long.BYTES );
-		final byte[] deduplication_block_buffer = new byte[DeduplicationBlock.SIZE];
+		final ByteBuffer deduplication_block_buffer = ByteBuffer.allocate(DeduplicationBlock.SIZE);
 		final long file_length = file.getLength();
 		try( FlakeInputStream fin = file.getFlakeInputStream() ) {
 			current_data_pointer = fin.getDataPointer();
@@ -277,12 +277,13 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 					}
 					long_buffer.rewind();
 				}
-				if( current_data_pointer.getRemainingBytes() < deduplication_block_buffer.length ) {
+				if( current_data_pointer.getRemainingBytes() < deduplication_block_buffer.capacity() ) {
 					current_data_pointer.seekEOF();
 					continue;
 				}
-				InputUtility.readComplete(fin, deduplication_block_buffer);
-				if( deduplication_table.isRegistered(deduplication_block_buffer) ) {
+				Util.readComplete(fin, deduplication_block_buffer);
+				long index = deduplication_table.getIndex(deduplication_block_buffer);
+				if( index != -1 ) {
 					long_buffer.put(deduplication_table.getIndex(deduplication_block_buffer));
 				}
 				else {
