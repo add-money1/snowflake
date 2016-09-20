@@ -115,7 +115,7 @@ public final class DeduplicationTable {
 	 */
 	@SuppressWarnings("unchecked") public long register(ByteBuffer data_block) {
 		DeduplicationTable.checkDataBlock(data_block);
-		if( isRegistered(data_block) ) {
+		if( getIndex(data_block) != -1 ) {
 			throw new FileSystemException("The block is already registered!");
 		}
 		long index;
@@ -235,7 +235,7 @@ public final class DeduplicationTable {
 	
 	
 	/**
-	 * @param long1
+	 * @param index
 	 */
 	@SuppressWarnings("unchecked") public DeduplicationBlock getDataBlock(long index) {
 		DeduplicationBlock current_block;
