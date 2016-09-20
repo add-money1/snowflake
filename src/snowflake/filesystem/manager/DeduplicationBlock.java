@@ -1,5 +1,6 @@
 package snowflake.filesystem.manager;
 
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Arrays;
 
@@ -10,7 +11,7 @@ import snowflake.GlobalString;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.20_0
+ * @version 2016.07.21_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationBlock {
@@ -25,7 +26,7 @@ public final class DeduplicationBlock {
 	/**
 	 * <p></p>
 	 */
-	private byte[] block_buffer;
+	private ByteBuffer block_buffer;
 	
 	
 	/**
@@ -71,9 +72,10 @@ public final class DeduplicationBlock {
 	 */
 	private void load() {
 		if( block_buffer == null ) {
-			block_buffer = new byte[DeduplicationBlock.SIZE];
+			block_buffer = ByteBuffer.allocate(DeduplicationBlock.SIZE);
 		}
 		deduplication_table.loadDeduplicationBlock(this, block_buffer);
+		block_buffer.rewind();
 	}
 	
 	
@@ -83,7 +85,7 @@ public final class DeduplicationBlock {
 	 * @param
 	 * @return
 	 */
-	private byte[] getBlockBufferInternal() {
+	private ByteBuffer getBlockBufferInternal() {
 		if( block_buffer == null ) {
 			load();
 		}
@@ -98,8 +100,9 @@ public final class DeduplicationBlock {
 	 * @param
 	 * @return
 	 */
-	public byte[] getBlockBuffer() {
-		return Arrays.copyOf(getBlockBufferInternal(), block_buffer.length);
+	public ByteBuffer getBlockBuffer() {
+		byte[] internal = getBlockBufferInternal().array();
+		return ByteBuffer.wrap(Arrays.copyOf(internal, internal.length));
 	}
 	
 	
@@ -133,9 +136,9 @@ public final class DeduplicationBlock {
 	 * @param
 	 * @return
 	 */
-	public boolean hasData(byte[] data_block) {
-		Checker.checkForNull(data_block, GlobalString.DataBlock.toString());
-		byte[] block_buffer = getBlockBufferInternal();
+	public boolean hasData(ByteBuffer data_block) {
+		Checker.checkForNull(data_block, GlobalString.DataBlock.toString()).rewind();
+		ByteBuffer block_buffer = getBlockBufferInternal();
 		return Checker.checkAllElementsForEquality(block_buffer, data_block);
 	}
 
