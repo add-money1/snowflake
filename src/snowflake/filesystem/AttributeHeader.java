@@ -1,5 +1,7 @@
 package snowflake.filesystem;
 
+import java.nio.ByteBuffer;
+
 import j3l.util.Checker;
 import snowflake.GlobalString;
 
@@ -7,10 +9,29 @@ import snowflake.GlobalString;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.09.22_0
  * @author Johannes B. Latzel
  */
 public final class AttributeHeader {
+	
+	
+	/**
+	 * <p></p>
+	 */
+	public static AttributeHeader create(ByteBuffer header_buffer) {
+		short name_length = header_buffer.getShort();
+		short type_name_length = header_buffer.getShort();
+		int value_length = header_buffer.getInt();
+		return AttributeHeader.create(name_length, type_name_length, value_length);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 */
+	public static AttributeHeader create(short name_length, short type_name_length, int value_length) {
+		return new AttributeHeader(name_length, type_name_length, value_length);
+	}
 	
 	
 	/**
@@ -19,7 +40,7 @@ public final class AttributeHeader {
 	 * @param
 	 * @return
 	 */
-	private final static int UNSIGNED_SHORT_OFFSET = 1 << 15;
+	private final static int UNSIGNED_SHORT_OFFSET = 1 << (Short.BYTES * 2 - 1);
 	
 	
 	/**
@@ -42,24 +63,15 @@ public final class AttributeHeader {
 	
 	/**
 	 * <p></p>
-	 */
-	private final long last_changed_time_stamp;
-	
-	
-	/**
-	 * <p></p>
 	 *
 	 * @param
 	 * @return
 	 */
-	public AttributeHeader(short name_length, short type_name_length, int value_length, long last_changed_time_stamp) {
+	private AttributeHeader(short name_length, short type_name_length, int value_length) {
 		this.name_length = name_length;
 		this.type_name_length = type_name_length;
 		this.value_length = Checker.checkForBoundaries(
 			value_length, 0, Integer.MAX_VALUE, GlobalString.ValueLength.toString()
-		);
-		this.last_changed_time_stamp = Checker.checkForBoundaries(
-			last_changed_time_stamp, 0, Long.MAX_VALUE, GlobalString.LastChangedTimeStamp.toString()
 		);
 	}
 	
@@ -94,17 +106,6 @@ public final class AttributeHeader {
 	 */
 	public int getValueLength() {
 		return value_length;
-	}
-	
-	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	public long getLastChangedTimeStamp() {
-		return last_changed_time_stamp;
 	}
 	
 }
