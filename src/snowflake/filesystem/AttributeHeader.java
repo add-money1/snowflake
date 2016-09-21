@@ -18,11 +18,20 @@ public final class AttributeHeader {
 	/**
 	 * <p></p>
 	 */
+	public final static int SIZE = 8;
+	
+	
+	/**
+	 * <p></p>
+	 */
 	public static AttributeHeader create(ByteBuffer header_buffer) {
-		short name_length = header_buffer.getShort();
-		short type_name_length = header_buffer.getShort();
-		int value_length = header_buffer.getInt();
-		return AttributeHeader.create(name_length, type_name_length, value_length);
+		Checker.checkForBoundaries(
+			header_buffer.remaining(),
+			AttributeHeader.SIZE,
+			AttributeHeader.SIZE,
+			GlobalString.BufferLength.toString()
+		);
+		return AttributeHeader.create(header_buffer.getShort(), header_buffer.getShort(), header_buffer.getInt());
 	}
 	
 	
