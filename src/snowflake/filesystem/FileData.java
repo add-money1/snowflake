@@ -6,12 +6,13 @@ import j3l.util.ArrayTool;
 import j3l.util.Checker;
 import j3l.util.TransformValue2;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.21_0
+ * @version 2016.07.22_0
  * @author Johannes B. Latzel
  */
 public final class FileData extends NodeData {
@@ -53,28 +54,23 @@ public final class FileData extends NodeData {
 	 * @param
 	 * @return
 	 */
-	public static byte[] getBinaryData(byte[] buffer, long attribute_flake_identification,
+	public static ByteBuffer getBinaryData(ByteBuffer buffer, long attribute_flake_identification,
 			long data_flake_identification, long parent_directory_identification, boolean is_empty) {
-		Checker.checkForNull(buffer, GlobalString.Buffer.toString());
-		int data_length = FileData.FILE_DATA_LENGTH;
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(buffer, GlobalString.Buffer.toString());
+		}
 		Checker.checkForBoundaries(
-			buffer.length, data_length, data_length, GlobalString.BufferLength.toString()
+			buffer.remaining(),
+			DirectoryData.DIRECTORY_DATA_LENGTH,
+			DirectoryData.DIRECTORY_DATA_LENGTH,
+			GlobalString.BufferLength.toString()
 		);
-		byte[] long_buffer = new byte[8];
-		ArrayTool.transferValues(
-			buffer, TransformValue2.toByteArray(attribute_flake_identification, long_buffer),
-			FileData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION
-		);
-		ArrayTool.transferValues(
-			buffer, TransformValue2.toByteArray(data_flake_identification, long_buffer),
-			FileData.DATA_FLAKE_IDENTIFICATION_POSITION
-		);
-		ArrayTool.transferValues(
-			buffer, TransformValue2.toByteArray(parent_directory_identification, long_buffer),
-			FileData.PARENT_DIRECTORY_IDENTIFICATION_POSITION
-		);
-		buffer[FileData.FLAG_VECTOR_POSITION] = (byte)( is_empty ? 1 : 0 );
+		buffer.putLong(FileData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION, attribute_flake_identification);
+		buffer.putLong(FileData.DATA_FLAKE_IDENTIFICATION_POSITION, data_flake_identification);
+		buffer.putLong(FileData.PARENT_DIRECTORY_IDENTIFICATION_POSITION, parent_directory_identification);
+		buffer.put((byte)( is_empty ? 1 : 0 ));
 		return buffer;
+		
 	}
 	
 	
@@ -197,8 +193,11 @@ public final class FileData extends NodeData {
 	 */
 	@Override public void getBinaryData(byte[] buffer) {
 		FileData.getBinaryData(
-			buffer, attribute_flake_identification, data_flake_identification,
-			parent_directory_identification, is_empty
+			ByteBuffer.wrap(buffer),
+			attribute_flake_identification,
+			data_flake_identification,
+			parent_directory_identification,
+			is_empty
 		);
 	}
 	

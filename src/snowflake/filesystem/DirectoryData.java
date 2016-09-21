@@ -6,12 +6,13 @@ import j3l.util.ArrayTool;
 import j3l.util.Checker;
 import j3l.util.TransformValue2;
 import snowflake.GlobalString;
+import snowflake.StaticMode;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.21_0
+ * @version 2016.09.22_0
  * @author Johannes B. Latzel
  */
 public final class DirectoryData extends NodeData {
@@ -43,10 +44,14 @@ public final class DirectoryData extends NodeData {
 	 */
 	public static ByteBuffer getBinaryData(ByteBuffer buffer, long attribute_flake_identification,
 			long parent_directory_identification) {
-		Checker.checkForNull(buffer, GlobalString.Buffer.toString()).rewind();
-		int data_length = DirectoryData.DIRECTORY_DATA_LENGTH;
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(buffer, GlobalString.Buffer.toString());
+		}
 		Checker.checkForBoundaries(
-			buffer.remaining(), data_length, data_length, GlobalString.BufferLength.toString()
+			buffer.remaining(),
+			DirectoryData.DIRECTORY_DATA_LENGTH,
+			DirectoryData.DIRECTORY_DATA_LENGTH,
+			GlobalString.BufferLength.toString()
 		);
 		buffer.putLong(DirectoryData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION, attribute_flake_identification);
 		buffer.putLong(DirectoryData.PARENT_DIRECTORY_IDENTIFICATION_POSITION, parent_directory_identification);

@@ -1,26 +1,27 @@
 package snowflake.filesystem;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import j3l.util.Checker;
 import j3l.util.IBinaryData;
 import j3l.util.IDataTable;
 import j3l.util.Indexable;
-import j3l.util.InputUtility;
 import j3l.util.LongRange;
-import j3l.util.Checker;
 import snowflake.GlobalString;
+import snowflake.Util;
 import snowflake.api.DataPointer;
-import snowflake.api.FlakeInputStream;
-import snowflake.api.FlakeOutputStream;
 import snowflake.api.IFlake;
+import snowflake.core.FlakeInputStream;
+import snowflake.core.FlakeOutputStream;
 
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.09.22_0
  * @author Johannes B. Latzel
  */
 public abstract class FileSystemDataTable<T extends Indexable, R extends IBinaryData> implements IDataTable<T, R> {
@@ -47,7 +48,7 @@ public abstract class FileSystemDataTable<T extends Indexable, R extends IBinary
 	/**
 	 * <p></p>
 	 */
-	protected final byte[] clear_array;
+	protected final ByteBuffer clear_buffer;
 	
 	
 	/**
@@ -60,9 +61,9 @@ public abstract class FileSystemDataTable<T extends Indexable, R extends IBinary
 		flake_input_stream = table_flake.getFlakeInputStream();
 		flake_output_stream = table_flake.getFlakeOutputStream();
 		available_index_list = new ArrayList<>(1000);
-		clear_array = new byte[
-		    Checker.checkForBoundaries(data_entry_size, 1, Integer.MAX_VALUE, GlobalString.DataEntrySize.toString())
-		];
+		clear_buffer = ByteBuffer.allocateDirect(
+			Checker.checkForBoundaries(data_entry_size, 1, Integer.MAX_VALUE, GlobalString.DataEntrySize.toString())
+		);
 	}
 	
 	
@@ -95,12 +96,13 @@ public abstract class FileSystemDataTable<T extends Indexable, R extends IBinary
 				synchronized( flake_output_stream ) {
 					DataPointer pointer = flake_output_stream.getDataPointer();
 					pointer.seekEOF();
-					int data_length = clear_array.length;
-					byte[] buffer = FileData.createBuffer();
+					clear_buffer.rewind();
+					int data_length = clear_buffer.capacity();
+					ByteBuffer buffer = FileData.createBuffer();
 					while( pointer.getPositionInFlake() != 0 ) {
 						pointer.changePosition(-data_length);
 						long current_position_in_flake = pointer.getPositionInFlake();
-						InputUtility.readComplete(flake_input_stream, buffer);
+						Util.readComplete(flake_input_stream, buffer);
 						if( !Checker.checkAllElements(buffer, (byte)0) ) {
 							long current_range_position;
 							LongRange current_range;
@@ -150,7 +152,7 @@ public abstract class FileSystemDataTable<T extends Indexable, R extends IBinary
 				synchronized( flake_output_stream ) {
 					DataPointer pointer = flake_output_stream.getDataPointer();
 					pointer.seekEOF();
-					int data_length = clear_array.length;
+					int data_length = clear_buffer.capacity();
 					begin = pointer.getPositionInFlake() / data_length;
 					flake_output_stream.ensureRemainingCapacity(100 * data_length);
 					pointer.seekEOF();
