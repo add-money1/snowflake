@@ -6,12 +6,13 @@ import java.util.Arrays;
 
 import j3l.util.Checker;
 import snowflake.GlobalString;
+import snowflake.api.StorageException;
 
 /**
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.21_0
+ * @version 2016.09.22_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationBlock {
@@ -103,6 +104,25 @@ public final class DeduplicationBlock {
 	public ByteBuffer getBlockBuffer() {
 		byte[] internal = getBlockBufferInternal().array();
 		return ByteBuffer.wrap(Arrays.copyOf(internal, internal.length));
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public ByteBuffer getBlockBuffer(ByteBuffer buffer) {
+		ByteBuffer block_buffer = getBlockBufferInternal();
+		if( buffer.remaining() < block_buffer.capacity() ) {
+			throw new StorageException(
+				"The buffer is not big enough. buffer.remaining() must be >= "
+				+ block_buffer.capacity() + ", but is " + buffer.remaining() + "!"
+			);
+		}
+		buffer.put(block_buffer);
+		return buffer;
 	}
 	
 	
