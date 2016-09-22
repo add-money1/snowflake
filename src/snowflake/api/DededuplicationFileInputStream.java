@@ -18,7 +18,7 @@ import snowflake.filesystem.manager.DeduplicationTable;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.08.12_0
+ * @version 2016.09.22_0
  * @author Johannes B. Latzel
  */
 public final class DededuplicationFileInputStream implements Closeable {
@@ -87,15 +87,9 @@ public final class DededuplicationFileInputStream implements Closeable {
 	private void loadBuffer() throws IOException {
 		if( !data_buffer.hasRemaining() ) {
 			ByteBuffer long_buffer = ByteBuffer.allocate(Long.BYTES);
-			long index_position = deduplication_data_pointer.getDeduplicationIndexPosition();
-			flake_input_stream.getDataPointer().setPosition(index_position);
-			InputUtility.readComplete(flake_input_stream, long_buffer);
-			long_buffer.flip();
-			DeduplicationBlock deduplication_block = deduplication_table.getDataBlock(long_buffer.getLong());
-			byte[] block_buffer = deduplication_block.getBlockBuffer();
-			data_buffer.rewind();
-			data_buffer.put(block_buffer);
-			data_buffer.flip();
+			flake_input_stream.getDataPointer().setPosition(deduplication_data_pointer.getDeduplicationIndexPosition());
+			InputUtility.readComplete(flake_input_stream, long_buffer).flip();
+			deduplication_table.getDataBlock(long_buffer.getLong()).getBlockBuffer(data_buffer).rewind();
 		}
 	}
 	
