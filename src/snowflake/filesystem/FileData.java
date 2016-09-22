@@ -117,9 +117,8 @@ public final class FileData extends NodeData {
 		if( StaticMode.TESTING_MODE ) {
 			Checker.checkForNull(buffer, GlobalString.Buffer.toString());
 		}
-		int data_length = getDataLength();
 		Checker.checkForBoundaries(
-			buffer.remaining(), data_length, Integer.MAX_VALUE, GlobalString.BufferLength.toString()
+			buffer.remaining(), getDataLength(), Integer.MAX_VALUE, GlobalString.BufferLength.toString()
 		);
 		attribute_flake_identification = buffer.getLong(FileData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION);
 		data_flake_identification = buffer.getLong(FileData.DATA_FLAKE_IDENTIFICATION_POSITION);

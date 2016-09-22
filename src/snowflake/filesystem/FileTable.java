@@ -108,6 +108,7 @@ public final class FileTable extends FileSystemDataTable<File, FileData> {
 			long current_index = 0;
 			while( !pointer.isEOF() ) {
 				if( !Checker.checkAllElements(InputUtility.readComplete(flake_input_stream, buffer), (byte)0) ) {
+					buffer.rewind();
 					list.add(new FileData(buffer, current_index));
 				}
 				else {
