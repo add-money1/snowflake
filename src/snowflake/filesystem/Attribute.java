@@ -10,7 +10,7 @@ import snowflake.api.IAttributeValue;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.19_0
+ * @version 2016.09.22_0
  * @author Johannes B. Latzel
  */
 public final class Attribute implements Nameable {
@@ -61,6 +61,15 @@ public final class Attribute implements Nameable {
 	 */
 	public IAttributeValue<?> getAttributeValue() {
 		return attribute_value;
+	}
+	
+	
+	/**
+	 * @return
+	 */
+	public int getBinarySize() {
+		return AttributeHeader.SIZE + name.length() + attribute_value.getClass().getName().length()
+				+ attribute_value.getDataLength();
 	}
 	
 	
