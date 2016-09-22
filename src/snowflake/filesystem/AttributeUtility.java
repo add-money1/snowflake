@@ -8,7 +8,6 @@ import java.util.List;
 
 import j3l.util.Checker;
 import snowflake.GlobalString;
-import snowflake.StaticMode;
 import snowflake.Util;
 import snowflake.api.DataPointer;
 import snowflake.api.IAttributeValue;
@@ -21,7 +20,7 @@ import snowflake.core.FlakeOutputStream;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.21_0
+ * @version 2016.09.22_0
  * @author Johannes B. Latzel
  */
 
@@ -30,8 +29,95 @@ public final class AttributeUtility {
 	
 	/**
 	 * <p></p>
+	 *
+	 * @param
+	 * @return
 	 */
-	private final static int ATTRIBUTE_HEADER_LENGTH = 8;	
+	private static Attribute createAttribute(String name, String type_name, ByteBuffer value_buffer) {
+		// get class
+		Class<?> attribute_value_class;
+		try {
+			attribute_value_class = ClassLoader.getSystemClassLoader().loadClass(type_name);
+		}
+		catch( ClassNotFoundException e ) {
+			throw new StorageException("Could not load the class \"" + type_name + "\"!", e);
+		}
+		// check if the class is an instance of "snowflake.core.IBinaryData"
+		Class<?>[] interfaces = attribute_value_class.getInterfaces();
+		if( interfaces == null || interfaces.length == 0 ) {
+			throw new StorageException("The class \"" + type_name + "\" has not implemented the interface "
+					+ " \"snowflake.api.IAttributeValue\"!");
+		}
+		boolean found_interface = false;
+		for( Class<?> i : interfaces ) {
+			if( i.equals(IAttributeValue.class) ) {
+				found_interface = true;
+				break;
+			}
+		}
+		if( !found_interface ) {
+			throw new StorageException("The class \"" + type_name + "\" has not implemented the interface "
+					+ " \"snowflake.api.IAttributeValue\"!");
+		}
+		// get the constructor
+		Constructor<?> constructor;
+		try {
+			constructor = attribute_value_class.getConstructor(byte[].class);
+		}
+		catch( NoSuchMethodException e ) {
+			throw new StorageException("The class \"" + type_name + "\" has no Constructor(byte[])!", e);
+		}
+		catch (SecurityException e) {
+			throw new StorageException(
+				"The class \"" + type_name + "\" has no accesseable Constructor(byte[])!", e
+			);
+		}
+		// construct attribute
+		Attribute attribute; 
+		try {
+			attribute = new Attribute(
+				name, (IAttributeValue<?>)constructor.newInstance(value_buffer.array())
+			);
+		}
+		catch( InstantiationException e ) {
+			throw new StorageException("The class \"" + type_name + "\" must not be abstract!", e);
+		}
+		catch( IllegalAccessException e ) {
+			throw new StorageException(
+				"The constructor \"" + constructor.toString() + "\" is not accessable!",  e
+			);
+		}
+		catch( IllegalArgumentException e ) {
+			throw new StorageException(
+				"The constructor \"" + constructor.toString() + "\" seems to not take an byte[] as an "
+				+ "argument - this has been checked and should therefore not happen.", e
+			);
+		}
+		catch( InvocationTargetException e ) {
+			throw new StorageException(
+				"The constructor \"" + constructor.toString() + "\" threw an exception!",  e
+			);
+		}
+		return attribute;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	private static boolean skipIfNotEqual(String name, String read_in_name,
+			AttributeHeader current_header, DataPointer pointer) {
+		// is it the searched for attribute?
+		if( !name.equals(read_in_name) ) {
+			// no: skip bytes and continue searching
+			pointer.changePosition(current_header.getTypeNameLength() + current_header.getValueLength());
+			return true;
+		}
+		return false;
+	}
 	
 	
 	/**
@@ -44,10 +130,8 @@ public final class AttributeUtility {
 		Checker.checkForEmptyString(name, GlobalString.Name.toString());
 		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
 		DataPointer pointer;
-		int name_length;
-		int type_name_length;
-		int value_length;
-		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
+		ByteBuffer header_buffer = AttributeHeader.createBuffer();
+		AttributeHeader current_header;
 		String read_in_name;
 		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
 			pointer = input.getDataPointer();
@@ -56,84 +140,25 @@ public final class AttributeUtility {
 				// read in first header
 				header_buffer.rewind();
 				Util.readComplete(input, header_buffer);
-				name_length = header_buffer.getShort();
-				type_name_length = header_buffer.getShort();
-				value_length = header_buffer.getInt();
-				read_in_name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
-				// is it the searched for attribute?
-				if( !name.equals(read_in_name) ) {
-					// no: skip bytes and continue searching
-					pointer.changePosition(type_name_length + value_length);
+				header_buffer.rewind();
+				current_header = AttributeHeader.create(header_buffer);
+				ByteBuffer name_buffer = ByteBuffer.allocate(current_header.getNameLength());
+				read_in_name = new String(name_buffer.array());
+				if( skipIfNotEqual(name, read_in_name, current_header, pointer) ) {
 					continue;
 				}
-				String type_name = new String(Util.readComplete(input, ByteBuffer.allocate(type_name_length)).array());
-				byte[] value_buffer = Util.readComplete(input, ByteBuffer.allocate(value_length)).array();
-				// get class
-				Class<?> attribute_value_class;
-				try {
-					attribute_value_class = ClassLoader.getSystemClassLoader().loadClass(type_name);
-				}
-				catch( ClassNotFoundException e ) {
-					throw new StorageException("Could not load the class \"" + type_name + "\"!", e);
-				}
-				// check if the class is an instance of "snowflake.core.IBinaryData"
-				Class<?>[] interfaces = attribute_value_class.getInterfaces();
-				if( interfaces == null || interfaces.length == 0 ) {
-					throw new StorageException("The class \"" + type_name + "\" has not implemented the interface "
-							+ " \"snowflake.api.IAttributeValue\"!");
-				}
-				boolean found_interface = false;
-				for( Class<?> i : interfaces ) {
-					if( i.equals(IAttributeValue.class) ) {
-						found_interface = true;
-						break;
-					}
-				}
-				if( !found_interface ) {
-					throw new StorageException("The class \"" + type_name + "\" has not implemented the interface "
-							+ " \"snowflake.api.IAttributeValue\"!");
-				}
-				// get the constructor
-				Constructor<?> constructor;
-				try {
-					constructor = attribute_value_class.getConstructor(byte[].class);
-				}
-				catch( NoSuchMethodException e ) {
-					throw new StorageException("The class \"" + type_name + "\" has no Constructor(byte[])!", e);
-				}
-				catch (SecurityException e) {
-					throw new StorageException(
-						"The class \"" + type_name + "\" has no accesseable Constructor(byte[])!", e
-					);
-				}
-				// construct attribute
-				Attribute attribute; 
-				try {
-					attribute = new Attribute(
-						name, (IAttributeValue<?>)constructor.newInstance(value_buffer)
-					);
-				}
-				catch( InstantiationException e ) {
-					throw new StorageException("The class \"" + type_name + "\" must not be abstract!", e);
-				}
-				catch( IllegalAccessException e ) {
-					throw new StorageException(
-						"The constructor \"" + constructor.toString() + "\" is not accessable!",  e
-					);
-				}
-				catch( IllegalArgumentException e ) {
-					throw new StorageException(
-						"The constructor \"" + constructor.toString() + "\" seems to not take an byte[] as an "
-						+ "argument - this has been checked and should therefore not happen.", e
-					);
-				}
-				catch( InvocationTargetException e ) {
-					throw new StorageException(
-						"The constructor \"" + constructor.toString() + "\" threw an exception!",  e
-					);
-				}
-				return attribute;
+				name_buffer = ByteBuffer.allocate(current_header.getTypeNameLength());
+				ByteBuffer value_buffer = Util.readComplete(
+					input,
+					ByteBuffer.allocate(current_header.getValueLength())
+				);
+				return AttributeUtility.createAttribute(
+					read_in_name,
+					new String(name_buffer.array()),
+					value_buffer
+				);
 			}
+			
 		}
 		catch( Exception e ) {
 			throw new StorageException("Could not load the attribute \"" + name + "\"!", e);
@@ -150,14 +175,13 @@ public final class AttributeUtility {
 	 */
 	public static List<Attribute> loadAllAttributes(IFlake attribute_flake) {
 		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
-		ArrayList<Attribute> list = new ArrayList<>(10);
 		DataPointer pointer;
-		int name_length;
-		int type_name_length;
-		int value_length;
-		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
-		byte[] value_buffer;
-		String name = null;
+		ArrayList<Attribute> list = new ArrayList<>(0);
+		ByteBuffer header_buffer = AttributeHeader.createBuffer();
+		AttributeHeader current_header;
+		String read_in_name;
+		ByteBuffer name_buffer;
+		ByteBuffer value_buffer;
 		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
 			pointer = input.getDataPointer();
 			pointer.setPosition(0);
@@ -165,82 +189,26 @@ public final class AttributeUtility {
 				// read in first header
 				header_buffer.rewind();
 				Util.readComplete(input, header_buffer);
-				name_length = header_buffer.getShort();
-				type_name_length = header_buffer.getShort();
-				value_length = header_buffer.getInt();
-				name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
-				String type_name = new String(Util.readComplete(input, ByteBuffer.allocate(type_name_length)).array());
-				value_buffer = Util.readComplete(input, ByteBuffer.allocate(value_length)).array();
-				// get class
-				Class<?> attribute_value_class;
-				try {
-					attribute_value_class = ClassLoader.getSystemClassLoader().loadClass(type_name);
-				}
-				catch( ClassNotFoundException e ) {
-					throw new StorageException("Could not load the class \"" + type_name + "\"!", e);
-				}
-				// check if the class is an instance of "snowflake.core.IBinaryData"
-				Class<?>[] interfaces = attribute_value_class.getInterfaces();
-				if( interfaces == null || interfaces.length == 0 ) {
-					throw new StorageException("The class \"" + type_name + "\" has not implemented the interface "
-							+ " \"snowflake.api.IAttributeValue\"!");
-				}
-				boolean found_interface = false;
-				for( Class<?> i : interfaces ) {
-					if( i.equals(IAttributeValue.class) ) {
-						found_interface = true;
-						break;
-					}
-				}
-				if( !found_interface ) {
-					throw new StorageException("The class \"" + type_name + "\" has not implemented the interface "
-							+ " \"snowflake.api.IAttributeValue\"!");
-				}
-				// get the constructor
-				Constructor<?> constructor;
-				try {
-					constructor = attribute_value_class.getConstructor(byte[].class);
-				}
-				catch( NoSuchMethodException e ) {
-					throw new StorageException("The class \"" + type_name + "\" has no Constructor(byte[])!", e);
-				}
-				catch (SecurityException e) {
-					throw new StorageException(
-						"The class \"" + type_name + "\" has no accesseable Constructor(byte[])!", e
-					);
-				}
-				// construct attribute
-				Attribute attribute; 
-				try {
-					attribute = new Attribute(
-						name, (IAttributeValue<?>)constructor.newInstance(value_buffer)
-					);
-				}
-				catch( InstantiationException e ) {
-					throw new StorageException("The class \"" + type_name + "\" must not be abstract!", e);
-				}
-				catch( IllegalAccessException e ) {
-					throw new StorageException(
-						"The constructor \"" + constructor.toString() + "\" is not accessable!",  e
-					);
-				}
-				catch( IllegalArgumentException e ) {
-					throw new StorageException(
-						"The constructor \"" + constructor.toString() + "\" seems to not take an byte[] as an "
-						+ "argument - this has been checked and should therefore not happen.", e
-					);
-				}
-				catch( InvocationTargetException e ) {
-					throw new StorageException(
-						"The constructor \"" + constructor.toString() + "\" threw an exception!",  e
-					);
-				}
-				list.add(attribute);
+				header_buffer.rewind();
+				current_header = AttributeHeader.create(header_buffer);
+				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
+				read_in_name = new String(name_buffer.array());
+				name_buffer = ByteBuffer.allocate(current_header.getTypeNameLength());
+				value_buffer = Util.readComplete(
+					input,
+					ByteBuffer.allocate(current_header.getValueLength())
+				);
+				list.add(AttributeUtility.createAttribute(
+					read_in_name,
+					new String(name_buffer.array()),
+					value_buffer
+				));
 			}
 		}
 		catch( Exception e ) {
-			throw new StorageException("Could not load the attribute \"" + name + "\"!", e);
+			throw new StorageException("Could not load the attributes!", e);
 		}
+		list.trimToSize();
 		return list;
 	}
 	
@@ -252,14 +220,18 @@ public final class AttributeUtility {
 	 * @return
 	 */
 	public static List<Attribute> loadNecessaryAttributes(IFlake attribute_flake, List<Attribute> attribute_list) {
+		if( attribute_list == null || attribute_list.isEmpty() ) {
+			return AttributeUtility.loadAllAttributes(attribute_flake);
+		}
 		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
-		ArrayList<Attribute> list = new ArrayList<>(10);
 		DataPointer pointer;
-		int name_length;
-		int type_name_length;
-		int value_length;
-		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
-		String name = null;
+		ArrayList<Attribute> list = new ArrayList<>(0);
+		ByteBuffer header_buffer = AttributeHeader.createBuffer();
+		AttributeHeader current_header;
+		String read_in_name;
+		ByteBuffer name_buffer;
+		ByteBuffer value_buffer;
+		boolean attribute_is_cached;
 		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
 			pointer = input.getDataPointer();
 			pointer.setPosition(0);
@@ -267,95 +239,39 @@ public final class AttributeUtility {
 				// read in first header
 				header_buffer.rewind();
 				Util.readComplete(input, header_buffer);
-				name_length = header_buffer.getShort();
-				type_name_length = header_buffer.getShort();
-				value_length = header_buffer.getInt();
-				name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
-				// check if the attribute is already there
-				boolean attribute_is_cached = false;
+				header_buffer.rewind();
+				current_header = AttributeHeader.create(header_buffer);
+				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
+				read_in_name = new String(name_buffer.array());
+				attribute_is_cached = false;
 				for( Attribute a : attribute_list ) {
-					if( a.getName().equals(name) ) {
+					if( a.getName().equals(read_in_name) ) {
 						// yes: skip bytes and continue searching
-						pointer.changePosition(type_name_length + value_length);
+						pointer.changePosition(current_header.getTypeNameLength() + current_header.getValueLength());
 						attribute_is_cached = true;
+						attribute_list.remove(a);
 						break;
 					}
 				}
 				if( attribute_is_cached ) {
 					continue;
 				}
-				String type_name = new String(Util.readComplete(input, ByteBuffer.allocate(type_name_length)).array());
-				byte[] value_buffer = Util.readComplete(input, ByteBuffer.allocate(value_length)).array();
-				// get class
-				Class<?> attribute_value_class;
-				try {
-					attribute_value_class = ClassLoader.getSystemClassLoader().loadClass(type_name);
-				}
-				catch( ClassNotFoundException e ) {
-					throw new StorageException("Could not load the class \"" + type_name + "\"!", e);
-				}
-				// check if the class is an instance of "snowflake.core.IBinaryData"
-				Class<?>[] interfaces = attribute_value_class.getInterfaces();
-				if( interfaces == null || interfaces.length == 0 ) {
-					throw new StorageException("The class \"" + type_name + "\" has not implemented the interface "
-							+ " \"snowflake.api.IAttributeValue\"!");
-				}
-				boolean found_interface = false;
-				for( Class<?> i : interfaces ) {
-					if( i.equals(IAttributeValue.class) ) {
-						found_interface = true;
-						break;
-					}
-				}
-				if( !found_interface ) {
-					throw new StorageException("The class \"" + type_name + "\" has not implemented the interface "
-							+ " \"snowflake.api.IAttributeValue\"!");
-				}
-				// get the constructor
-				Constructor<?> constructor;
-				try {
-					constructor = attribute_value_class.getConstructor(byte[].class);
-				}
-				catch( NoSuchMethodException e ) {
-					throw new StorageException("The class \"" + type_name + "\" has no Constructor(byte[])!", e);
-				}
-				catch (SecurityException e) {
-					throw new StorageException(
-						"The class \"" + type_name + "\" has no accesseable Constructor(byte[])!", e
-					);
-				}
-				// construct attribute
-				Attribute attribute; 
-				try {
-					attribute = new Attribute(
-						name, (IAttributeValue<?>)constructor.newInstance(value_buffer)
-					);
-				}
-				catch( InstantiationException e ) {
-					throw new StorageException("The class \"" + type_name + "\" must not be abstract!", e);
-				}
-				catch( IllegalAccessException e ) {
-					throw new StorageException(
-						"The constructor \"" + constructor.toString() + "\" is not accessable!",  e
-					);
-				}
-				catch( IllegalArgumentException e ) {
-					throw new StorageException(
-						"The constructor \"" + constructor.toString() + "\" seems to not take an byte[] as an "
-						+ "argument - this has been checked and should therefore not happen.", e
-					);
-				}
-				catch( InvocationTargetException e ) {
-					throw new StorageException(
-						"The constructor \"" + constructor.toString() + "\" threw an exception!",  e
-					);
-				}
-				list.add(attribute);
+				name_buffer = ByteBuffer.allocate(current_header.getTypeNameLength());
+				value_buffer = Util.readComplete(
+					input,
+					ByteBuffer.allocate(current_header.getValueLength())
+				);
+				list.add(AttributeUtility.createAttribute(
+					read_in_name,
+					new String(name_buffer.array()),
+					value_buffer
+				));
 			}
 		}
 		catch( Exception e ) {
-			throw new StorageException("Could not load the attribute \"" + name + "\"!", e);
+			throw new StorageException("Could not load the attributes!", e);
 		}
+		list.trimToSize();
 		return list;
 	}
 	
@@ -370,12 +286,12 @@ public final class AttributeUtility {
 		Checker.checkForNull(attribute, GlobalString.Attribute.toString());
 		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
 		DataPointer pointer;
-		int name_length = 0;
-		int type_name_length = 0;
-		int value_length = 0;
-		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
-		String name = null;
+		ByteBuffer header_buffer = AttributeHeader.createBuffer();
+		ByteBuffer name_buffer;
+		String read_in_name;
+		String name = attribute.getName();
 		boolean override = false;
+		AttributeHeader current_header = null;
 		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
 			pointer = input.getDataPointer();
 			pointer.setPosition(0);
@@ -383,14 +299,11 @@ public final class AttributeUtility {
 				// read in first header
 				header_buffer.rewind();
 				Util.readComplete(input, header_buffer);
-				name_length = header_buffer.getShort();
-				type_name_length = header_buffer.getShort();
-				value_length = header_buffer.getInt();
-				name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
-				// is it the searched for attribute?
-				if( !attribute.getName().equals(name) ) {
-					// no: skip bytes and continue searching
-					pointer.changePosition(type_name_length + value_length);
+				header_buffer.rewind();
+				current_header = AttributeHeader.create(header_buffer);
+				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
+				read_in_name = new String(name_buffer.array());
+				if( skipIfNotEqual(name, read_in_name, current_header, pointer) ) {
 					continue;
 				}
 				override = true;
@@ -398,18 +311,17 @@ public final class AttributeUtility {
 			}
 			IAttributeValue<?> attribute_value = attribute.getAttributeValue();
 			String type_name = attribute_value.getClass().getName();
-			name = attribute.getName();
 			// the data and header capacity in bytes needed to save this attribute
-			byte[] new_name_buffer = name.getBytes();
-			byte[] new_type_name_buffer = type_name.getBytes();
+			name_buffer = ByteBuffer.wrap(name.getBytes());
+			ByteBuffer type_name_buffer = ByteBuffer.wrap(type_name.getBytes());
 			int new_value_length = attribute_value.getDataLength();
-			int needed_capacity = new_name_buffer.length + new_type_name_buffer.length + new_value_length
-					+ AttributeUtility.ATTRIBUTE_HEADER_LENGTH;
 			if( override ) {
-				pointer.changePosition( -name_length - AttributeUtility.ATTRIBUTE_HEADER_LENGTH );
+				pointer.changePosition( -name_buffer.capacity() - AttributeHeader.SIZE );
 				// difference = current_capacity - needed_capacity
-				int difference = AttributeUtility.ATTRIBUTE_HEADER_LENGTH + name_length + type_name_length
-						+ value_length - needed_capacity;
+				int difference = -attribute.getBinarySize();
+				if( current_header != null ) {
+					difference += current_header.getAttributeLength();
+				}
 				long current_position = pointer.getPositionInFlake();
 				if( difference > 0 ) {
 					attribute_flake.cutAt(current_position, difference);
@@ -425,16 +337,20 @@ public final class AttributeUtility {
 						+ "the end of the flake."
 					);
 				}
-				attribute_flake.expandAtEnd(needed_capacity);
+				if( current_header == null ) {
+					throw new StorageException("The current_header must not be null at this point!");
+				}
+				attribute_flake.expandAtEnd(current_header.getAttributeLength());
 			}
 			try( FlakeOutputStream output = attribute_flake.getFlakeOutputStream() ) {
 				output.getDataPointer().setPosition(pointer.getPositionInFlake());
 				header_buffer.rewind();
-				header_buffer.putShort((short)new_name_buffer.length);
-				header_buffer.putShort((short)new_type_name_buffer.length);
+				header_buffer.putShort((short)name_buffer.capacity());
+				header_buffer.putShort((short)type_name_buffer.capacity());
 				header_buffer.putInt(new_value_length);
-				output.write(ByteBuffer.wrap(new_name_buffer));
-				output.write(ByteBuffer.wrap(new_type_name_buffer));
+				output.write(header_buffer);
+				output.write(name_buffer);
+				output.write(type_name_buffer);
 				output.write(ByteBuffer.wrap(attribute_value.getBinaryData()));
 			}
 			catch( Exception e ) {
@@ -454,18 +370,15 @@ public final class AttributeUtility {
 	 * @return
 	 */
 	public static void removeAttribute(String attribute_name, IFlake attribute_flake) {
-		if( StaticMode.TESTING_MODE ) {
-			Checker.checkForEmptyString(attribute_name, GlobalString.AttributeName.toString());
-			Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
-		}
+		Checker.checkForEmptyString(attribute_name, GlobalString.AttributeName.toString());
+		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
 		DataPointer pointer;
-		int name_length = 0;
-		int type_name_length = 0;
-		int value_length = 0;
-		ByteBuffer header_buffer = ByteBuffer.allocate(AttributeUtility.ATTRIBUTE_HEADER_LENGTH);
-		String name = null;
+		ByteBuffer header_buffer = AttributeHeader.createBuffer();
+		ByteBuffer name_buffer;
+		String read_in_name;
 		long position_of_attribute = -1;
 		long length_of_attribute = -1;
+		AttributeHeader current_header;
 		try( FlakeInputStream input = attribute_flake.getFlakeInputStream() ) {
 			pointer = input.getDataPointer();
 			pointer.setPosition(0);
@@ -473,20 +386,17 @@ public final class AttributeUtility {
 				// read in first header
 				header_buffer.rewind();
 				Util.readComplete(input, header_buffer);
-				name_length = header_buffer.getShort();
-				type_name_length = header_buffer.getShort();
-				value_length = header_buffer.getInt();
-				name = new String(Util.readComplete(input, ByteBuffer.allocate(name_length)).array());
-				// is it the searched for attribute?
-				if( !attribute_name.equals(name) ) {
-					// no: skip bytes and continue searching
-					pointer.changePosition(type_name_length + value_length);
+				header_buffer.rewind();
+				current_header = AttributeHeader.create(header_buffer);
+				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
+				read_in_name = new String(name_buffer.array());
+				if( skipIfNotEqual(attribute_name, read_in_name, current_header, pointer) ) {
 					continue;
 				}
-				position_of_attribute = pointer.getPositionInFlake() - name_length
-						- Integer.BYTES - 2 * Short.BYTES;
-				length_of_attribute = Integer.BYTES + 2 * Short.BYTES + name_length
-						+ type_name_length + value_length;
+				position_of_attribute = pointer.getPositionInFlake() - current_header.getNameLength()
+						- AttributeHeader.SIZE;
+				length_of_attribute = AttributeHeader.SIZE + current_header.getNameLength()
+						+ current_header.getTypeNameLength() + current_header.getValueLength();
 				break;
 			}
 			if( position_of_attribute < 0 ) {
@@ -496,7 +406,7 @@ public final class AttributeUtility {
 			attribute_flake.cutAt(position_of_attribute, length_of_attribute);
 		}
 		catch( Exception e ) {
-			throw new StorageException("Could remove the attribute \"" + name + "\"!", e);
+			throw new StorageException("Could remove the attribute \"" + attribute_name + "\"!", e);
 		}
 	}
 	
