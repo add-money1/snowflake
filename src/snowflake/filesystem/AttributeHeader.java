@@ -18,7 +18,7 @@ public final class AttributeHeader {
 	/**
 	 * <p></p>
 	 */
-	public final static int SIZE = 8;
+	public final static int SIZE = 2 * Short.BYTES + Integer.BYTES;
 	
 	
 	/**
