@@ -2,9 +2,7 @@ package snowflake.filesystem;
 
 import java.nio.ByteBuffer;
 
-import j3l.util.ArrayTool;
 import j3l.util.Checker;
-import j3l.util.TransformValue2;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 
@@ -12,7 +10,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.22_0
+ * @version 2016.09.22_0
  * @author Johannes B. Latzel
  */
 public final class FileData extends NodeData {
@@ -114,33 +112,19 @@ public final class FileData extends NodeData {
 	 * 
 	 * @param
 	 */
-	public FileData(byte[] buffer, long index) {
+	public FileData(ByteBuffer buffer, long index) {
 		super(index);
-		Checker.checkForNull(buffer, GlobalString.Buffer.toString());
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(buffer, GlobalString.Buffer.toString());
+		}
 		int data_length = getDataLength();
 		Checker.checkForBoundaries(
-			buffer.length, data_length, data_length, GlobalString.BufferLength.toString()
+			buffer.remaining(), data_length, Integer.MAX_VALUE, GlobalString.BufferLength.toString()
 		);
-		byte[] long_buffer = new byte[8];
-		attribute_flake_identification = TransformValue2.toLong(
-			ArrayTool.transferValues(
-				long_buffer, buffer, 0, FileData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION,
-				long_buffer.length
-			)
-		);
-		data_flake_identification = TransformValue2.toLong(
-			ArrayTool.transferValues(
-				long_buffer, buffer, 0, FileData.DATA_FLAKE_IDENTIFICATION_POSITION,
-				long_buffer.length
-			)
-		);
-		parent_directory_identification = TransformValue2.toLong(
-			ArrayTool.transferValues(
-				long_buffer, buffer, 0, FileData.PARENT_DIRECTORY_IDENTIFICATION_POSITION,
-				long_buffer.length
-			)
-		);
-		is_empty = buffer[FileData.FLAG_VECTOR_POSITION] == 1;
+		attribute_flake_identification = buffer.getLong(FileData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION);
+		data_flake_identification = buffer.getLong(FileData.DATA_FLAKE_IDENTIFICATION_POSITION);
+		parent_directory_identification = buffer.getLong(FileData.PARENT_DIRECTORY_IDENTIFICATION_POSITION);
+		is_empty = buffer.get(FileData.FLAG_VECTOR_POSITION) == 1;
 	}
 	
 	

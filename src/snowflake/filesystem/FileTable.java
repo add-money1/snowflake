@@ -1,6 +1,7 @@
 package snowflake.filesystem;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import j3l.util.Checker;
@@ -15,7 +16,7 @@ import snowflake.api.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.09.22_0
  * @author Johannes B. Latzel
  */
 public final class FileTable extends FileSystemDataTable<File, FileData> {
@@ -66,7 +67,7 @@ public final class FileTable extends FileSystemDataTable<File, FileData> {
 				throw new FileSystemException("The index " + index + " is too big!");
 			}
 			flake_output_stream.getDataPointer().setPosition(position);
-			flake_output_stream.write(clear_array);
+			flake_output_stream.write(clear_buffer);
 		}
 		synchronized( available_index_list ) {
 			available_index_list.sort(LongRange.BY_BEGIN_COMPARATOR);
@@ -103,7 +104,7 @@ public final class FileTable extends FileSystemDataTable<File, FileData> {
 				// cast is okay, because number_of_entries is smaller than equals Integer.MAX_VALUE
 				number_of_entries > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)number_of_entries
 			);
-			byte[] buffer = FileData.createBuffer();
+			ByteBuffer buffer = FileData.createBuffer();
 			long current_index = 0;
 			while( !pointer.isEOF() ) {
 				if( !Checker.checkAllElements(InputUtility.readComplete(flake_input_stream, buffer), (byte)0) ) {
