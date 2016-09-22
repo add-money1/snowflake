@@ -2,9 +2,7 @@ package snowflake.filesystem;
 
 import java.nio.ByteBuffer;
 
-import j3l.util.ArrayTool;
 import j3l.util.Checker;
-import j3l.util.TransformValue2;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 
@@ -87,26 +85,16 @@ public final class DirectoryData extends NodeData {
 	 * 
 	 * @param
 	 */
-	public DirectoryData(byte[] buffer, long index) {
+	public DirectoryData(ByteBuffer buffer, long index) {
 		super(index);
-		Checker.checkForNull(buffer, GlobalString.Buffer.toString());
-		int data_length = getDataLength();
+		if( StaticMode.TESTING_MODE ) {
+			Checker.checkForNull(buffer, GlobalString.Buffer.toString());
+		}
 		Checker.checkForBoundaries(
-			buffer.length, data_length, data_length, GlobalString.BufferLength.toString()
+			buffer.remaining(), getDataLength(), Integer.MAX_VALUE, GlobalString.BufferLength.toString()
 		);
-		byte[] long_buffer = new byte[8];
-		attribute_flake_identification = TransformValue2.toLong(
-			ArrayTool.transferValues(
-				long_buffer, buffer, 0, DirectoryData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION,
-				long_buffer.length
-			)
-		);
-		parent_directory_identification = TransformValue2.toLong(
-			ArrayTool.transferValues(
-				long_buffer, buffer, 0, DirectoryData.PARENT_DIRECTORY_IDENTIFICATION_POSITION,
-				long_buffer.length
-			)
-		);
+		attribute_flake_identification = buffer.getLong();
+		parent_directory_identification = buffer.getLong();
 	}
 	
 	
