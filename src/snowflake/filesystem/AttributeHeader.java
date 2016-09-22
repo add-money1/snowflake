@@ -49,6 +49,17 @@ public final class AttributeHeader {
 	 * @param
 	 * @return
 	 */
+	public static ByteBuffer createBuffer() {
+		return ByteBuffer.allocateDirect(AttributeHeader.SIZE);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
 	private final static int UNSIGNED_SHORT_OFFSET = 1 << (Short.BYTES * 2 - 1);
 	
 	
