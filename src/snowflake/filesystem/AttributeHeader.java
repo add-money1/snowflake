@@ -128,4 +128,15 @@ public final class AttributeHeader {
 		return value_length;
 	}
 	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public int getNeededCapacity() {
+		return AttributeHeader.SIZE + getNameLength() + getTypeNameLength() + getValueLength();
+	}
+	
 }
