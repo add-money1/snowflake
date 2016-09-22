@@ -135,7 +135,7 @@ public final class AttributeHeader {
 	 * @param
 	 * @return
 	 */
-	public int getNeededCapacity() {
+	public int getAttributeLength() {
 		return AttributeHeader.SIZE + getNameLength() + getTypeNameLength() + getValueLength();
 	}
 	
