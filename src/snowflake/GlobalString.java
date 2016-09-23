@@ -97,7 +97,8 @@ public enum GlobalString {
 	CurrentIndexPointer("current_index_pointer"),
 	PreviousDeduplcationDescription("previous_deduplication_description"),
 	AttributeName("attribute_name"),
-	BackupFlakeIdentification("backup_flake_identification");
+	BackupFlakeIdentification("backup_flake_identification"),
+	GetFlake("get_flake");
 	
 	
 	private final String string;
