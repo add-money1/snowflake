@@ -3,9 +3,11 @@ package snowflake.filesystem.manager;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 import j3l.util.Checker;
+import j3l.util.LoopedTaskThread;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.FileSystemException;
@@ -17,7 +19,7 @@ import snowflake.core.FlakeOutputStream;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.21_0
+ * @version 2016.09.23_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationTable {
@@ -66,6 +68,12 @@ public final class DeduplicationTable {
 	
 	/**
 	 * <p></p>
+	 */
+	private final LoopedTaskThread cached_block_clearer;
+	
+	
+	/**
+	 * <p></p>
 	 * 
 	 * @param
 	 * @throws IOException 
@@ -77,6 +85,56 @@ public final class DeduplicationTable {
 		this.table_output = deduplication_table_flake.getFlakeOutputStream();
 		this.table_input = deduplication_table_flake.getFlakeInputStream();
 		deduplication_map = new HashMap<>();
+		initialize();
+		cached_block_clearer = new LoopedTaskThread(
+			this::clearCache, "Snowflake Cached Deduplication Block Clearer", 15 * 60 * 1_000
+		);
+		cached_block_clearer.start();
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	private final void initialize() {
+		// table_input einlesen und jeden SIZE großen block registrieren und den block danach clearen, damit der ram
+		// nicht voll läuft (index kann durch anzahl der lesevorgänge ermittelt werden)
+		System.out.println("warnung: initialize wurde noch nicht implementiert!");
+		System.out.println(this);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	private final void clearCache() {
+		ArrayList<Object> list;
+		synchronized( deduplication_map ) {
+			Collection<Object> c = deduplication_map.values();
+			list = new ArrayList<>(c.size());
+			list.addAll(deduplication_map.values());
+		}
+		Object[] array;
+		do {
+			array = list.toArray();
+			list.clear();
+			for( Object o : array ) {
+				if( o instanceof DeduplicationBlock ) {
+					// cast okay, because o is instance of DeduplicationBlock
+					((DeduplicationBlock)o).clearWhenUnusedFor(cached_block_clearer.getLoopTimeSpan());
+				}
+				else if( o instanceof ArrayList<?> ) {
+					list.addAll((ArrayList<?>)o);
+				}
+			}
+		}
+		while( !list.isEmpty() );
 	}
 	
 	
