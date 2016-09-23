@@ -2,7 +2,6 @@ package snowflake.filesystem.manager;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
-import java.util.Arrays;
 
 import j3l.util.Checker;
 import snowflake.GlobalString;
@@ -12,7 +11,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.22_0
+ * @version 2016.09.23_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationBlock {
@@ -73,7 +72,7 @@ public final class DeduplicationBlock {
 	 */
 	private void load() {
 		if( block_buffer == null ) {
-			block_buffer = ByteBuffer.allocate(DeduplicationBlock.SIZE);
+			block_buffer = ByteBuffer.allocateDirect(DeduplicationBlock.SIZE);
 		}
 		deduplication_table.loadDeduplicationBlock(this, block_buffer);
 		block_buffer.rewind();
@@ -102,8 +101,7 @@ public final class DeduplicationBlock {
 	 * @return
 	 */
 	public ByteBuffer getBlockBuffer() {
-		byte[] internal = getBlockBufferInternal().array();
-		return ByteBuffer.wrap(Arrays.copyOf(internal, internal.length));
+		return getBlockBufferInternal().asReadOnlyBuffer();
 	}
 	
 	
