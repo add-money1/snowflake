@@ -25,7 +25,7 @@ import snowflake.filesystem.manager.DeduplicationManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.23_0
+ * @version 2016.09.23_0
  * @author Johannes B. Latzel
  */
 public class FileSystem implements IClose<FileSystemException> {
@@ -94,7 +94,7 @@ public class FileSystem implements IClose<FileSystemException> {
 		catch( IOException e ) {
 			throw new FileSystemException("Can create the directory_table!", e);
 		}
-		deduplication_manager = new DeduplicationManager(this, storage.getDeduplicationTableFlake());
+		deduplication_manager = new DeduplicationManager(this, storage.getDeduplicationTableFlake(), storage);
 		closure_state = ClosureState.None;
 	}
 	
