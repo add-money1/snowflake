@@ -11,8 +11,10 @@ import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
 import snowflake.core.FlakeInputStream;
 import snowflake.core.FlakeOutputStream;
+import snowflake.filesystem.attribute.DededuplicationProgressDescription;
 import snowflake.filesystem.attribute.DeduplicationDescription;
 import snowflake.filesystem.attribute.DeduplicationProgressDescription;
+import snowflake.filesystem.manager.IDededuplicationProgressDescription;
 import snowflake.filesystem.manager.IDeduplicationDescription;
 import snowflake.filesystem.manager.IDeduplicationProgressDescription;
 
@@ -21,7 +23,7 @@ import snowflake.filesystem.manager.IDeduplicationProgressDescription;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.22_0
+ * @version 2016.09.23_0
  * @author Johannes B. Latzel
  */
 public final class File extends Node {
@@ -121,7 +123,7 @@ public final class File extends Node {
 				return ((DeduplicationDescription)attribute_value).getValue();
 			}
 		}
-		throw new FileSystemException("The file has no deduplication_description!");
+		throw new FileSystemException("The file has no " + CommonAttribute.DeduplicationDescription.toString() + "!");
 	}
 	
 	
@@ -139,7 +141,29 @@ public final class File extends Node {
 				return ((DeduplicationProgressDescription)attribute_value).getValue();
 			}
 		}
-		throw new FileSystemException("The file has no deduplication_progress_description!");
+		throw new FileSystemException(
+			"The file has no " + CommonAttribute.DeduplicationProgressDescription.toString() + "!"
+		);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public final IDededuplicationProgressDescription getDededuplicationProgressDescription() {
+		IAttributeValue<?> attribute_value = null;
+		if( hasAttribute(CommonAttribute.DededuplicationProgressDescription) ) {
+			attribute_value = getAttribute(CommonAttribute.DededuplicationProgressDescription).getAttributeValue();
+			if( attribute_value instanceof DededuplicationProgressDescription ) {
+				return ((DededuplicationProgressDescription)attribute_value).getValue();
+			}
+		}
+		throw new FileSystemException(
+			"The file has no " + CommonAttribute.DededuplicationProgressDescription.toString() + "!"
+		);
 	}
 	
 	
@@ -162,6 +186,17 @@ public final class File extends Node {
 	 */
 	public boolean isInDeduplication() {
 		return hasAttribute(CommonAttribute.DeduplicationProgressDescription);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public boolean isInDededuplication() {
+		return hasAttribute(CommonAttribute.DededuplicationProgressDescription);
 	}
 	
 	
