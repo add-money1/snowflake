@@ -30,11 +30,11 @@ import snowflake.core.manager.SpecialFlakeIdentification;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.07.15_0
+ * @version 2016.09.23_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IStorageInformation, IAllocateSpace, 
-										IClearChunk, IClose<IOException>, ICreateFlake {
+										IClearChunk, IClose<IOException>, ICreateFlake, IGetFlake {
 	
 	
 		
@@ -278,13 +278,11 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 	}
 	
 	
-	/**
-	 * <p></p>
-	 *
-	 * @param
-	 * @return
+	/*
+	 * (non-Javadoc)
+	 * @see snowflake.core.storage.IGetFlake#getFlake(long)
 	 */
-	public IFlake getFlake(long indentification) {
+	@Override public IFlake getFlake(long indentification) {
 		return flake_manager.getFlake(indentification);
 	}
 	
