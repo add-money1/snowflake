@@ -20,7 +20,7 @@ import snowflake.filesystem.attribute.Name;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.23_0
+ * @version 2016.07.25_0
  * @author Johannes B. Latzel
  */
 public abstract class Node implements IValidate, Indexable, ILock {
