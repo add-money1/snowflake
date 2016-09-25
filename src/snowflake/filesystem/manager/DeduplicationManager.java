@@ -208,7 +208,7 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 			}
 			file = deduplicant_list.remove(deduplicant_list.size() - 1);
 		}
-		deduplicateFile(file);
+		deduplicate(file);
 	}
 	
 	
@@ -273,7 +273,7 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 	 * @param
 	 * @return
 	 */
-	public void deduplicateFile(File file) {
+	public void deduplicate(File file) {
 		if( StaticMode.TESTING_MODE ) {
 			Checker.checkForValidation(file, GlobalString.File.toString());
 		}
@@ -373,7 +373,7 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 	 * @param
 	 * @return
 	 */
-	public void dededuplicateFile(File file) {
+	public void dededuplicate(File file) {
 		if( StaticMode.TESTING_MODE ) {
 			Checker.checkForValidation(file, GlobalString.File.toString());
 		}
