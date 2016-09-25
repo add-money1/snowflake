@@ -7,11 +7,14 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import j3l.util.Checker;
+import j3l.util.ClosureState;
+import j3l.util.IClose;
 import j3l.util.LoopedTaskThread;
 import snowflake.GlobalString;
 import snowflake.StaticMode;
 import snowflake.api.FileSystemException;
 import snowflake.api.IFlake;
+import snowflake.api.StorageException;
 import snowflake.core.FlakeInputStream;
 import snowflake.core.FlakeOutputStream;
 
@@ -19,10 +22,10 @@ import snowflake.core.FlakeOutputStream;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.23_0
+ * @version 2016.09.25_0
  * @author Johannes B. Latzel
  */
-public final class DeduplicationTable {
+public final class DeduplicationTable implements IClose<InterruptedException> {	
 	
 	
 	/**
@@ -74,6 +77,12 @@ public final class DeduplicationTable {
 	
 	/**
 	 * <p></p>
+	 */
+	private ClosureState closure_state;
+	
+	
+	/**
+	 * <p></p>
 	 * 
 	 * @param
 	 * @throws IOException 
@@ -89,7 +98,7 @@ public final class DeduplicationTable {
 		cached_block_clearer = new LoopedTaskThread(
 			this::clearCache, "Snowflake Cached Deduplication Block Clearer", 15 * 60 * 1_000
 		);
-		cached_block_clearer.start();
+		closure_state = ClosureState.None;
 	}
 	
 	
@@ -317,6 +326,46 @@ public final class DeduplicationTable {
 			}
 		}
 		throw new FileSystemException("The deduplication_block with the index " + index + " does not exist!");
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see j3l.util.IStateClosure#getClosureState()
+	 */
+	@Override public ClosureState getClosureState() {
+		return closure_state;
+	}
+	
+	
+	/* (non-Javadoc)
+	 * @see j3l.util.IClose#open()
+	 */
+	@Override public void open() {
+		if( isOpen() || isInOpening() ) {
+			if( StaticMode.TESTING_MODE ) {
+				throw new StorageException("The deduplication_table has already been opened!");
+			}
+			return;
+		}
+		closure_state = ClosureState.InOpening;
+		cached_block_clearer.start();
+		closure_state = ClosureState.Open;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see j3l.util.IClose#close()
+	 */
+	@Override public void close() throws InterruptedException {
+		if( !isOpen() ) {
+			if( StaticMode.TESTING_MODE ) {
+				throw new StorageException("The deduplication_table is not open!");
+			}
+			return;
+		}
+		closure_state = ClosureState.InClosure;
+		cached_block_clearer.interrupt();
+		closure_state = ClosureState.Closed;
 	}
 	
 }
