@@ -10,7 +10,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.22_0
+ * @version 2016.09.25_0
  * @author Johannes B. Latzel
  */
 public final class FileData extends NodeData {
@@ -59,8 +59,8 @@ public final class FileData extends NodeData {
 		}
 		Checker.checkForBoundaries(
 			buffer.remaining(),
-			DirectoryData.DIRECTORY_DATA_LENGTH,
-			DirectoryData.DIRECTORY_DATA_LENGTH,
+			FileData.FILE_DATA_LENGTH,
+			FileData.FILE_DATA_LENGTH,
 			GlobalString.BufferLength.toString()
 		);
 		buffer.putLong(FileData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION, attribute_flake_identification);
