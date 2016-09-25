@@ -372,7 +372,7 @@ public abstract class Node implements IValidate, Indexable, ILock {
 	 * @see snowflake.filesystem.ILock#isLocked()
 	 */
 	@Override public final boolean isLocked() {
-		return parent_directory.isLocked() || lock != null;
+		return (parent_directory != null && parent_directory.isLocked()) || lock != null;
 	}
 	
 	
