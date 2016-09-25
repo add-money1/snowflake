@@ -25,7 +25,7 @@ import snowflake.core.FlakeOutputStream;
  * @version 2016.09.25_0
  * @author Johannes B. Latzel
  */
-public final class DeduplicationTable implements IClose<InterruptedException> {	
+public final class DeduplicationTable implements IClose<FileSystemException> {	
 	
 	
 	/**
@@ -356,7 +356,7 @@ public final class DeduplicationTable implements IClose<InterruptedException> {
 	/* (non-Javadoc)
 	 * @see j3l.util.IClose#close()
 	 */
-	@Override public void close() throws InterruptedException {
+	@Override public void close() {
 		if( !isOpen() ) {
 			if( StaticMode.TESTING_MODE ) {
 				throw new StorageException("The deduplication_table is not open!");
