@@ -37,7 +37,7 @@ import snowflake.filesystem.attribute.DeduplicationProgressDescription;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.22_0
+ * @version 2016.09.25_0
  * @author Johannes B. Latzel
  */
 public final class DeduplicationManager implements IClose<FileSystemException> {
