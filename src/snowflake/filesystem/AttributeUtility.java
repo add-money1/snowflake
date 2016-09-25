@@ -337,10 +337,7 @@ public final class AttributeUtility {
 						+ "the end of the flake."
 					);
 				}
-				if( current_header == null ) {
-					throw new StorageException("The current_header must not be null at this point!");
-				}
-				attribute_flake.expandAtEnd(current_header.getAttributeLength());
+				attribute_flake.expandAtEnd(new_value_length);
 			}
 			try( FlakeOutputStream output = attribute_flake.getFlakeOutputStream() ) {
 				output.getDataPointer().setPosition(pointer.getPositionInFlake());
