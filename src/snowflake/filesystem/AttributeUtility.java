@@ -20,7 +20,7 @@ import snowflake.core.FlakeOutputStream;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.22_0
+ * @version 2016.09.25_0
  * @author Johannes B. Latzel
  */
 
@@ -113,7 +113,13 @@ public final class AttributeUtility {
 		// is it the searched for attribute?
 		if( !name.equals(read_in_name) ) {
 			// no: skip bytes and continue searching
-			pointer.changePosition(current_header.getTypeNameLength() + current_header.getValueLength());
+			int difference = current_header.getTypeNameLength() + current_header.getValueLength();
+			if( pointer.getRemainingBytes() < difference ) {
+				pointer.seekEOF();
+			}
+			else {
+				pointer.changePosition(difference);
+			}
 			return true;
 		}
 		return false;
