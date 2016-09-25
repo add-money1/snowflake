@@ -331,7 +331,7 @@ public class FileSystem implements IClose<FileSystemException> {
 	 * @return
 	 */
 	public void deduplicate(File file) {
-		deduplication_manager.dededuplicateFile(file);
+		deduplication_manager.dededuplicate(file);
 	}
 	
 	
@@ -342,7 +342,7 @@ public class FileSystem implements IClose<FileSystemException> {
 	 * @return
 	 */
 	public void dededuplicate(File file) {
-		deduplication_manager.dededuplicateFile(file);
+		deduplication_manager.dededuplicate(file);
 	}
 	
 	
