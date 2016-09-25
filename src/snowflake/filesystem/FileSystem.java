@@ -25,7 +25,7 @@ import snowflake.filesystem.manager.DeduplicationManager;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.23_0
+ * @version 2016.09.25_0
  * @author Johannes B. Latzel
  */
 public class FileSystem implements IClose<FileSystemException> {
@@ -321,6 +321,28 @@ public class FileSystem implements IClose<FileSystemException> {
 	 */
 	public RootDirectory getRootDirectory() {
 		return root_directory;
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void deduplicate(File file) {
+		deduplication_manager.dededuplicateFile(file);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void dededuplicate(File file) {
+		deduplication_manager.dededuplicateFile(file);
 	}
 	
 	
