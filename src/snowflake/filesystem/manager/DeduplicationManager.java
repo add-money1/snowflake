@@ -460,6 +460,7 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 			return;
 		}
 		closure_state = ClosureState.InOpening;
+		deduplication_table.open();
 		analyzation_thread.start();
 		deduplication_thread.start();
 		closure_state = ClosureState.Open;
@@ -479,6 +480,7 @@ public final class DeduplicationManager implements IClose<FileSystemException> {
 		closure_state = ClosureState.InClosure;
 		analyzation_thread.interrupt();
 		deduplication_thread.interrupt();
+		deduplication_table.close();
 		closure_state = ClosureState.Closed;
 	}
 	
