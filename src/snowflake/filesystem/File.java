@@ -9,6 +9,7 @@ import snowflake.api.FileSystemException;
 import snowflake.api.IAttributeValue;
 import snowflake.api.IDirectory;
 import snowflake.api.IFlake;
+import snowflake.api.StorageException;
 import snowflake.core.FlakeInputStream;
 import snowflake.core.FlakeOutputStream;
 import snowflake.filesystem.attribute.DededuplicationProgressDescription;
@@ -23,7 +24,7 @@ import snowflake.filesystem.manager.IDeduplicationProgressDescription;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.23_0
+ * @version 2016.09.25_0
  * @author Johannes B. Latzel
  */
 public final class File extends Node {
@@ -197,6 +198,54 @@ public final class File extends Node {
 	 */
 	public boolean isInDededuplication() {
 		return hasAttribute(CommonAttribute.DededuplicationProgressDescription);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void deduplicate() {
+		String message = null;
+		if( isDeduplicated() ) {
+			message = "The file \"" + toString() + "\" is already deduplicated!";
+		}
+		else if( isInDededuplication() ) {
+			message = "The file \"" + toString() + "\" is already in deduplication!";
+		}
+		else if( isInDededuplication() ) {
+			message = "The file \"" + toString() + "\" is currently in dededuplication!";
+		}
+		if( message != null ) {
+			throw new StorageException(message);
+		}
+		getFileSystem().deduplicate(this);
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
+	public void dededuplicate() {
+		String message = null;
+		if( !isDeduplicated() ) {
+			message = "The file \"" + toString() + "\" is not deduplicated!";
+		}
+		else if( isInDededuplication() ) {
+			message = "The file \"" + toString() + "\" is currently in deduplication!";
+		}
+		else if( isInDededuplication() ) {
+			message = "The file \"" + toString() + "\" is already in dededuplication!";
+		}
+		if( message != null ) {
+			throw new StorageException(message);
+		}
+		getFileSystem().dededuplicate(this);
 	}
 	
 	
