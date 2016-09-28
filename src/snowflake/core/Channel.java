@@ -54,7 +54,7 @@ public final class Channel implements IRead, IWrite, Closeable {
 			throw new IOException("The chanel is not open!");
 		}
 		byte[] byte_array_buffer = new byte[buffer.remaining()];
-		buffer.get(byte_array_buffer);
+		buffer.get(byte_array_buffer);		
 		int remaining_bytes = byte_array_buffer.length;
 		int advance_in_buffer;
 		int remaining_bytes_in_chunk;
@@ -89,7 +89,6 @@ public final class Channel implements IRead, IWrite, Closeable {
 			throw new IOException("The chanel is not open!");
 		}
 		byte[] byte_array_buffer = new byte[buffer.remaining()];
-		buffer.get(byte_array_buffer);
 		int remaining_bytes;
 		if( data_pointer.getRemainingBytes() < Integer.MAX_VALUE ) {
 			// cast ok, because data_pointer.getRemainingBytes() < Integer.MAX_VALUE
@@ -128,6 +127,7 @@ public final class Channel implements IRead, IWrite, Closeable {
 			read_in_bytes += current_read_in_bytes;
 		}
 		while( remaining_bytes != 0 );
+		buffer.put(byte_array_buffer);
 		return read_in_bytes;
 	}
 	
