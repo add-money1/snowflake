@@ -17,7 +17,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.08.12_0
+ * @version 2016.09.28_0
  * @author Johannes B. Latzel
  */
 public final class Channel implements IRead, IWrite, Closeable {
