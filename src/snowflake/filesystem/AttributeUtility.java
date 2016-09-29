@@ -20,7 +20,7 @@ import snowflake.core.FlakeOutputStream;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.25_0
+ * @version 2016.09.29_0
  * @author Johannes B. Latzel
  */
 
@@ -149,11 +149,13 @@ public final class AttributeUtility {
 				header_buffer.rewind();
 				current_header = AttributeHeader.create(header_buffer);
 				ByteBuffer name_buffer = ByteBuffer.allocate(current_header.getNameLength());
+				Util.readComplete(input, name_buffer);
 				read_in_name = new String(name_buffer.array());
 				if( skipIfNotEqual(name, read_in_name, current_header, pointer) ) {
 					continue;
 				}
 				name_buffer = ByteBuffer.allocate(current_header.getTypeNameLength());
+				Util.readComplete(input, name_buffer);
 				ByteBuffer value_buffer = Util.readComplete(
 					input,
 					ByteBuffer.allocate(current_header.getValueLength())
@@ -198,8 +200,10 @@ public final class AttributeUtility {
 				header_buffer.rewind();
 				current_header = AttributeHeader.create(header_buffer);
 				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
+				Util.readComplete(input, name_buffer);
 				read_in_name = new String(name_buffer.array());
 				name_buffer = ByteBuffer.allocate(current_header.getTypeNameLength());
+				Util.readComplete(input, name_buffer);
 				value_buffer = Util.readComplete(
 					input,
 					ByteBuffer.allocate(current_header.getValueLength())
@@ -248,6 +252,7 @@ public final class AttributeUtility {
 				header_buffer.rewind();
 				current_header = AttributeHeader.create(header_buffer);
 				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
+				Util.readComplete(input, name_buffer);
 				read_in_name = new String(name_buffer.array());
 				attribute_is_cached = false;
 				for( Attribute a : attribute_list ) {
@@ -263,6 +268,7 @@ public final class AttributeUtility {
 					continue;
 				}
 				name_buffer = ByteBuffer.allocate(current_header.getTypeNameLength());
+				Util.readComplete(input, name_buffer);
 				value_buffer = Util.readComplete(
 					input,
 					ByteBuffer.allocate(current_header.getValueLength())
@@ -308,6 +314,7 @@ public final class AttributeUtility {
 				header_buffer.rewind();
 				current_header = AttributeHeader.create(header_buffer);
 				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
+				Util.readComplete(input, name_buffer);
 				read_in_name = new String(name_buffer.array());
 				if( skipIfNotEqual(name, read_in_name, current_header, pointer) ) {
 					continue;
@@ -351,8 +358,11 @@ public final class AttributeUtility {
 				header_buffer.putShort((short)name_buffer.capacity());
 				header_buffer.putShort((short)type_name_buffer.capacity());
 				header_buffer.putInt(new_value_length);
+				header_buffer.flip();
 				output.write(header_buffer);
+				name_buffer.rewind();
 				output.write(name_buffer);
+				type_name_buffer.rewind();
 				output.write(type_name_buffer);
 				output.write(ByteBuffer.wrap(attribute_value.getBinaryData()));
 			}
