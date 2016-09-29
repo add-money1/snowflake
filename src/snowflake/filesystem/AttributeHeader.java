@@ -57,15 +57,6 @@ public final class AttributeHeader {
 	
 	/**
 	 * <p></p>
-	 *
-	 * @param
-	 * @return
-	 */
-	private final static int UNSIGNED_SHORT_OFFSET = 1 << (Short.BYTES * 2 - 1);
-	
-	
-	/**
-	 * <p></p>
 	 */
 	private final short name_length;
 	
@@ -89,8 +80,8 @@ public final class AttributeHeader {
 	 * @return
 	 */
 	private AttributeHeader(short name_length, short type_name_length, int value_length) {
-		this.name_length = name_length;
-		this.type_name_length = type_name_length;
+		this.name_length = (short)(name_length - Short.MAX_VALUE);
+		this.type_name_length = (short)(type_name_length - Short.MAX_VALUE);
 		this.value_length = Checker.checkForBoundaries(
 			value_length, 0, Integer.MAX_VALUE, GlobalString.ValueLength.toString()
 		);
@@ -104,7 +95,7 @@ public final class AttributeHeader {
 	 * @return
 	 */
 	public int getNameLength() {
-		return name_length + AttributeHeader.UNSIGNED_SHORT_OFFSET;
+		return name_length + Short.MAX_VALUE;
 	}
 	
 	
@@ -115,7 +106,7 @@ public final class AttributeHeader {
 	 * @return
 	 */
 	public int getTypeNameLength() {
-		return type_name_length + AttributeHeader.UNSIGNED_SHORT_OFFSET;
+		return type_name_length + Short.MAX_VALUE;
 	}
 	
 	
