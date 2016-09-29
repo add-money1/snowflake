@@ -10,7 +10,7 @@ import snowflake.api.IAttributeValue;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.22_0
+ * @version 2016.09.29_0
  * @author Johannes B. Latzel
  */
 public final class Attribute implements Nameable {
@@ -78,6 +78,21 @@ public final class Attribute implements Nameable {
 	 */
 	@Override public String getName() {
 		return name;
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override public String toString() {
+		StringBuilder string_builder = new StringBuilder(100);
+		string_builder.append("Attribute [name: ");
+		string_builder.append(name);
+		string_builder.append(" | value: ");
+		string_builder.append(attribute_value.toString());
+		string_builder.append(']');
+		return string_builder.toString();
 	}
 	
 	
