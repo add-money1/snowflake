@@ -16,7 +16,7 @@ import snowflake.api.StorageException;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.22_0
+ * @version 2016.09.29_0
  * @author Johannes B. Latzel
  */
 public final class DirectoryTable extends FileSystemDataTable<Directory, DirectoryData> {
@@ -114,6 +114,7 @@ public final class DirectoryTable extends FileSystemDataTable<Directory, Directo
 				else {
 					addAvailableIndex(current_index);
 				}
+				buffer.rewind();
 				current_index++;
 			}
 			return list;
