@@ -236,6 +236,7 @@ public final class AttributeUtility {
 		Checker.checkForNull(attribute_flake, GlobalString.AttributeFlake.toString());
 		DataPointer pointer;
 		ArrayList<Attribute> list = new ArrayList<>(0);
+		ArrayList<Attribute> known_attribute_list = new ArrayList<>(attribute_list);
 		ByteBuffer header_buffer = AttributeHeader.createBuffer();
 		AttributeHeader current_header;
 		String read_in_name;
@@ -255,12 +256,12 @@ public final class AttributeUtility {
 				Util.readComplete(input, name_buffer);
 				read_in_name = new String(name_buffer.array());
 				attribute_is_cached = false;
-				for( Attribute a : attribute_list ) {
+				for( Attribute a : known_attribute_list ) {
 					if( a.getName().equals(read_in_name) ) {
 						// yes: skip bytes and continue searching
 						pointer.changePosition(current_header.getTypeNameLength() + current_header.getValueLength());
 						attribute_is_cached = true;
-						attribute_list.remove(a);
+						known_attribute_list.remove(a);
 						break;
 					}
 				}
