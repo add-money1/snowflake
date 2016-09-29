@@ -39,6 +39,7 @@ public final class AttributeHeader {
 	 * <p></p>
 	 */
 	public static AttributeHeader create(short name_length, short type_name_length, int value_length) {
+		System.out.println("header: " + name_length + " " + type_name_length + " " + value_length);
 		return new AttributeHeader(name_length, type_name_length, value_length);
 	}
 	
@@ -137,6 +138,23 @@ public final class AttributeHeader {
 	 */
 	public int getAttributeLength() {
 		return AttributeHeader.SIZE + getNameLength() + getTypeNameLength() + getValueLength();
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override public String toString() {
+		StringBuilder string_builder = new StringBuilder(75);
+		string_builder.append("AttributeHeader [name_length: ");
+		string_builder.append(name_length);
+		string_builder.append(" | type_name_length: ");
+		string_builder.append(type_name_length);
+		string_builder.append(" | value_length: ");
+		string_builder.append(value_length);
+		string_builder.append(']');
+		return string_builder.toString();
 	}
 	
 }
