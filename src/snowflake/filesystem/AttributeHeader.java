@@ -80,8 +80,16 @@ public final class AttributeHeader {
 	 * @return
 	 */
 	private AttributeHeader(short name_length, short type_name_length, int value_length) {
-		this.name_length = (short)(name_length - Short.MAX_VALUE);
-		this.type_name_length = (short)(type_name_length - Short.MAX_VALUE);
+		this.name_length = (short)(
+			Checker.checkForBoundaries(
+				name_length, 0, Short.MAX_VALUE, GlobalString.NameLength.toString()
+			) - Short.MAX_VALUE
+		);
+		this.type_name_length = (short)(
+			Checker.checkForBoundaries(
+				type_name_length, 0, Short.MAX_VALUE, GlobalString.TypeNameLength.toString()
+			) - Short.MAX_VALUE
+		);
 		this.value_length = Checker.checkForBoundaries(
 			value_length, 0, Integer.MAX_VALUE, GlobalString.ValueLength.toString()
 		);
