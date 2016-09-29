@@ -39,7 +39,6 @@ public final class AttributeHeader {
 	 * <p></p>
 	 */
 	public static AttributeHeader create(short name_length, short type_name_length, int value_length) {
-		System.out.println("header: " + name_length + " " + type_name_length + " " + value_length);
 		return new AttributeHeader(name_length, type_name_length, value_length);
 	}
 	
