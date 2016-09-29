@@ -12,7 +12,7 @@ import snowflake.filesystem.FileSystem;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.23_0
+ * @version 2016.09.29_0
  * @author Johannes B. Latzel
  */
 public final class SnowFlake implements AutoCloseable {
@@ -65,6 +65,7 @@ public final class SnowFlake implements AutoCloseable {
 		storage = new Storage(storage_configuration);
 		storage.open();
 		file_system = new FileSystem(storage);
+		file_system.open();
 	}
 	
 	
@@ -94,6 +95,7 @@ public final class SnowFlake implements AutoCloseable {
 	 * @see java.lang.AutoCloseable#close()
 	 */
 	@Override public void close() throws IOException {
+		file_system.close();
 		storage.close();
 	}
 
