@@ -9,7 +9,7 @@ import snowflake.GlobalString;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.22_0
+ * @version 2016.09.29_0
  * @author Johannes B. Latzel
  */
 public final class AttributeHeader {
