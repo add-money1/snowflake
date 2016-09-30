@@ -16,7 +16,7 @@ import snowflake.api.IFlake;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.29_0
+ * @version 2016.09.30_0
  * @author Johannes B. Latzel
  */
 public final class FileTable extends FileSystemDataTable<File, FileData> {
@@ -44,13 +44,15 @@ public final class FileTable extends FileSystemDataTable<File, FileData> {
 				throw new FileSystemException("The index " + index + " is too big!");
 			}
 			flake_output_stream.getDataPointer().setPosition(position);
-			flake_output_stream.write(FileData.getBinaryData(
-				FileData.createBuffer(),
-				file.getAttributeFlakeIdentification(),
-				file.getDataFlakeIdentification(),
-				file.getParentDirectory().getIdentification(),
-				file.isEmpty()
-			));
+			flake_output_stream.write(
+				FileData.getBinaryData(
+					FileData.createBuffer(),
+					file.getAttributeFlakeIdentification(),
+					file.getDataFlakeIdentification(),
+					file.getParentDirectory().getIdentification(),
+					file.isEmpty()
+				)
+			);
 		}
 	}
 	
