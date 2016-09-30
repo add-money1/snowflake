@@ -117,7 +117,7 @@ public final class DataPointer {
 	 * @return
 	 */
 	public long getRemainingBytes() {
-		long remaining = flake.getLength() - position_in_flake;
+		long remaining = getFlakeLength() - position_in_flake;
 		if( remaining < 0 ) {
 			return 0L;
 		}

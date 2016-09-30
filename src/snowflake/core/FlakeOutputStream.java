@@ -16,7 +16,7 @@ import snowflake.core.storage.IWrite;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.08.12_0
+ * @version 2016.09.30_0
  * @author Johannes B. Latzel
  */
 public final class FlakeOutputStream implements WritableByteChannel {
@@ -119,7 +119,7 @@ public final class FlakeOutputStream implements WritableByteChannel {
 	 */
 	public void ensureRemainingCapacity(long number_of_bytes) {
 		if( number_of_bytes > data_pointer.getRemainingBytes() ) {
-			flake.setLength(data_pointer.getPositionInFlake() + number_of_bytes);
+			flake.setLength(data_pointer.getFlakeLength() - data_pointer.getRemainingBytes() + number_of_bytes);
 		}
 	}
 	
