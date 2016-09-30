@@ -65,6 +65,17 @@ public final class DataPointer {
 	 * @param
 	 * @return
 	 */
+	public long getFlakeLength() {
+		return flake.getLength();
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
 	public long getPositionInFlake() {
 		checkEOF();
 		return position_in_flake;
