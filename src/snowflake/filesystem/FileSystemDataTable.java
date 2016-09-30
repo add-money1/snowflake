@@ -21,7 +21,7 @@ import snowflake.core.FlakeOutputStream;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.22_0
+ * @version 2016.09.30_0
  * @author Johannes B. Latzel
  */
 public abstract class FileSystemDataTable<T extends Indexable, R extends IBinaryData> implements IDataTable<T, R> {
@@ -151,12 +151,11 @@ public abstract class FileSystemDataTable<T extends Indexable, R extends IBinary
 			synchronized( flake_input_stream ) {
 				synchronized( flake_output_stream ) {
 					DataPointer pointer = flake_output_stream.getDataPointer();
-					pointer.seekEOF();
 					int data_length = clear_buffer.capacity();
-					begin = pointer.getPositionInFlake() / data_length;
-					flake_output_stream.ensureRemainingCapacity(100 * data_length);
+					begin = pointer.getFlakeLength() / data_length;
 					pointer.seekEOF();
-					end = pointer.getPositionInFlake() / data_length;
+					flake_output_stream.ensureRemainingCapacity(100 * data_length);
+					end = pointer.getFlakeLength() / data_length;
 				}
 			}
 			range = new LongRange(begin, end);
