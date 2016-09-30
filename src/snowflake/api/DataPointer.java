@@ -216,7 +216,12 @@ public final class DataPointer {
 		string_builder.append("pointer to flake \"");
 		string_builder.append(flake.toString());
 		string_builder.append("\" at position: ");
-		string_builder.append(position_in_flake);
+		if( position_in_flake < getFlakeLength() ) {
+			string_builder.append(position_in_flake);
+		}
+		else {
+			string_builder.append("eof");
+		}
 		string_builder.trimToSize();
 		return string_builder.toString();
 	}
