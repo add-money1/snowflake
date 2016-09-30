@@ -10,7 +10,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.22_0
+ * @version 2016.09.29_0
  * @author Johannes B. Latzel
  */
 public final class DirectoryData extends NodeData {
@@ -53,6 +53,7 @@ public final class DirectoryData extends NodeData {
 		);
 		buffer.putLong(DirectoryData.ATTRIBUTE_FLAKE_IDENTIFICATION_POSITION, attribute_flake_identification);
 		buffer.putLong(DirectoryData.PARENT_DIRECTORY_IDENTIFICATION_POSITION, parent_directory_identification);
+		buffer.flip();
 		return buffer;
 	}
 	

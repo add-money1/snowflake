@@ -10,7 +10,7 @@ import snowflake.StaticMode;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.25_0
+ * @version 2016.09.29_0
  * @author Johannes B. Latzel
  */
 public final class FileData extends NodeData {
@@ -67,6 +67,7 @@ public final class FileData extends NodeData {
 		buffer.putLong(FileData.DATA_FLAKE_IDENTIFICATION_POSITION, data_flake_identification);
 		buffer.putLong(FileData.PARENT_DIRECTORY_IDENTIFICATION_POSITION, parent_directory_identification);
 		buffer.put((byte)( is_empty ? 1 : 0 ));
+		buffer.flip();
 		return buffer;
 		
 	}
