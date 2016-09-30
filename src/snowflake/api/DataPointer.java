@@ -106,10 +106,11 @@ public final class DataPointer {
 	 * @return
 	 */
 	public long getRemainingBytes() {
-		if( isEOF() ) {
+		long remaining = flake.getLength() - position_in_flake;
+		if( remaining < 0 ) {
 			return 0L;
 		}
-		return flake.getLength() - position_in_flake;
+		return remaining;
 	}
 	
 	
