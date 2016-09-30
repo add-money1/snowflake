@@ -11,7 +11,7 @@ import snowflake.core.IChunk;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.07.11_0
+ * @version 2016.09.30_0
  * @author Johannes B. Latzel
  */
 public final class DataPointer {	
@@ -52,7 +52,21 @@ public final class DataPointer {
 	 * @param
 	 * @return
 	 */
+	private void checkEOF() {
+		if( isEOF() ) {
+			throw new SecurityException("Can not resolve the position of an eof-pointer!");
+		}
+	}
+	
+	
+	/**
+	 * <p></p>
+	 *
+	 * @param
+	 * @return
+	 */
 	public long getPositionInFlake() {
+		checkEOF();
 		return position_in_flake;
 	}
 	
@@ -64,9 +78,7 @@ public final class DataPointer {
 	 * @return
 	 */
 	public long getPositionInStorage() {
-		if( isEOF() ) {
-			throw new SecurityException("Can not resolve the position of an eof-pointer!");
-		}
+		checkEOF();
 		IChunk chunk = flake.getChunkAtPositionInFlake(position_in_flake);
 		return chunk.getStartAddress() - chunk.getPositionInFlake() + position_in_flake;	
 	}
@@ -79,6 +91,9 @@ public final class DataPointer {
 	 * @return
 	 */
 	public long getRemainingBytesInChunk() {
+		if( isEOF() ) {
+			return 0L;
+		}
 		IChunk chunk = flake.getChunkAtPositionInFlake(position_in_flake);
 		return chunk.getLength() - ( position_in_flake - chunk.getPositionInFlake() );
 	}
@@ -91,6 +106,9 @@ public final class DataPointer {
 	 * @return
 	 */
 	public long getRemainingBytes() {
+		if( isEOF() ) {
+			return 0L;
+		}
 		return flake.getLength() - position_in_flake;
 	}
 	
