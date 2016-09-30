@@ -102,9 +102,6 @@ public final class DataPointer {
 	 * @return
 	 */
 	public long getRemainingBytesInChunk() {
-		if( isEOF() ) {
-			return 0L;
-		}
 		IChunk chunk = flake.getChunkAtPositionInFlake(position_in_flake);
 		return chunk.getLength() - ( position_in_flake - chunk.getPositionInFlake() );
 	}
@@ -117,11 +114,7 @@ public final class DataPointer {
 	 * @return
 	 */
 	public long getRemainingBytes() {
-		long remaining = getFlakeLength() - position_in_flake;
-		if( remaining < 0 ) {
-			return 0L;
-		}
-		return remaining;
+		return getFlakeLength() - position_in_flake;
 	}
 	
 	
