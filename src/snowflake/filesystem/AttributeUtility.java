@@ -3,6 +3,8 @@ package snowflake.filesystem;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +22,7 @@ import snowflake.core.FlakeOutputStream;
  * <p></p>
  * 
  * @since JDK 1.8
- * @version 2016.09.29_0
+ * @version 2016.10.04_0
  * @author Johannes B. Latzel
  */
 
@@ -150,7 +152,7 @@ public final class AttributeUtility {
 				current_header = AttributeHeader.create(header_buffer);
 				ByteBuffer name_buffer = ByteBuffer.allocate(current_header.getNameLength());
 				Util.readComplete(input, name_buffer);
-				read_in_name = new String(name_buffer.array());
+				read_in_name = new String(StandardCharsets.ISO_8859_1.decode(name_buffer).array());
 				if( skipIfNotEqual(name, read_in_name, current_header, pointer) ) {
 					continue;
 				}
@@ -162,7 +164,7 @@ public final class AttributeUtility {
 				);
 				return AttributeUtility.createAttribute(
 					read_in_name,
-					new String(name_buffer.array()),
+					new String(StandardCharsets.ISO_8859_1.decode(name_buffer).array()),
 					value_buffer
 				);
 			}
@@ -201,7 +203,7 @@ public final class AttributeUtility {
 				current_header = AttributeHeader.create(header_buffer);
 				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
 				Util.readComplete(input, name_buffer);
-				read_in_name = new String(name_buffer.array());
+				read_in_name = new String(StandardCharsets.ISO_8859_1.decode(name_buffer).array());
 				name_buffer = ByteBuffer.allocate(current_header.getTypeNameLength());
 				Util.readComplete(input, name_buffer);
 				value_buffer = Util.readComplete(
@@ -210,7 +212,7 @@ public final class AttributeUtility {
 				);
 				list.add(AttributeUtility.createAttribute(
 					read_in_name,
-					new String(name_buffer.array()),
+					new String(StandardCharsets.ISO_8859_1.decode(name_buffer).array()),
 					value_buffer
 				));
 			}
@@ -254,7 +256,7 @@ public final class AttributeUtility {
 				current_header = AttributeHeader.create(header_buffer);
 				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
 				Util.readComplete(input, name_buffer);
-				read_in_name = new String(name_buffer.array());
+				read_in_name = new String(StandardCharsets.ISO_8859_1.decode(name_buffer).array());
 				attribute_is_cached = false;
 				for( Attribute a : known_attribute_list ) {
 					if( a.getName().equals(read_in_name) ) {
@@ -276,7 +278,7 @@ public final class AttributeUtility {
 				);
 				list.add(AttributeUtility.createAttribute(
 					read_in_name,
-					new String(name_buffer.array()),
+					new String(StandardCharsets.ISO_8859_1.decode(name_buffer).array()),
 					value_buffer
 				));
 			}
@@ -316,7 +318,7 @@ public final class AttributeUtility {
 				current_header = AttributeHeader.create(header_buffer);
 				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
 				Util.readComplete(input, name_buffer);
-				read_in_name = new String(name_buffer.array());
+				read_in_name = new String(StandardCharsets.ISO_8859_1.decode(name_buffer).array());
 				if( skipIfNotEqual(name, read_in_name, current_header, pointer) ) {
 					continue;
 				}
@@ -326,8 +328,8 @@ public final class AttributeUtility {
 			IAttributeValue<?> attribute_value = attribute.getAttributeValue();
 			String type_name = attribute_value.getClass().getName();
 			// the data and header capacity in bytes needed to save this attribute
-			name_buffer = ByteBuffer.wrap(name.getBytes());
-			ByteBuffer type_name_buffer = ByteBuffer.wrap(type_name.getBytes());
+			name_buffer = StandardCharsets.ISO_8859_1.encode(CharBuffer.wrap(name.toCharArray()));
+			ByteBuffer type_name_buffer = StandardCharsets.ISO_8859_1.encode(CharBuffer.wrap(type_name.toCharArray()));
 			int new_value_length = attribute_value.getDataLength();
 			if( override ) {
 				pointer.changePosition( -name_buffer.capacity() - AttributeHeader.SIZE );
@@ -403,7 +405,7 @@ public final class AttributeUtility {
 				header_buffer.rewind();
 				current_header = AttributeHeader.create(header_buffer);
 				name_buffer = ByteBuffer.allocate(current_header.getNameLength());
-				read_in_name = new String(name_buffer.array());
+				read_in_name = new String(StandardCharsets.ISO_8859_1.decode(name_buffer).array());
 				if( skipIfNotEqual(attribute_name, read_in_name, current_header, pointer) ) {
 					continue;
 				}
