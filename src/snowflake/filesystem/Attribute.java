@@ -46,7 +46,9 @@ public final class Attribute implements Nameable {
 	 * @return
 	 */
 	public Attribute(String name, IAttributeValue<?> attribute_value) {
-		this.name = Checker.checkForEmptyString(name, GlobalString.Name.toString());
+		Checker.checkForEmptyString(name, GlobalString.Name.toString());
+		Checker.checkForBoundaries(name.length(), 1, Short.MAX_VALUE, GlobalString.Name.toString());
+		this.name = name;
 		this.attribute_value = Checker.checkForNull(
 			attribute_value, GlobalString.AttributeValue.toString()
 		);
