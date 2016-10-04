@@ -42,7 +42,7 @@ public final class Attribute implements Nameable {
 	/**
 	 * <p></p>
 	 *
-	 * @param
+	 * @param name length must not exceed Short.MAX_VALUE
 	 * @return
 	 */
 	public Attribute(String name, IAttributeValue<?> attribute_value) {
