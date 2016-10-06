@@ -30,7 +30,7 @@ import snowflake.core.manager.SpecialFlakeIdentification;
  * <p>storage</p>
  * 
  * @since JDK 1.8
- * @version 2016.09.23_0
+ * @version 2016.10.06_0
  * @author Johannes B. Latzel
  */
 public final class Storage implements IStorageInformation, IAllocateSpace, 
@@ -205,11 +205,14 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 								flake_list.put(current_flake_identification, new ArrayList<>(1));
 							}
 							current_flake_chunk_list = flake_list.get(current_flake_identification);
-							if( current_flake_chunk_list.size() < current_index_in_flake ) {
-								do {
-									current_flake_chunk_list.add(null);
+							while( current_flake_chunk_list.size() <= chunk_data.getIndexInFlake() ) {
+								current_flake_chunk_list.add(null);
+							}
+							if( !current_flake_chunk_list.isEmpty() ) {
+								Chunk removed_chunk = current_flake_chunk_list.remove(current_index_in_flake);
+								if( removed_chunk != null ) {
+									throw new StorageException("Removed a non-null element \"" + removed_chunk.toString() + "\"!");
 								}
-								while( current_flake_chunk_list.size() < chunk_data.getIndexInFlake() );
 							}
 							current_flake_chunk_list.add(current_index_in_flake, chunk);
 							// flake_modifier.addChunkToFlake(current_flake_identification.longValue(), chunk, 
@@ -246,7 +249,7 @@ public final class Storage implements IStorageInformation, IAllocateSpace,
 			current_flake_chunk_list = flake_list.get(identification);
 			for(int a=current_flake_chunk_list.size()-1;a>=0;a--) {
 				if( current_flake_chunk_list.get(a) == null ) {
-					// should this happen? like, ever??
+					System.out.println("should this happen? like, ever??");
 					current_flake_chunk_list.remove(a);
 				}
 			}
